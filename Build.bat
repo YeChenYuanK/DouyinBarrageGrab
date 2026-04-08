@@ -43,6 +43,7 @@ echo.
 
 ::: Build mode selection
 echo Select build mode:
+
 echo   [1] Debug
 echo   [2] Release (default)
 echo.
@@ -90,6 +91,7 @@ if exist "%SOLUTION_DIR%BarrageService.sln" (
             echo [Warn] NuGet not found, skipping restore
         )
     )
+
 ) else (
     echo [Error] BarrageService.sln not found!
     pause
@@ -130,8 +132,8 @@ if %ERRORLEVEL% neq 0 (
 )
 echo.
 
-::: Copy output files
-echo [Step 4] Copying output files...
+::: Copy output files to Output folder
+echo [Step 4] Copying output files to Output folder...
 set "SRC_EXE=%PROJECT_DIR%\bin\%BUILD_CONFIG%\%EXE_NAME%"
 
 if not exist "%SRC_EXE%" (
@@ -143,20 +145,35 @@ if not exist "%SRC_EXE%" (
 copy /y "%SRC_EXE%" "%OUTPUT_DIR%\" >nul
 echo   Copied %EXE_NAME%
 
-::: Copy config
+:: Copy exe.config (required for .NET Framework runtime)
+if exist "%PROJECT_DIR%\bin\%BUILD_CONFIG%\%EXE_NAME%.config" (
+    copy /y "%PROJECT_DIR%\bin\%BUILD_CONFIG%\%EXE_NAME%.config" "%OUTPUT_DIR%\" >nul
+    echo   Copied %EXE_NAME%.config
+)
+
+:: Copy rootCert.pfx (for HTTPS proxy)
+if exist "%PROJECT_DIR%\bin\%BUILD_CONFIG%\rootCert.pfx" (
+    copy /y "%PROJECT_DIR%\bin\%BUILD_CONFIG%\rootCert.pfx" "%OUTPUT_DIR%\" >nul
+    echo   Copied rootCert.pfx
+)
+
+:: Copy logs folder (create if not exists)
+if not exist "%OUTPUT_DIR%\logs" mkdir "%OUTPUT_DIR%\logs"
+
+:: Copy config
 if exist "%PROJECT_DIR%\AppConfig.json" (
     copy /y "%PROJECT_DIR%\AppConfig.json" "%OUTPUT_DIR%\" >nul
     echo   Copied AppConfig.json
 )
 
-::: Copy Scripts folder
+:: Copy Scripts folder
 if exist "%PROJECT_DIR%\Scripts\" (
     if not exist "%OUTPUT_DIR%\Scripts" mkdir "%OUTPUT_DIR%\Scripts"
     xcopy /y /e /q "%PROJECT_DIR%\Scripts\" "%OUTPUT_DIR%\Scripts\" >nul 2>&1
     echo   Copied Scripts folder
 )
 
-::: Copy Configs folder
+:: Copy Configs folder
 if exist "%PROJECT_DIR%\Configs\" (
     if not exist "%OUTPUT_DIR%\Configs" mkdir "%OUTPUT_DIR%\Configs"
     copy /y "%PROJECT_DIR%\Configs\*" "%OUTPUT_DIR%\Configs\" >nul 2>&1
@@ -170,10 +187,12 @@ if "%BUILD_CONFIG%"=="Release" (
         del /q "%OUTPUT_DIR%\*.pdb" >nul 2>&1
         echo   Deleted .pdb files
     )
+
     if exist "%OUTPUT_DIR%\*.xml" (
         del /q "%OUTPUT_DIR%\*.xml" >nul 2>&1
         echo   Deleted .xml files
     )
+
 )
 
 echo.
@@ -183,6 +202,9 @@ echo ===============================================
 echo.
 echo Output: %OUTPUT_DIR%
 echo Executable: %OUTPUT_DIR%\%EXE_NAME%
+echo.
+echo Output folder contents:
+dir "%OUTPUT_DIR%" /b
 echo.
 echo Usage:
 echo   1. Edit AppConfig.json to configure
