@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BarrageGrab.Modles;
 using BarrageGrab.Modles.JsonEntity;
+using BarrageGrab.Modles.ProtoEntity;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

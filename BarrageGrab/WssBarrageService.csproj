@@ -19,9 +19,10 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
-  <!-- 排除 WinForms 相关文件 -->
+  <!-- 排除 WinForms 和冲突的 AssemblyInfo -->
   <ItemGroup>
     <Compile Remove="Forms\**" />
+    <Compile Remove="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Remove="Forms\**" />
     <None Remove="Forms\**" />
     <Content Remove="Forms\**" />
