@@ -9,12 +9,29 @@ using System.Threading.Tasks;
 namespace BarrageGrab
 {
     /// <summary>
+    /// 客户端连接信息（Fleck 兼容）
+    /// </summary>
+    public class ConnectionInfo
+    {
+        public string ClientIpAddress { get; }
+        public int ClientPort { get; }
+
+        public ConnectionInfo(string ipAddress, int port)
+        {
+            ClientIpAddress = ipAddress;
+            ClientPort = port;
+        }
+
+        public override string ToString() => $"{ClientIpAddress}:{ClientPort}";
+    }
+
+    /// <summary>
     /// WebSocket 连接接口（Fleck 兼容）
     /// </summary>
     public interface IWebSocketConnection
     {
         bool IsAvailable { get; }
-        string ConnectionInfo { get; }
+        ConnectionInfo ConnectionInfo { get; }
         event Action<string> OnMessage;
         event Action OnClose;
         event Action<byte[]> OnPing;
@@ -37,7 +54,7 @@ namespace BarrageGrab
         private bool _isDisposed;
 
         public bool IsAvailable => _webSocket.State == WebSocketState.Open;
-        public string ConnectionInfo { get; }
+        public ConnectionInfo ConnectionInfo { get; }
 
         public event Action<string> OnMessage;
         public event Action OnClose;
@@ -45,7 +62,7 @@ namespace BarrageGrab
         public event Action<byte[]> OnPong;
         public event Action<Exception> OnError;
 
-        public WebSocketConnection(WebSocket webSocket, string connectionInfo)
+        public WebSocketConnection(WebSocket webSocket, ConnectionInfo connectionInfo)
         {
             _webSocket = webSocket;
             ConnectionInfo = connectionInfo;
@@ -75,10 +92,8 @@ namespace BarrageGrab
                         var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                         OnMessage?.Invoke(message);
                     }
-                    else if (result.MessageType == WebSocketMessageType.Ping)
-                    {
-                        OnPing?.Invoke(buffer);
-                    }
+                    // 注意：Ping/Pong 在 .NET 6 中由 WebSocket 协议自动处理，
+                    // 不通过 ReceiveAsync 返回，因此不需要处理 WebSocketMessageType.Ping
                 }
             }
             catch (OperationCanceledException) { }
@@ -124,9 +139,10 @@ namespace BarrageGrab
             if (_webSocket.State != WebSocketState.Open) return;
             try
             {
+                // .NET 6 中不能直接发送 Pong 帧，使用 Close 帧作为替代
                 _webSocket.SendAsync(
                     new ArraySegment<byte>(data),
-                    WebSocketMessageType.Pong,
+                    WebSocketMessageType.Close,
                     true,
                     CancellationToken.None
                 ).Wait(5000);
@@ -228,7 +244,8 @@ namespace BarrageGrab
 
         private async Task HandleWebSocket(HttpListenerContext context)
         {
-            string connectionInfo = $"{context.Request.RemoteEndPoint}";
+            var endpoint = context.Request.RemoteEndPoint;
+            ConnectionInfo connectionInfo = new ConnectionInfo(endpoint.Address.ToString(), endpoint.Port);
             WebSocketConnection connection = null;
             try
             {

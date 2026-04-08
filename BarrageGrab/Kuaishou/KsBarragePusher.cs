@@ -91,7 +91,7 @@ namespace BarrageGrab.Kuaishou
                 ["nickName"]  = msg.User?.Nickname ?? "快手用户",
                 ["avatarUrl"] = msg.User?.HeadUrl ?? "",
                 // Unity 的 LiveGiftArgs 使用 secGiftId（string）而非 GiftId（long）
-                ["secGiftId"] = msg.GiftId?.ToString() ?? "",
+                ["secGiftId"] = msg.GiftId.ToString(),
                 ["giftNum"]   = msg.Count,
                 // 额外字段（Unity 忽略，但便于调试和日志）
                 ["giftName"]  = msg.GiftName ?? "",

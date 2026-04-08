@@ -79,7 +79,7 @@ namespace BarrageGrab
         public WsBarrageServer()
         {
             var socket = new WebSocketServer($"ws://0.0.0.0:{Appsetting.WsProt}");
-            socket.RestartAfterListenError = true;//异常重启
+            // 使用 OnConnect 事件模式替代直接赋值
 
             dieout.Elapsed += Dieout_Elapsed;
             giftCountTimer.Elapsed += GiftCountTimer_Elapsed;
@@ -99,6 +99,8 @@ namespace BarrageGrab
             this.ksGrab.OnBarrage += KsGrab_OnBarrage;
 
             this.socketServer = socket;
+            this.socketServer.OnConnect += Listen;
+            this.socketServer.Start();
             //dieout.Start();
             giftCountTimer.Start();
         }
@@ -632,7 +634,7 @@ namespace BarrageGrab
             }
 
             //接收指令
-            socket.OnMessage = (message) =>
+            socket.OnMessage += (message) =>
             {
                 try
                 {
@@ -642,13 +644,13 @@ namespace BarrageGrab
                 catch (Exception) { }
             };
 
-            socket.OnClose = () =>
+            socket.OnClose += () =>
             {
                 socketList.Remove(clientUrl);
                 Logger.PrintColor($"{DateTime.Now.ToLongTimeString()} 已经关闭与[{clientUrl}]的连接", ConsoleColor.Red);
             };
 
-            socket.OnPing = (data) =>
+            socket.OnPing += (data) =>
             {
                 socketList[clientUrl].LastPing = DateTime.Now;
                 socket.SendPong(Encoding.UTF8.GetBytes("pong"));
