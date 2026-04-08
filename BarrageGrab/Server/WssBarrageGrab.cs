@@ -65,6 +65,11 @@ namespace BarrageGrab
         public event EventHandler<RoomMessageEventArgs<FansclubMessage>> OnFansclubMessage;
 
         /// <summary>
+        /// 快手代理弹幕事件（通过直播伴侣代理抓取的快手弹幕）
+        /// </summary>
+        public event EventHandler<KsBarragePusher.BarrageEventArgs> OnKuaishouProxyBarrage;
+
+        /// <summary>
         /// 代理
         /// </summary>
         public ISystemProxy Proxy { get { return proxy; } }
@@ -310,7 +315,7 @@ namespace BarrageGrab
                 }
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.弹幕消息);
-            AppRuntime.WsServer?.KsGrab_OnBarrage(null, new Kuaishou.KsBarragePusher.BarrageEventArgs(pack));
+            this.OnKuaishouProxyBarrage?.Invoke(this, new KsBarragePusher.BarrageEventArgs(pack));
         }
 
         private void FireKuaishouGift(Modles.ProtoEntity.KsGiftMessage msg)
@@ -329,7 +334,7 @@ namespace BarrageGrab
                 ["Count"] = msg.Count
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.礼物消息);
-            AppRuntime.WsServer?.KsGrab_OnBarrage(null, new Kuaishou.KsBarragePusher.BarrageEventArgs(pack));
+            this.OnKuaishouProxyBarrage?.Invoke(this, new KsBarragePusher.BarrageEventArgs(pack));
         }
 
         private void FireKuaishouLike(Modles.ProtoEntity.KsLikeMessage msg)
@@ -346,7 +351,7 @@ namespace BarrageGrab
                 ["Count"] = msg.Count
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.点赞消息);
-            AppRuntime.WsServer?.KsGrab_OnBarrage(null, new Kuaishou.KsBarragePusher.BarrageEventArgs(pack));
+            this.OnKuaishouProxyBarrage?.Invoke(this, new KsBarragePusher.BarrageEventArgs(pack));
         }
 
         private void FireKuaishouEnter(Modles.ProtoEntity.KsEnterMessage msg)
@@ -362,7 +367,7 @@ namespace BarrageGrab
                 }
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.进直播间);
-            AppRuntime.WsServer?.KsGrab_OnBarrage(null, new Kuaishou.KsBarragePusher.BarrageEventArgs(pack));
+            this.OnKuaishouProxyBarrage?.Invoke(this, new KsBarragePusher.BarrageEventArgs(pack));
         }
 
         private void FireKuaishouFollow(Modles.ProtoEntity.KsFollowMessage msg)
@@ -378,7 +383,7 @@ namespace BarrageGrab
                 }
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.关注消息);
-            AppRuntime.WsServer?.KsGrab_OnBarrage(null, new Kuaishou.KsBarragePusher.BarrageEventArgs(pack));
+            this.OnKuaishouProxyBarrage?.Invoke(this, new KsBarragePusher.BarrageEventArgs(pack));
         }
 
         //http 数据处理

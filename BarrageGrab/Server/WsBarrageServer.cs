@@ -98,6 +98,7 @@ namespace BarrageGrab
             this.grab.OnRoomUserSeqMessage += Grab_OnRoomUserSeqMessage;
             this.grab.OnFansclubMessage += Grab_OnFansclubMessage; ;
             this.grab.OnControlMessage += Grab_OnControlMessage;
+            this.grab.OnKuaishouProxyBarrage += KsGrab_OnBarrage;
 
             // 初始化快手弹幕抓取器
             this.ksGrab = new KsBarragePusher();
