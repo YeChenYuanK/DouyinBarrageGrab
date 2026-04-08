@@ -115,11 +115,11 @@ if not defined MSBUILD_PATH (
 
 if defined MSBUILD_PATH (
     echo [Info] Using Rider MSBuild: %MSBUILD_PATH%
-    "%MSBUILD_PATH%" "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="AnyCPU" /t:Rebuild /v:minimal
+    "%MSBUILD_PATH%" "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="Any CPU" /t:Rebuild /v:minimal
 ) else (
     :::: Fallback to dotnet msbuild
     echo [Warn] .NET Framework MSBuild not found, using dotnet msbuild...
-    dotnet msbuild "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="AnyCPU" /t:Rebuild /v:minimal
+    dotnet msbuild "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="Any CPU" /t:Rebuild /v:minimal
 )
 
 if %ERRORLEVEL% neq 0 (
