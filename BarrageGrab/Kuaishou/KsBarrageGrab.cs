@@ -554,11 +554,13 @@ namespace BarrageGrab.Kuaishou
             {
                 try
                 {
-                    using var ms = new MemoryStream(data);
-                    using var gz = new GZipStream(ms, CompressionMode.Decompress);
-                    using var out_ = new MemoryStream();
-                    gz.CopyTo(out_);
-                    return out_.ToArray();
+                    using (var ms = new MemoryStream(data))
+                    using (var gz = new GZipStream(ms, CompressionMode.Decompress))
+                    using (var out_ = new MemoryStream())
+                    {
+                        gz.CopyTo(out_);
+                        return out_.ToArray();
+                    }
                 }
                 catch { }
             }
@@ -568,11 +570,13 @@ namespace BarrageGrab.Kuaishou
             {
                 try
                 {
-                    using var ms = new MemoryStream(data, 2, data.Length - 2); // 跳过 zlib 2 字节头
-                    using var deflate = new DeflateStream(ms, CompressionMode.Decompress);
-                    using var out_ = new MemoryStream();
-                    deflate.CopyTo(out_);
-                    return out_.ToArray();
+                    using (var ms = new MemoryStream(data, 2, data.Length - 2)) // 跳过 zlib 2 字节头
+                    using (var deflate = new DeflateStream(ms, CompressionMode.Decompress))
+                    using (var out_ = new MemoryStream())
+                    {
+                        deflate.CopyTo(out_);
+                        return out_.ToArray();
+                    }
                 }
                 catch { }
             }

@@ -100,8 +100,7 @@ namespace BarrageGrab
             this.ksGrab.OnBarrage += KsGrab_OnBarrage;
 
             this.socketServer = socket;
-            this.socketServer.OnConnect += Listen;
-            this.socketServer.Start();
+            this.socketServer.Start(Listen);
             //dieout.Start();
             giftCountTimer.Start();
         }
