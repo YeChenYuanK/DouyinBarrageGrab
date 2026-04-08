@@ -5,9 +5,13 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BarrageGrab.Kuaishou;
+using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Modles.ProtoEntity;
 using BarrageGrab.Proxy;
 using BarrageGrab.Proxy.ProxyEventArgs;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ProtoBuf;
 
 namespace BarrageGrab
@@ -108,6 +112,14 @@ namespace BarrageGrab
             if (!appsetting.ProcessFilter.Contains(e.ProcessName)) return;
             var buff = e.Payload;
             if (buff.Length == 0) return;
+
+            // 判断是否为快手弹幕请求
+            if (e.HostName != null && (e.HostName.Contains("kuaishou") || e.HostName.Contains("ksapis")))
+            {
+                ProcessKuaishouWsData(e);
+                return;
+            }
+
             //如果需要Gzip解压缩，但是开头字节不符合Gzip特征字节 则不处理
             if (e.NeedDecompress && buff[0] != 0x08) return;
 
@@ -131,6 +143,243 @@ namespace BarrageGrab
             {
                 Logger.LogError(ex, $"处理弹幕数据包时出错:{ex.Message}");
             }
+        }
+
+        // 处理快手 WebSocket 数据
+        private void ProcessKuaishouWsData(WsMessageEventArgs e)
+        {
+            var buff = e.Payload;
+            if (buff.Length == 0) return;
+
+            try
+            {
+                // 尝试 Protobuf 解析（快手直播伴侣可能用 Protobuf）
+                ProcessKuaishouProtobuf(buff, e.ProcessName);
+            }
+            catch (Exception ex1)
+            {
+                // Protobuf 解析失败，尝试 JSON 解析
+                try
+                {
+                    ProcessKuaishouJson(buff, e.ProcessName);
+                }
+                catch (Exception ex2)
+                {
+                    Logger.LogWarn($"[快手] WebSocket 数据解析失败: Protobuf({ex1.Message}), JSON({ex2.Message})");
+                }
+            }
+        }
+
+        // 处理快手 Protobuf 数据
+        private void ProcessKuaishouProtobuf(byte[] buff, string processName)
+        {
+            var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(new ReadOnlyMemory<byte>(buff));
+            if (envelope?.Payload == null) return;
+
+            var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(envelope.Payload));
+            if (ksPayload?.SendMessages == null) return;
+
+            foreach (var sendMsg in ksPayload.SendMessages)
+            {
+                var msgType = (sendMsg.MsgType ?? "").ToUpper();
+                var payload = sendMsg.Payload;
+                if (payload == null) continue;
+
+                switch (msgType)
+                {
+                    case "CHAT":
+                        var chatMsg = Serializer.Deserialize<Modles.ProtoEntity.KsChatMessage>(new ReadOnlyMemory<byte>(payload));
+                        FireKuaishouChat(chatMsg);
+                        break;
+                    case "GIFT":
+                        var giftMsg = Serializer.Deserialize<Modles.ProtoEntity.KsGiftMessage>(new ReadOnlyMemory<byte>(payload));
+                        FireKuaishouGift(giftMsg);
+                        break;
+                    case "LIKE":
+                        var likeMsg = Serializer.Deserialize<Modles.ProtoEntity.KsLikeMessage>(new ReadOnlyMemory<byte>(payload));
+                        FireKuaishouLike(likeMsg);
+                        break;
+                    case "ENTER":
+                        var enterMsg = Serializer.Deserialize<Modles.ProtoEntity.KsEnterMessage>(new ReadOnlyMemory<byte>(payload));
+                        FireKuaishouEnter(enterMsg);
+                        break;
+                    case "FOLLOW":
+                        var followMsg = Serializer.Deserialize<Modles.ProtoEntity.KsFollowMessage>(new ReadOnlyMemory<byte>(payload));
+                        FireKuaishouFollow(followMsg);
+                        break;
+                }
+            }
+        }
+
+        // 处理快手 JSON 数据
+        private void ProcessKuaishouJson(byte[] buff, string processName)
+        {
+            var json = Encoding.UTF8.GetString(buff);
+            var jobj = JObject.Parse(json);
+            var type = jobj["type"]?.Value<string>()?.ToUpper() ?? "";
+
+            // 心跳 ACK 不处理
+            if (type == "HEARTBEAT_ACK" || type == "HEARTBEAT") return;
+
+            // 单条推送消息
+            if (jobj["data"] is JObject singleData)
+            {
+                DispatchKuaishouJsonMsg(type, singleData);
+                return;
+            }
+
+            // 批量推送
+            if (jobj["sendMessages"] is JArray sendMsgs)
+            {
+                foreach (var item in sendMsgs)
+                {
+                    var msgType = item["msgType"]?.Value<string>()?.ToUpper() ?? "";
+                    var data = item["payload"] as JObject;
+                    if (data != null) DispatchKuaishouJsonMsg(msgType, data);
+                }
+            }
+        }
+
+        // 分发快手 JSON 消息
+        private void DispatchKuaishouJsonMsg(string msgType, JObject data)
+        {
+            switch (msgType)
+            {
+                case "CHAT":
+                    var chatMsg = new Modles.ProtoEntity.KsChatMessage
+                    {
+                        User = ParseKuaishouUser(data["user"]),
+                        Content = data["content"]?.Value<string>() ?? ""
+                    };
+                    FireKuaishouChat(chatMsg);
+                    break;
+                case "GIFT":
+                    var giftMsg = new Modles.ProtoEntity.KsGiftMessage
+                    {
+                        User = ParseKuaishouUser(data["user"]),
+                        GiftId = data["giftId"]?.Value<long>() ?? 0,
+                        GiftName = data["giftName"]?.Value<string>() ?? "",
+                        Count = data["count"]?.Value<long>() ?? 1
+                    };
+                    FireKuaishouGift(giftMsg);
+                    break;
+                case "LIKE":
+                    var likeMsg = new Modles.ProtoEntity.KsLikeMessage
+                    {
+                        User = ParseKuaishouUser(data["user"]),
+                        Count = data["count"]?.Value<long>() ?? 1
+                    };
+                    FireKuaishouLike(likeMsg);
+                    break;
+                case "ENTER":
+                    var enterMsg = new Modles.ProtoEntity.KsEnterMessage
+                    {
+                        User = ParseKuaishouUser(data["user"])
+                    };
+                    FireKuaishouEnter(enterMsg);
+                    break;
+            }
+        }
+
+        // 解析快手用户信息
+        private Modles.ProtoEntity.KsUser ParseKuaishouUser(JToken userToken)
+        {
+            if (userToken == null) return new Modles.ProtoEntity.KsUser();
+
+            var jobj = userToken as JObject;
+            if (jobj == null) return new Modles.ProtoEntity.KsUser();
+
+            return new Modles.ProtoEntity.KsUser
+            {
+                UserId = jobj["userId"]?.Value<string>() ?? "",
+                Nickname = jobj["nickname"]?.Value<string>() ?? "",
+                HeadUrl = jobj["headUrl"]?.Value<string>() ?? ""
+            };
+        }
+
+        // 触发快手弹幕事件（转发给游戏）
+        private void FireKuaishouChat(Modles.ProtoEntity.KsChatMessage msg)
+        {
+            var data = new JObject
+            {
+                ["Content"] = msg.Content ?? "",
+                ["User"] = new JObject
+                {
+                    ["Nickname"] = msg.User?.Nickname ?? "快手用户",
+                    ["HeadImgUrl"] = msg.User?.HeadUrl ?? "",
+                    ["SecUid"] = msg.User?.UserId ?? ""
+                }
+            };
+            var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.弹幕消息);
+            AppRuntime.WsServer?.KsGrab_OnBarrage(null, new Kuaishou.KsBarragePusher.BarrageEventArgs(pack));
+        }
+
+        private void FireKuaishouGift(Modles.ProtoEntity.KsGiftMessage msg)
+        {
+            var data = new JObject
+            {
+                ["Content"] = $"{msg.User?.Nickname ?? "某用户"} 送出 {msg.GiftName} x {msg.Count}",
+                ["User"] = new JObject
+                {
+                    ["Nickname"] = msg.User?.Nickname ?? "",
+                    ["HeadImgUrl"] = msg.User?.HeadUrl ?? "",
+                    ["SecUid"] = msg.User?.UserId ?? ""
+                },
+                ["GiftId"] = msg.GiftId,
+                ["GiftName"] = msg.GiftName ?? "",
+                ["Count"] = msg.Count
+            };
+            var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.礼物消息);
+            AppRuntime.WsServer?.KsGrab_OnBarrage(null, new Kuaishou.KsBarragePusher.BarrageEventArgs(pack));
+        }
+
+        private void FireKuaishouLike(Modles.ProtoEntity.KsLikeMessage msg)
+        {
+            var data = new JObject
+            {
+                ["Content"] = $"{msg.User?.Nickname ?? "某用户"} 点赞 x {msg.Count}",
+                ["User"] = new JObject
+                {
+                    ["Nickname"] = msg.User?.Nickname ?? "",
+                    ["HeadImgUrl"] = msg.User?.HeadUrl ?? "",
+                    ["SecUid"] = msg.User?.UserId ?? ""
+                },
+                ["Count"] = msg.Count
+            };
+            var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.点赞消息);
+            AppRuntime.WsServer?.KsGrab_OnBarrage(null, new Kuaishou.KsBarragePusher.BarrageEventArgs(pack));
+        }
+
+        private void FireKuaishouEnter(Modles.ProtoEntity.KsEnterMessage msg)
+        {
+            var data = new JObject
+            {
+                ["Content"] = $"{msg.User?.Nickname ?? "某用户"} 来了",
+                ["User"] = new JObject
+                {
+                    ["Nickname"] = msg.User?.Nickname ?? "",
+                    ["HeadImgUrl"] = msg.User?.HeadUrl ?? "",
+                    ["SecUid"] = msg.User?.UserId ?? ""
+                }
+            };
+            var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.进直播间);
+            AppRuntime.WsServer?.KsGrab_OnBarrage(null, new Kuaishou.KsBarragePusher.BarrageEventArgs(pack));
+        }
+
+        private void FireKuaishouFollow(Modles.ProtoEntity.KsFollowMessage msg)
+        {
+            var data = new JObject
+            {
+                ["Content"] = $"{msg.User?.Nickname ?? "某用户"} 关注了主播",
+                ["User"] = new JObject
+                {
+                    ["Nickname"] = msg.User?.Nickname ?? "",
+                    ["HeadImgUrl"] = msg.User?.HeadUrl ?? "",
+                    ["SecUid"] = msg.User?.UserId ?? ""
+                }
+            };
+            var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.关注消息);
+            AppRuntime.WsServer?.KsGrab_OnBarrage(null, new Kuaishou.KsBarragePusher.BarrageEventArgs(pack));
         }
 
         //http 数据处理

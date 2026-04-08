@@ -320,7 +320,7 @@ namespace BarrageGrab.Proxy
             var contentType = e.HttpClient.Response.ContentType ?? "";
             var isLiveCompan = processName == "直播伴侣";
 
-            //ws 方式
+            //ws 方式 - 抖音
             if (
                 e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
                 webcastBarrageReg.IsMatch(uri)
@@ -329,7 +329,17 @@ namespace BarrageGrab.Proxy
                 e.DataReceived += WebSocket_DataReceived;
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
-                Logger.LogInfo($"订阅到新的弹幕流地址，roomid:{roomid}");
+                Logger.LogInfo($"[抖音] 订阅到新的弹幕流地址，roomid:{roomid}");
+            }
+
+            //ws 方式 - 快手
+            if (
+                e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
+                IsKuaishouBarrageRequest(hostname, uri)
+               )
+            {
+                e.DataReceived += WebSocket_DataReceived;
+                Logger.LogInfo($"[快手] 订阅到新的弹幕流地址，hostname:{hostname}");
             }
 
             //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)
