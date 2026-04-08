@@ -102,23 +102,24 @@ echo [Step 3] Building project (Configuration=%BUILD_CONFIG%)...
 echo.
 
 :::: Try Rider MSBuild first
-for /f "delims=" %%i in ('dir /s /b "C:\Program Files\JetBrains\JetBrains Rider*\tools\MSBuild\Current\Bin\MSBuild.exe" 2^>nul') do set "MSBUILD_PATH=%%i"
+if exist "C:\Program Files\JetBrains\JetBrains Rider 2024.1\tools\MSBuild\Current\Bin\MSBuild.exe" (
+    set "MSBUILD_PATH=C:\Program Files\JetBrains\JetBrains Rider 2024.1\tools\MSBuild\Current\Bin\MSBuild.exe"
+)
+if not defined MSBUILD_PATH (
+    for /d %%d in ("C:\Program Files\JetBrains\JetBrains Rider*") do (
+        if exist "%%d\tools\MSBuild\Current\Bin\MSBuild.exe" (
+            set "MSBUILD_PATH=%%d\tools\MSBuild\Current\Bin\MSBuild.exe"
+        )
+    )
+)
 
 if defined MSBUILD_PATH (
     echo [Info] Using Rider MSBuild: %MSBUILD_PATH%
     "%MSBUILD_PATH%" "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="AnyCPU" /t:Rebuild /v:minimal
 ) else (
-    :::: Fallback to system MSBuild
-    where msbuild >nul 2>&1
-    if %ERRORLEVEL% equ 0 (
-        echo [Info] Using system MSBuild...
-        msbuild "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="AnyCPU" /t:Rebuild /v:minimal
-    ) else (
-        :::: Last resort: dotnet msbuild
-        echo [Warn] .NET Framework MSBuild not found, using dotnet msbuild...
-        echo [Warn] This may fail for .NET Framework projects!
-        dotnet msbuild "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="AnyCPU" /t:Rebuild /v:minimal
-    )
+    :::: Fallback to dotnet msbuild
+    echo [Warn] .NET Framework MSBuild not found, using dotnet msbuild...
+    dotnet msbuild "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="AnyCPU" /t:Rebuild /v:minimal
 )
 
 if %ERRORLEVEL% neq 0 (
