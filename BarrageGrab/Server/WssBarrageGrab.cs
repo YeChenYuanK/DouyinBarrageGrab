@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BarrageGrab.Kuaishou;
-using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Modles.ProtoEntity;
 using BarrageGrab.Proxy;
 using BarrageGrab.Proxy.ProxyEventArgs;
