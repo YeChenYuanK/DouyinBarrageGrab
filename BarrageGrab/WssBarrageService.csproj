@@ -44,7 +44,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="AppConfig.json" />
-    <None Include="Configs\nlog.config" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Configs\nlog.config" />
   </ItemGroup>
 
   <ItemGroup>
