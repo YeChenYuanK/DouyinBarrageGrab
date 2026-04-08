@@ -9,7 +9,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
-using IWshRuntimeLibrary;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using File = System.IO.File;
@@ -173,21 +172,6 @@ namespace BarrageGrab
             }
 
             Logger.LogInfo("直播伴侣环境初始化完成");
-        }
-
-        //获取Ink快捷方式的目标路径
-        private static string GetInkTargetPath(string shortcutPath)
-        {
-            // 创建 Windows Script Host 对象
-            WshShell shell = new WshShell();
-
-            // 使用 IWshShortcut 接口加载 .ink 文件
-            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
-
-            // 获取目标路径
-            string targetPath = shortcut.TargetPath;
-
-            return targetPath;
         }
 
         //检测备份文件

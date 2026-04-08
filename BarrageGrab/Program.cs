@@ -7,16 +7,13 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using System.Windows.Forms;
 using Jint.Runtime;
 
 namespace BarrageGrab
 {
     public class Program
     {
-        static FormView mainForm = null;
         static bool exited = false;
-        static bool formExited = false;
         static WinApi.ControlCtrlDelegate controlCtr = ControlCtrlHandle;
         static Mutex mutex = new Mutex(false, "DyBarrageGrab");
 
@@ -38,7 +35,7 @@ namespace BarrageGrab
             catch (Exception ex)
             {
                 Logger.LogError(ex, $"程序初始化错误，{ex.Message}");
-                MessageBox.Show(ex.Message, "程序初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Console.Error.WriteLine(ex.Message);
                 exited = true;
             }
 
@@ -73,22 +70,6 @@ namespace BarrageGrab
             if (!AppSetting.Current.ComPort.IsNullOrWhiteSpace())
             {
                 AppRuntime.ComPortServer.OpenStart();
-            }
-
-            //显示窗体
-            if (AppSetting.Current.ShowWindow)
-            {
-                var uiThread = new Thread(new ThreadStart(() =>
-                {
-                    mainForm = new FormView();
-                    //开启消息循环
-                    System.Windows.Forms.Application.Run(mainForm);
-                    formExited = true;
-                    AppRuntime.WsServer.Dispose();//Close后自动释放资源
-                }));
-                uiThread.SetApartmentState(ApartmentState.STA);
-                uiThread.IsBackground = true;
-                uiThread.Start();
             }
 
             AppRuntime.WsServer.StartListen();//启动WS以及代理服务
