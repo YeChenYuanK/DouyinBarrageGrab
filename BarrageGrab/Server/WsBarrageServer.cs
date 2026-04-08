@@ -675,8 +675,8 @@ namespace BarrageGrab
                 var state = item.Value;
                 if (item.Value.Socket.IsAvailable)
                 {
-                    // 使用 Unity 兼容的扁平化 JSON
-                    state.Socket.Send(pack.ToUnityJson());
+                    // 使用原始 JSON 格式
+                    state.Socket.Send(pack.ToJson());
                 }
                 else
                 {
