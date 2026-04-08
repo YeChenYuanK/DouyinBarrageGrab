@@ -22,13 +22,46 @@ namespace BarrageGrab
         {
             try
             {
-                // 优先从 JSON 配置文件加载（.NET 6 兼容）
-                LoadFromJson();
+                ProcessFilter = AppSettings["processFilter"].Trim().Split(',');
+                WsProt = int.Parse(AppSettings["wsListenPort"]);
+                PrintBarrage = AppSettings["printBarrage"].ToLower() == "true";
+                ProxyPort = int.Parse(AppSettings["proxyPort"]);
+                PrintFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
+                PushFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
+                LogFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
+                FilterHostName = bool.Parse(AppSettings["filterHostName"].Trim());
+                HostNameFilter = AppSettings["hostNameFilter"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
+                UsedProxy = bool.Parse(AppSettings["sysProxy"].Trim());
+                ListenAny = bool.Parse(AppSettings["listenAny"].Trim());
+                UpstreamProxy = AppSettings["upstreamProxy"].Trim();
+                HideConsole = bool.Parse(AppSettings["hideConsole"].Trim());
+                BarrageLog = bool.Parse(AppSettings["barrageFileLog"].Trim());
+                ShowWindow = bool.Parse(AppSettings["showWindow"].Trim());
+                AutoPause = bool.Parse(AppSettings["autoPause"].Trim());
+                ForcePolling = bool.Parse(AppSettings["forcePolling"].Trim());
+                PollingInterval = int.Parse(AppSettings["pollingInterval"].Trim());
+                DisableLivePageScriptCache = bool.Parse(AppSettings["disableLivePageScriptCache"].Trim());
+                WebRoomIds = AppSettings["webRoomIds"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
+                LiveCompanPath = AppSettings["liveCompanPath"].Trim();
+                LiveCompanHookSwitch = bool.Parse(AppSettings["liveCompanHookSwitch"].Trim());
+
+                // 快手弹幕配置
+                var ksEnabled = AppSettings["kuaishouEnabled"]?.Trim() ?? "false";
+                KuaishouEnabled = ksEnabled.ToLower() == "true";
+                KuaishouRoomId = AppSettings["kuaishouRoomId"]?.Trim() ?? "";
+                KuaishouCookie = AppSettings["kuaishouCookie"]?.Trim() ?? "";
+                var ksHeartbeat = AppSettings["kuaishouHeartbeatInterval"]?.Trim() ?? "20000";
+                KuaishouHeartbeatInterval = int.TryParse(ksHeartbeat, out var hb) ? hb : 20000;
+                var ksReconnect = AppSettings["kuaishouMaxReconnect"]?.Trim() ?? "-1";
+                KuaishouMaxReconnect = int.TryParse(ksReconnect, out var recon) ? recon : -1;
+
+                ConfigComPort();
+                ConfigFilter();
             }
             catch (Exception ex)
             {
-                Logger.PrintColor($"配置文件读取失败: {ex.Message}");
-                throw;
+                Logger.PrintColor("配置文件读取失败,请检查配置文件是否正确");
+                throw ex;
             }
         }
 
