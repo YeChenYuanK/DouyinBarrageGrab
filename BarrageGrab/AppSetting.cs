@@ -45,6 +45,16 @@ namespace BarrageGrab
                 LiveCompanPath = AppSettings["liveCompanPath"].Trim();
                 LiveCompanHookSwitch = bool.Parse(AppSettings["liveCompanHookSwitch"].Trim());
 
+                // 快手弹幕配置
+                var ksEnabled = AppSettings["kuaishouEnabled"]?.Trim() ?? "false";
+                KuaishouEnabled = ksEnabled.ToLower() == "true";
+                KuaishouRoomId = AppSettings["kuaishouRoomId"]?.Trim() ?? "";
+                KuaishouCookie = AppSettings["kuaishouCookie"]?.Trim() ?? "";
+                var ksHeartbeat = AppSettings["kuaishouHeartbeatInterval"]?.Trim() ?? "20000";
+                KuaishouHeartbeatInterval = int.TryParse(ksHeartbeat, out var hb) ? hb : 20000;
+                var ksReconnect = AppSettings["kuaishouMaxReconnect"]?.Trim() ?? "-1";
+                KuaishouMaxReconnect = int.TryParse(ksReconnect, out var recon) ? recon : -1;
+
                 ConfigComPort();
                 ConfigFilter();
             }
@@ -97,7 +107,7 @@ namespace BarrageGrab
 
                 // 过滤配置
                 var filtering = app["filtering"];
-                string processFilterStr = filtering["processFilter"]?.Value<string>() ?? "直播伴侣,douyin,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore";
+                string processFilterStr = filtering["processFilter"]?.Value<string>() ?? "直播伴侣,douyin,快手直播伴侣,kscloudtv,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore";
                 ProcessFilter = processFilterStr.Split(',');
                 FilterHostName = filtering["hostNameEnabled"]?.Value<bool>() ?? true;
                 string hostNameFilterStr = filtering["hostNameList"]?.Value<string>() ?? string.Empty;
@@ -145,7 +155,15 @@ namespace BarrageGrab
                 var liveCompanion = app["liveCompanion"];
                 LiveCompanPath = liveCompanion["path"]?.Value<string>() ?? string.Empty;
                 LiveCompanHookSwitch = liveCompanion["hookEnabled"]?.Value<bool>() ?? false;
-                AutoPause = liveCompanion["autoPause"]?.Value<bool>() ?? true;                
+                AutoPause = liveCompanion["autoPause"]?.Value<bool>() ?? true;
+
+                // 快手弹幕配置
+                var kuaishou = app["kuaishou"];
+                KuaishouEnabled = kuaishou?["enabled"]?.Value<bool>() ?? false;
+                KuaishouRoomId = kuaishou?["roomId"]?.Value<string>() ?? string.Empty;
+                KuaishouCookie = kuaishou?["cookie"]?.Value<string>() ?? string.Empty;
+                KuaishouHeartbeatInterval = kuaishou?["heartbeatInterval"]?.Value<int>() ?? 20000;
+                KuaishouMaxReconnect = kuaishou?["maxReconnect"]?.Value<int>() ?? -1;
 
                 // COM端口配置
                 var comPort = app["comPort"];
@@ -656,5 +674,30 @@ namespace BarrageGrab
         /// hook直播伴侣代理开关
         /// </summary>
         public bool LiveCompanHookSwitch { get; set; } = true;
+
+        /// <summary>
+        /// 是否启用快手弹幕抓取（WebSocket直连模式，无需代理）
+        /// </summary>
+        public bool KuaishouEnabled { get; set; } = false;
+
+        /// <summary>
+        /// 快手直播间主播ID（URL中 /u/ 后的部分，即主播的快手号）
+        /// </summary>
+        public string KuaishouRoomId { get; set; } = "";
+
+        /// <summary>
+        /// 快手 Cookie（可选，提升 API 稳定性）
+        /// </summary>
+        public string KuaishouCookie { get; set; } = "";
+
+        /// <summary>
+        /// 快手弹幕 WebSocket 心跳间隔（毫秒，默认 20000）
+        /// </summary>
+        public int KuaishouHeartbeatInterval { get; set; } = 20000;
+
+        /// <summary>
+        /// 快手弹幕自动重连次数（-1=无限重连）
+        /// </summary>
+        public int KuaishouMaxReconnect { get; set; } = -1;
     }
 }

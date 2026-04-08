@@ -62,6 +62,23 @@
       // 进入直播间自动暂停播放
       "autoPause": true
     },
+
+    // ========== 快手直播弹幕配置 ==========
+    // 快手弹幕通过 WebSocket 直连获取，无需系统代理
+    // 配置后程序启动时会自动连接指定的快手直播间
+    "kuaishou": {
+      // 是否启用快手弹幕抓取
+      "enabled": false,
+      // 快手直播间主播ID（URL中 /u/ 后的部分，即主播的快手号）
+      // 例如：https://live.kuaishou.com/u/xxxxxx，则 roomId 为 xxxxxx
+      "roomId": "",
+      // 快手 Cookie（可选，提升 API 稳定性，可从浏览器开发者工具复制）
+      "cookie": "",
+      // WebSocket 心跳间隔（毫秒，默认 20000）
+      "heartbeatInterval": 20000,
+      // 自动重连次数（-1=无限重连，0=不重连）
+      "maxReconnect": -1
+    },
     
     "comPort": {
       // 指定要发送的COM串口 格式:'COM1:9600' 代表用COM1发送，波特率9600，若不需要使用串口抄送服务请留空，(启用后程序会自动生成过滤器模板文件到 scripts/comPortFilter.js)

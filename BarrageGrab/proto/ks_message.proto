@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+// ========================================================
+//  快手直播弹幕 Protobuf 协议定义
+//  参考 real-url 项目及快手直播抓包分析
+// ========================================================
+
+// 外层数据包（WebSocket 收到的原始帧解析后的结构）
+message KsSocketMessage {
+    string payloadType = 1;   // 消息类型标识，如 "CS_HEARTBEAT", "SS_PUSH_MESSAGE" 等
+    bytes  payload     = 2;   // 内层消息体（对应 KsPayload）
+}
+
+// 推送消息体
+message KsPayload {
+    // 服务端推送下行消息列表
+    repeated KsSendMessage sendMessages = 1;
+    // 服务端心跳ACK时携带的本地时间戳
+    int64 serverTimestamp = 2;
+}
+
+// 单条下行消息
+message KsSendMessage {
+    string msgType   = 1;   // 消息类型，如 "CHAT", "GIFT", "LIKE", "ENTER", "FOLLOW", "STAT", "END"
+    bytes  payload   = 2;   // 对应消息内容（按 msgType 再反序列化）
+    string messageId = 3;   // 消息唯一ID（去重用）
+}
+
+// 弹幕聊天消息
+message KsChatMessage {
+    KsUser user    = 1;
+    string content = 2;
+    int64  color   = 3;   // 弹幕颜色
+}
+
+// 礼物消息
+message KsGiftMessage {
+    KsUser user       = 1;
+    int64  giftId     = 2;
+    string giftName   = 3;
+    int64  count      = 4;
+    int64  comboCount = 5;
+    int64  value      = 6;   // 面值（快币）
+    string giftPic    = 7;   // 礼物图片URL
+}
+
+// 点赞消息
+message KsLikeMessage {
+    KsUser user       = 1;
+    int64  count      = 2;   // 本次点赞数
+    int64  totalCount = 3;   // 累计点赞数
+}
+
+// 进入直播间消息
+message KsEnterMessage {
+    KsUser user        = 1;
+    int64  watchCount  = 2;   // 当前观看人数
+}
+
+// 关注消息
+message KsFollowMessage {
+    KsUser user = 1;
+}
+
+// 直播间统计消息
+message KsStatMessage {
+    int64  watchingCount  = 1;   // 当前在线人数
+    int64  likeCount      = 2;   // 累计点赞数
+    string watchingText   = 3;   // 在线人数显示文本
+}
+
+// 直播结束消息
+message KsLiveEndMessage {
+    int32 reason = 1;   // 结束原因
+}
+
+// 用户信息
+message KsUser {
+    string userId     = 1;
+    string nickname   = 2;
+    int32  gender     = 3;   // 1男 2女 0未知
+    string headUrl    = 4;   // 头像URL
+    int32  level      = 5;   // 用户等级
+    int32  payLevel   = 6;   // 付费等级（土豪等级）
+    string badgeUrl   = 7;   // 徽章URL
+    string userSign   = 8;   // 用户签名
+    KsFansClub fansClub = 9; // 粉丝团信息
+}
+
+// 粉丝团信息
+message KsFansClub {
+    string clubName = 1;   // 粉丝团名称
+    int32  level    = 2;   // 粉丝团等级
+    int32  status   = 3;   // 状态 0=未加入 1=已加入
+}

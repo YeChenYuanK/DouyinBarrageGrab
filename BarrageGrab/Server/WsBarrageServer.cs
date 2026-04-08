@@ -12,6 +12,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
+using BarrageGrab.Kuaishou;
 using BarrageGrab.Modles;
 using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Modles.ProtoEntity;
@@ -39,6 +40,7 @@ namespace BarrageGrab
         Timer dieout = new Timer(10000);//离线客户端清理计时器
         Timer giftCountTimer = new Timer(10000);//礼物缓存清理计时器
         WssBarrageGrab grab = new WssBarrageGrab();//弹幕解析器核心
+        KsBarragePusher ksGrab; //快手弹幕抓取器（WebSocket直连）
         AppSetting Appsetting = AppSetting.Current;//全局配置文件实例
         static int printCount = 0; //控制台输出计数，用于判断清理控制台
 
@@ -51,6 +53,11 @@ namespace BarrageGrab
         /// 数据内核
         /// </summary>
         public WssBarrageGrab Grab => grab;
+
+        /// <summary>
+        /// 快手弹幕内核（WebSocket直连模式）
+        /// </summary>
+        public KsBarragePusher KsGrab => ksGrab;
 
         /// <summary>
         /// 控制台打印事件
@@ -90,9 +97,50 @@ namespace BarrageGrab
             this.grab.OnFansclubMessage += Grab_OnFansclubMessage; ;
             this.grab.OnControlMessage += Grab_OnControlMessage;
 
+            // 初始化快手弹幕抓取器
+            this.ksGrab = new KsBarragePusher();
+            this.ksGrab.OnBarrage += KsGrab_OnBarrage;
+
             this.socketServer = socket;
             //dieout.Start();
             giftCountTimer.Start();
+        }
+
+        /// <summary>
+        /// 处理快手弹幕事件并广播
+        /// </summary>
+        private void KsGrab_OnBarrage(object sender, KsBarragePusher.BarrageEventArgs e)
+        {
+            var pack = e.Pack;
+            var msgType = pack.Type;
+
+            // 构造打印文本
+            var json = pack.Data;
+            try
+            {
+                var msg = Newtonsoft.Json.JsonConvert.DeserializeObject<Msg>(json);
+                if (msg != null)
+                {
+                    ConsoleColor color = AppSetting.Current.ColorMap[msgType].Item1;
+                    var text = $"{DateTime.Now:HH:mm:ss} [快手直播] [{msgType}] {msg.Content}";
+
+                    if (AppSetting.Current.BarrageLog)
+                    {
+                        Logger.LogBarrage(msgType, msg);
+                    }
+
+                    if (Appsetting.PrintBarrage &&
+                        (!AppSetting.Current.PrintFilter.Any() || AppSetting.Current.PrintFilter.Contains(msgType.GetHashCode())))
+                    {
+                        OnPrint?.Invoke(this, new PrintEventArgs { Color = color, Message = text, MsgType = msgType });
+                        Logger.PrintColor(text + "\n", color);
+                    }
+                }
+            }
+            catch { }
+
+            // 推送给所有 WS 客户端
+            Broadcast(pack);
         }
 
         //礼物缓存清理计时器回调
@@ -625,7 +673,8 @@ namespace BarrageGrab
                 var state = item.Value;
                 if (item.Value.Socket.IsAvailable)
                 {
-                    state.Socket.Send(pack.ToJson());
+                    // 使用 Unity 兼容的扁平化 JSON
+                    state.Socket.Send(pack.ToUnityJson());
                 }
                 else
                 {
@@ -644,7 +693,19 @@ namespace BarrageGrab
             try
             {
                 this.grab.Start(); //启动代理
-                this.socketServer.Start(Listen);//启动监听         
+                this.socketServer.Start(Listen);//启动监听
+
+                // 如果配置了快手弹幕抓取，则自动连接
+                if (AppSetting.Current.KuaishouEnabled && !string.IsNullOrWhiteSpace(AppSetting.Current.KuaishouRoomId))
+                {
+                    var roomId = AppSetting.Current.KuaishouRoomId;
+                    if (!string.IsNullOrWhiteSpace(AppSetting.Current.KuaishouCookie))
+                    {
+                        KsApiHelper.SetCookie(AppSetting.Current.KuaishouCookie);
+                    }
+                    _ = ksGrab.ConnectAsync(roomId);
+                    Logger.PrintColor($"[启动] 快手弹幕抓取已启动，房间ID: {roomId}", ConsoleColor.Green);
+                }
             }
             catch (Exception)
             {
@@ -662,6 +723,7 @@ namespace BarrageGrab
             socketList.Clear();
             socketServer.Dispose();
             grab.Dispose();
+            ksGrab?.Dispose();  // 释放快手弹幕抓取器
             this.IsDisposed = true;
             this.OnClose?.Invoke(this, EventArgs.Empty);
         }

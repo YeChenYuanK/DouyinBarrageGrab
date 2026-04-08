@@ -43,7 +43,23 @@ namespace BarrageGrab.Proxy
         const string BARRAGE_POOL_PATH = "/webcast/im/fetch";
         const string LIVE_SCRIPT_PATH = "/obj/static/webcast/douyin_live";
         const string WEBCAST_AMEMV_HOST = "webcast.amemv.com";
+
+        // ---- 快手直播域名 ----
+        const string KS_LIVE_HOST = "live.kuaishou.com";         // 快手网页直播
+        const string KS_MOBILE_HOST = "m.gifshow.com";            // 快手移动端直播
+        const string KS_WS_HOST = "live-ws-group.kuaishou.com";  // 快手弹幕WS服务器
+        const string KS_API_HOST = "live.kuaishou.com";           // 快手API
+
         private readonly Regex webcastBarrageReg = new Regex(@"webcast\d+-ws-web-\w+\.(douyin|amemv)\.com");
+
+        // 快手弹幕 WebSocket 地址正则（用于识别和拦截快手弹幕流）
+        private readonly Regex ksBarrageReg = new Regex(@"(live-ws-group\.kuaishou\.com|.*kuaishou.*ws.*)");
+
+        // 快手直播弹幕域名列表（用于识别快手弹幕请求）
+        private readonly string[] ksBarrageHosts = new[] {
+            "live-ws-group.kuaishou.com",
+            "live-ws.kuaishou.com"
+        };
 
         public override string HttpUpstreamProxy { get { return proxyServer?.UpStreamHttpProxy?.ToString() ?? ""; } }
 
@@ -197,6 +213,35 @@ namespace BarrageGrab.Proxy
         private bool CheckBrowser(string processName)
         {
             return AppSetting.Current.ProcessFilter.Contains(processName) && processName != "直播伴侣" && processName != "douyin";
+        }
+
+        /// <summary>
+        /// 检测是否为快手相关进程（快手直播伴侣、快手客户端）
+        /// </summary>
+        private bool CheckKuaishouProcess(string processName)
+        {
+            var ksProcessNames = new[] { "快手直播伴侣", "kscloudtv", "KSCloudTV", "kuaishou", "快手" };
+            foreach (var name in ksProcessNames)
+            {
+                if (processName.Contains(name) || AppSetting.Current.ProcessFilter.Any(f => f.Contains(name)))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 检测是否为快手弹幕相关请求
+        /// </summary>
+        private bool IsKuaishouBarrageRequest(string hostname, string uri)
+        {
+            hostname = hostname?.ToLower() ?? "";
+            uri = uri?.ToLower() ?? "";
+            foreach (var h in ksBarrageHosts)
+            {
+                if (hostname.Contains(h)) return true;
+            }
+            if (ksBarrageReg.IsMatch(uri)) return true;
+            return false;
         }
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
@@ -611,7 +656,15 @@ namespace BarrageGrab.Proxy
                 LIVE_HOST,
                 WEBCAST_AMEMV_HOST , //直播伴侣开播请求地址
                 "*-webcast-platform.bytetos.com", //新的脚本地址
-                "*webcast*" //所有带webcast的域名
+                "*webcast*", //所有带webcast的域名
+
+                // ---- 快手直播域名 ----
+                KS_LIVE_HOST,         // 快手网页直播主页
+                KS_MOBILE_HOST,      // 快手移动端
+                KS_WS_HOST,          // 快手弹幕WebSocket服务器
+                KS_API_HOST,         // 快手API接口
+                "*kuaishou*",        // 所有带 kuaishou 的域名
+                "*gifshow*",         // gifshow 快手旧域名
             };
 
             if (decryptSsls.Contains(hostname))

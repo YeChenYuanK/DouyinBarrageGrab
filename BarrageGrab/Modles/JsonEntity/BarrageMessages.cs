@@ -34,6 +34,16 @@ namespace BarrageGrab.Modles.JsonEntity
     }
 
     /// <summary>
+    /// 直播平台来源
+    /// </summary>
+    public enum Platform
+    {
+        Unknown = 0,
+        Douyin = 1,    // 抖音
+        Kuaishou = 2   // 快手
+    }
+
+    /// <summary>
     /// 粉丝团消息类型
     /// </summary>
     public enum FansclubType
@@ -87,16 +97,108 @@ namespace BarrageGrab.Modles.JsonEntity
         /// </summary>
         public string Data { get; set; }
 
+        /// <summary>
+        /// 平台来源（用于区分抖音/快手）
+        /// </summary>
+        public Platform Platform { get; set; } = Platform.Douyin;
+
         public BarrageMsgPack()
         {
 
         }
 
-        public BarrageMsgPack(string data, PackMsgType type, string processName)
+        public BarrageMsgPack(string data, PackMsgType type, string processName, Platform platform = Platform.Douyin)
         {
             Data = data;
             Type = type;
             ProcessName = processName;
+            Platform = platform;
+        }
+
+        /// <summary>
+        /// 构造快手平台的 BarrageMsgPack
+        /// </summary>
+        public static BarrageMsgPack Kuaishou(string data, PackMsgType type, string processName = "快手弹幕")
+        {
+            return new BarrageMsgPack(data, type, processName, Platform.Kuaishou);
+        }
+
+        /// <summary>
+        /// 生成 Unity 兼容的扁平化 JSON
+        /// 将嵌套的 User 对象展开为顶层字段，兼容野套圈等 Unity 项目的解析逻辑
+        /// 
+        /// Unity 期望的 Data 格式（以评论为例）：
+        ///   { "secOpenid":"xxx", "nickName":"xxx", "avatarUrl":"xxx", "content":"xxx" }
+        /// 
+        /// 内部 Douyin 格式：
+        ///   { "Content":"xxx", "User":{"Nickname":"xxx","HeadImgUrl":"xxx","SecUid":"xxx"} }
+        /// </summary>
+        public string ToUnityJson()
+        {
+            // 快手平台：Data 已经是扁平格式，直接输出
+            if (this.Platform == Platform.Kuaishou)
+            {
+                return $"{{\"Type\":{(int)this.Type},\"Data\":{this.Data}}}";
+            }
+
+            // 抖音平台：将嵌套的 User 对象扁平化
+            return FlattenDouyinData(this);
+        }
+
+        private static string FlattenDouyinData(BarrageMsgPack pack)
+        {
+            if (string.IsNullOrEmpty(pack.Data))
+                return pack.ToJson();
+
+            try
+            {
+                var dataObj = Newtonsoft.Json.Linq.JObject.Parse(pack.Data);
+                var flatData = new Newtonsoft.Json.Linq.JObject();
+
+                // 遍历所有字段
+                foreach (var prop in dataObj.Properties())
+                {
+                    string key = prop.Name;
+
+                    // User 字段：展开为顶层字段（兼容 Unity 期望的 secOpenid/nickName/avatarUrl）
+                    if (key == "User" && prop.Value.Type == Newtonsoft.Json.Linq.JTokenType.Object)
+                    {
+                        var userObj = (Newtonsoft.Json.Linq.JObject)prop.Value;
+                        // 映射：SecUid -> secOpenid（Unity 期望的字段名）
+                        if (userObj.TryGetValue("SecUid", out var secUid))
+                            flatData["secOpenid"] = secUid;
+                        if (userObj.TryGetValue("Nickname", out var nickname))
+                            flatData["nickName"] = nickname;
+                        if (userObj.TryGetValue("HeadImgUrl", out var headImg))
+                            flatData["avatarUrl"] = headImg;
+                        // GiftId 是 long，Unity 期望 string 类型的 secGiftId
+                        // 检查 User 下是否有 GiftId（某些消息类型）
+                        if (userObj.TryGetValue("GiftId", out var giftId))
+                            flatData["secGiftId"] = giftId?.ToString() ?? "";
+                    }
+                    else if (key == "GiftId")
+                    {
+                        flatData["secGiftId"] = prop.Value?.ToString() ?? "";
+                    }
+                    else
+                    {
+                        flatData[key] = prop.Value;
+                    }
+                }
+
+                // 构造 Unity 期望的最终格式（Type + Data 顶层，兼容现有 Unity 代码）
+                var unityData = new Newtonsoft.Json.Linq.JObject
+                {
+                    ["Type"] = (int)pack.Type,
+                    ["Data"] = flatData
+                };
+                return unityData.ToString(Newtonsoft.Json.Formatting.None);
+            }
+            catch
+            {
+                // 解析失败，降级为原始格式
+                return pack.ToJson();
+            }
         }
 
         /// <summary>
