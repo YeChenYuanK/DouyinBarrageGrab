@@ -205,7 +205,13 @@ namespace BarrageGrab
         {
             Location = url;
             _listener = new HttpListener();
-            _listener.Prefixes.Add(url);
+            
+            // HttpListener 只支持 http:// 或 https:// 前缀，不支持 ws:// 或 wss://
+            // 将 ws:// 转换为 http://，wss:// 转换为 https://
+            var httpUrl = url.Replace("ws://", "http://").Replace("wss://", "https://");
+            if (!httpUrl.EndsWith("/"))
+                httpUrl += "/";
+            _listener.Prefixes.Add(httpUrl);
         }
 
         public void Start(Action<IWebSocketConnection> onConnect)
