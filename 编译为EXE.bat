@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+pause
 title DouyinBarrageGrab 构建脚本
 
 echo ===============================================
