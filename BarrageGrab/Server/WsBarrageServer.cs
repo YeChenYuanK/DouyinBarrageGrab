@@ -82,7 +82,8 @@ namespace BarrageGrab
             // 直接使用字符串构建 WebSocket URL，避免 IPAddress 对象转换问题
             var wsPort = Appsetting.WsProt;
             var listenHost = Appsetting.ListenAny ? "0.0.0.0" : "127.0.0.1";
-            var socket = new WebSocketServer($"ws://{listenHost}:{wsPort}");
+            // 禁用双栈模式，避免 Windows 上的 IPv6/IPv4 双协议栈绑定问题
+            var socket = new WebSocketServer($"ws://{listenHost}:{wsPort}", false);
             // 使用 OnConnect 事件模式替代直接赋值
 
             dieout.Elapsed += Dieout_Elapsed;
