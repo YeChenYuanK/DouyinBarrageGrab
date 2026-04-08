@@ -79,7 +79,10 @@ namespace BarrageGrab
 
         public WsBarrageServer()
         {
-            var socket = new WebSocketServer($"ws://0.0.0.0:{Appsetting.WsProt}");
+            // 使用 IPAddress.Any 替代字符串 "0.0.0.0"，避免某些 Windows 环境下的绑定问题
+            var wsPort = Appsetting.WsProt;
+            var listenAddr = Appsetting.ListenAny ? IPAddress.Any : IPAddress.Loopback;
+            var socket = new WebSocketServer(new System.Net.IPEndPoint(listenAddr, wsPort));
             // 使用 OnConnect 事件模式替代直接赋值
 
             dieout.Elapsed += Dieout_Elapsed;
