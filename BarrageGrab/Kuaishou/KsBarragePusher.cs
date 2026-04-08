@@ -10,9 +10,8 @@ namespace BarrageGrab.Kuaishou
 {
     /// <summary>
     /// 快手弹幕推送器
-    /// 将快手弹幕事件转换为统一的 BarrageMsgPack 格式，
-    /// Data 部分为 Unity 兼容的扁平 JSON（secOpenid/nickName/avatarUrl/content 等顶层字段），
-    /// 复用现有的 WsBarrageServer 进行广播，无需修改 Unity 侧代码。
+    /// 将快手弹幕事件转换为抖音的 Msg 嵌套格式，
+    /// 游戏只需接一套协议，无需为每个平台单独适配。
     /// </summary>
     public class KsBarragePusher : IDisposable
     {
@@ -66,17 +65,35 @@ namespace BarrageGrab.Kuaishou
         }
 
         // ==================== 事件处理 ====================
-        // 所有消息都构造为扁平 JSON，直接兼容 Unity 的 LiveCommentArgs / LiveGiftArgs / LiveLikeArgs 结构
+        // 所有消息都构造为抖音的 Msg 嵌套格式（User 字段内嵌），
+        // 与抖音弹幕格式保持一致，游戏只需接一套协议。
+
+        /// <summary>
+        /// 将快手用户转换为抖音 MsgUser 嵌套格式
+        /// </summary>
+        private static JObject BuildMsgUser(KsUser ksUser)
+        {
+            if (ksUser == null)
+                return new JObject();
+
+            return new JObject
+            {
+                ["Nickname"] = ksUser.Nickname ?? "快手用户",
+                ["HeadImgUrl"] = ksUser.HeadUrl ?? "",
+                ["SecUid"] = ksUser.UserId ?? "",
+                ["Gender"] = ksUser.Gender,
+                ["Level"] = ksUser.Level,
+                ["PayLevel"] = ksUser.PayLevel
+            };
+        }
 
         private void Grab_OnChatMessage(object sender, KsBarrageGrab.KsMessageEventArgs<KsChatMessage> e)
         {
             var msg = e.Message;
             var data = new JObject
             {
-                ["secOpenid"] = msg.User?.UserId ?? "",
-                ["nickName"]  = msg.User?.Nickname ?? "快手用户",
-                ["avatarUrl"] = msg.User?.HeadUrl ?? "",
-                ["content"]   = msg.Content ?? ""
+                ["Content"] = msg.Content ?? "",
+                ["User"] = BuildMsgUser(msg.User)
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.弹幕消息);
             OnBarrage?.Invoke(this, new BarrageEventArgs(pack));
@@ -87,15 +104,11 @@ namespace BarrageGrab.Kuaishou
             var msg = e.Message;
             var data = new JObject
             {
-                ["secOpenid"] = msg.User?.UserId ?? "",
-                ["nickName"]  = msg.User?.Nickname ?? "快手用户",
-                ["avatarUrl"] = msg.User?.HeadUrl ?? "",
-                // Unity 的 LiveGiftArgs 使用 secGiftId（string）而非 GiftId（long）
-                ["secGiftId"] = msg.GiftId.ToString(),
-                ["giftNum"]   = msg.Count,
-                // 额外字段（Unity 忽略，但便于调试和日志）
-                ["giftName"]  = msg.GiftName ?? "",
-                ["content"]   = $"{msg.User?.Nickname ?? "某用户"} 送出 {msg.GiftName} x {msg.Count}"
+                ["Content"] = $"{msg.User?.Nickname ?? "某用户"} 送出 {msg.GiftName} x {msg.Count}",
+                ["User"] = BuildMsgUser(msg.User),
+                ["GiftId"] = msg.GiftId,
+                ["GiftName"] = msg.GiftName ?? "",
+                ["Count"] = msg.Count
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.礼物消息);
             OnBarrage?.Invoke(this, new BarrageEventArgs(pack));
@@ -106,13 +119,10 @@ namespace BarrageGrab.Kuaishou
             var msg = e.Message;
             var data = new JObject
             {
-                ["secOpenid"] = msg.User?.UserId ?? "",
-                ["nickName"]  = msg.User?.Nickname ?? "快手用户",
-                ["avatarUrl"] = msg.User?.HeadUrl ?? "",
-                ["likeNum"]   = msg.Count,
-                // 额外字段
-                ["totalLike"] = msg.TotalCount,
-                ["content"]   = $"{msg.User?.Nickname ?? "某用户"} 点赞 x {msg.Count}"
+                ["Content"] = $"{msg.User?.Nickname ?? "某用户"} 点赞 x {msg.Count}",
+                ["User"] = BuildMsgUser(msg.User),
+                ["Count"] = msg.Count,
+                ["TotalCount"] = msg.TotalCount
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.点赞消息);
             OnBarrage?.Invoke(this, new BarrageEventArgs(pack));
@@ -123,10 +133,9 @@ namespace BarrageGrab.Kuaishou
             var msg = e.Message;
             var data = new JObject
             {
-                ["secOpenid"] = msg.User?.UserId ?? "",
-                ["nickName"]  = msg.User?.Nickname ?? "快手用户",
-                ["avatarUrl"] = msg.User?.HeadUrl ?? "",
-                ["content"]   = $"{msg.User?.Nickname ?? "某用户"} 来了，当前观看 {msg.WatchCount}"
+                ["Content"] = $"{msg.User?.Nickname ?? "某用户"} 来了",
+                ["User"] = BuildMsgUser(msg.User),
+                ["WatchCount"] = msg.WatchCount
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.进直播间);
             OnBarrage?.Invoke(this, new BarrageEventArgs(pack));
@@ -137,10 +146,8 @@ namespace BarrageGrab.Kuaishou
             var msg = e.Message;
             var data = new JObject
             {
-                ["secOpenid"] = msg.User?.UserId ?? "",
-                ["nickName"]  = msg.User?.Nickname ?? "快手用户",
-                ["avatarUrl"] = msg.User?.HeadUrl ?? "",
-                ["content"]   = $"{msg.User?.Nickname ?? "某用户"} 关注了主播"
+                ["Content"] = $"{msg.User?.Nickname ?? "某用户"} 关注了主播",
+                ["User"] = BuildMsgUser(msg.User)
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.关注消息);
             OnBarrage?.Invoke(this, new BarrageEventArgs(pack));
@@ -151,11 +158,10 @@ namespace BarrageGrab.Kuaishou
             var msg = e.Message;
             var data = new JObject
             {
-                // 统计类消息：Unity 没有对应的事件类型，作为额外信息传递
-                ["watchingText"] = msg.WatchingText ?? "",
-                ["watchingCount"] = msg.WatchingCount,
-                ["likeCount"]     = msg.LikeCount,
-                ["content"]       = $"在线人数 {msg.WatchingText}，点赞 {msg.LikeCount}"
+                ["Content"] = $"在线人数 {msg.WatchingText}，点赞 {msg.LikeCount}",
+                ["WatchingText"] = msg.WatchingText ?? "",
+                ["WatchingCount"] = msg.WatchingCount,
+                ["LikeCount"] = msg.LikeCount
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.直播间统计);
             OnBarrage?.Invoke(this, new BarrageEventArgs(pack));
@@ -165,7 +171,7 @@ namespace BarrageGrab.Kuaishou
         {
             var data = new JObject
             {
-                ["content"] = "直播已结束"
+                ["Content"] = "直播已结束"
             };
             var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.下播);
             OnBarrage?.Invoke(this, new BarrageEventArgs(pack));
