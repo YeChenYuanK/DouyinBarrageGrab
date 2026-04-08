@@ -73,14 +73,26 @@ echo.
 :: ========== 恢复 NuGet 包 ==========
 echo [步骤2] 恢复 NuGet 包...
 if exist "%SOLUTION_DIR%BarrageService.sln" (
-    nuget restore "%SOLUTION_DIR%BarrageService.sln"
-    if %ERRORLEVEL% neq 0 (
-        echo [错误] NuGet 包恢复失败！
-        echo [提示] 尝试手动运行: nuget restore BarrageService.sln
-        pause
-        exit /b 1
+    :: 优先使用 dotnet restore（更通用）
+    where dotnet >nul 2>&1
+    if %ERRORLEVEL% equ 0 (
+        echo [信息] 使用 dotnet restore 恢复包...
+        dotnet restore "%SOLUTION_DIR%BarrageService.sln"
+        if %ERRORLEVEL% neq 0 (
+            echo [警告] dotnet restore 失败，尝试 nuget...
+            nuget restore "%SOLUTION_DIR%BarrageService.sln"
+        )
+    ) else (
+        :: 尝试使用 nuget CLI
+        where nuget >nul 2>&1
+        if %ERRORLEVEL% equ 0 (
+            echo [信息] 使用 nuget restore 恢复包...
+            nuget restore "%SOLUTION_DIR%BarrageService.sln"
+        ) else (
+            echo [警告] 未找到 NuGet 工具，跳过包恢复
+            echo [提示] 如果编译失败，请用 Visual Studio 打开解决方案自动恢复包
+        )
     )
-    echo   NuGet 包恢复成功
 ) else (
     echo [错误] 未找到 BarrageService.sln 解决方案文件！
     pause
