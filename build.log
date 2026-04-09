@@ -1,15 +1,37 @@
-[信息] 编译开始时间: 周四 2026/04/09 20:35:43.79 
-=============================================== 
-  DouyinBarrageGrab - Windows 编译脚本 
-=============================================== 
- 
-[信息] 项目目录: E:\DouyinBarrageGrab\BarrageGrab 
-[信息] 输出目录: E:\DouyinBarrageGrab\Output 
-[信息] 日志文件: E:\DouyinBarrageGrab\build.log 
- 
-[检查] .NET Framework 4.8... 
- 
- 
-[信息] 编译模式: Release 
- 
- 
+[信息] 编译开始时间: 周四 2026/04/09 20:59:20.86 
+[信息] 根目录: E:\DouyinBarrageGrab\ 
+[步骤1] 正在查找 MSBuild... 
+[信息] MSBuild: D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe 
+[步骤2] 正在准备 NuGet... 
+[信息] nuget.exe 就绪 
+[步骤3] 正在恢复项目依赖... 
+NoCache 已弃用，并且已重命名为 NoHttpCache。请转而使用 NoHttpCache。
+MSBuild 自动检测: 使用来自 "D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\bin" 的 msbuild 版本 "17.14.40.60911"。
+packages.config 中列出的所有包均已安装。
+  CACHE https://api.nuget.org/v3/vulnerabilities/index.json
+  CACHE https://api.nuget.org/v3-vulnerabilities/2026.04.09.00.05.32/vulnerability.base.json
+  CACHE https://api.nuget.org/v3-vulnerabilities/2026.04.09.00.05.32/2026.04.09.12.05.34/vulnerability.update.json
+警告: NU1902: Package 'BouncyCastle.Cryptography' 2.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-v435-xc8x-wvr9
+警告: NU1902: Package 'BouncyCastle.Cryptography' 2.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-m44j-cfrm-g8qc
+警告: NU1902: Package 'BouncyCastle.Cryptography' 2.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-8xfc-gm6g-vgpv
+警告: NU1903: Package 'System.Net.Http' 4.3.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-7jgj-8wvc-jh57
+警告: NU1903: Package 'System.Text.RegularExpressions' 4.3.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-cmhx-cq75-c4mj
+[成功] NuGet 恢复完成 
+[步骤4] 正在编译项目 (Release)... 
+适用于 .NET Framework MSBuild 版本 17.14.40+3e7442088
+
+  请考虑使用 app.config 将程序集“System.Diagnostics.Tracing, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a”从版本“4.1.1.0”[]重新映射到版本“4.2.0.0”[C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Diagnostics.Tracing.dll]，以解决冲突并消除警告。
+  请考虑使用 app.config 将程序集“System.IO.Compression, Culture=neutral, PublicKeyToken=b77a5c561934e089”从版本“4.1.2.0”[]重新映射到版本“4.2.0.0”[C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.IO.Compression.dll]，以解决冲突并消除警告。
+  请考虑使用 app.config 将程序集“System.Net.Http, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a”从版本“4.1.1.0”[]重新映射到版本“4.2.0.0”[C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Net.Http.dll]，以解决冲突并消除警告。
+  请考虑使用 app.config 将程序集“System.Reflection, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a”从版本“4.1.1.0”[]重新映射到版本“4.1.2.0”[C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\Facades\System.Reflection.dll]，以解决冲突并消除警告。
+  请考虑使用 app.config 将程序集“System.Runtime, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a”从版本“4.1.1.0”[]重新映射到版本“4.1.2.0”[C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\Facades\System.Runtime.dll]，以解决冲突并消除警告。
+D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(2555,5): warning MSB3836: “System.Net.Http, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a”上的显式绑定重定向与自动生成的绑定重定向冲突。请考虑将其从应用程序配置文件中删除或者禁用自动生成的绑定重定向。生成会将其替换为:“<bindingRedirect oldVersion="0.0.0.0-4.2.0.0" newVersion="4.2.0.0" xmlns="urn:schemas-microsoft-com:asm.v1" />”。 [E:\DouyinBarrageGrab\BarrageGrab\WssBarrageService.csproj]
+D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(2555,5): warning MSB3836: “System.IO.Compression, Culture=neutral, PublicKeyToken=b77a5c561934e089”上的显式绑定重定向与自动生成的绑定重定向冲突。请考虑将其从应用程序配置文件中删除或者禁用自动生成的绑定重定向。生成会将其替换为:“<bindingRedirect oldVersion="0.0.0.0-4.2.0.0" newVersion="4.2.0.0" xmlns="urn:schemas-microsoft-com:asm.v1" />”。 [E:\DouyinBarrageGrab\BarrageGrab\WssBarrageService.csproj]
+D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(2555,5): warning MSB3836: “System.Runtime, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a”上的显式绑定重定向与自动生成的绑定重定向冲突。请考虑将其从应用程序配置文件中删除或者禁用自动生成的绑定重定向。生成会将其替换为:“<bindingRedirect oldVersion="0.0.0.0-4.1.2.0" newVersion="4.1.2.0" xmlns="urn:schemas-microsoft-com:asm.v1" />”。 [E:\DouyinBarrageGrab\BarrageGrab\WssBarrageService.csproj]
+D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(2555,5): warning MSB3836: “System.Diagnostics.Tracing, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a”上的显式绑定重定向与自动生成的绑定重定向冲突。请考虑将其从应用程序配置文件中删除或者禁用自动生成的绑定重定向。生成会将其替换为:“<bindingRedirect oldVersion="0.0.0.0-4.2.0.0" newVersion="4.2.0.0" xmlns="urn:schemas-microsoft-com:asm.v1" />”。 [E:\DouyinBarrageGrab\BarrageGrab\WssBarrageService.csproj]
+D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(2555,5): warning MSB3836: “System.Reflection, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a”上的显式绑定重定向与自动生成的绑定重定向冲突。请考虑将其从应用程序配置文件中删除或者禁用自动生成的绑定重定向。生成会将其替换为:“<bindingRedirect oldVersion="0.0.0.0-4.1.2.0" newVersion="4.1.2.0" xmlns="urn:schemas-microsoft-com:asm.v1" />”。 [E:\DouyinBarrageGrab\BarrageGrab\WssBarrageService.csproj]
+  WssBarrageService -> E:\DouyinBarrageGrab\BarrageGrab\bin\Release\WssBarrageServer.exe
+  找不到 E:\DouyinBarrageGrab\BarrageGrab\bin\Release\*.pdb
+  找不到 E:\DouyinBarrageGrab\BarrageGrab\bin\Release\*.pfx
+  系统找不到指定的文件。
+[信息] 编译成功完成 
