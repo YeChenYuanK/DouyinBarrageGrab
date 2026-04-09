@@ -180,11 +180,12 @@ namespace BarrageGrab.Kuaishou
                 if (liveStream == null)
                 {
                     Logger.LogWarn("[KS] 移动端页面未找到 liveStream 数据块");
-                    // 尝试打印页面中包含的关键字帮助调试
                     if (html.Contains("liveStream"))
                         Logger.LogInfo("[KS] 页面包含 liveStream 关键字，但正则匹配失败");
                     if (html.Contains("liveStreamId"))
                         Logger.LogInfo("[KS] 页面包含 liveStreamId 关键字");
+                    // 打印页面前 2000 字符帮助调试
+                    Logger.LogInfo("[KS] 移动端页面内容(前2000字符): " + (html.Length > 2000 ? html.Substring(0, 2000) : html));
                     return null;
                 }
 
@@ -194,12 +195,18 @@ namespace BarrageGrab.Kuaishou
                 info.Title = liveStream["caption"]?.Value<string>() ?? "";
                 info.CoverUrl = liveStream["coverUrls"]?.FirstOrDefault()?.Value<string>() ?? "";
 
+                Logger.LogInfo($"[KS] 移动端页面解析成功: liveStreamId={info.LiveStreamId}, authorId={info.AuthorId}, authorName={info.AuthorName}, isLive={!string.IsNullOrWhiteSpace(info.LiveStreamId)}");
+
                 // 获取 WebSocket 弹幕连接信息
                 var wsInfo = await GetDanmuWsInfo(info.LiveStreamId, info.AuthorId, html);
                 if (wsInfo != null)
                 {
                     info.Token = wsInfo.Item1;
                     info.WebSocketUrls = wsInfo.Item2;
+                    Logger.LogInfo($"[KS] WS信息: token长度={info.Token?.Length ?? 0}, wsUrls数量={info.WebSocketUrls?.Count ?? 0}");
+                    if (info.WebSocketUrls != null)
+                        foreach (var wu in info.WebSocketUrls)
+                            Logger.LogInfo($"[KS]   wsUrl: {wu}");
                 }
 
                 info.IsLive = !string.IsNullOrWhiteSpace(info.LiveStreamId);
@@ -249,11 +256,14 @@ namespace BarrageGrab.Kuaishou
                 info.AuthorName = liveData["author"]?["name"]?.Value<string>() ?? "";
                 info.Title = liveData["caption"]?.Value<string>() ?? "";
 
+                Logger.LogInfo($"[KS] PC端页面解析成功: liveStreamId={info.LiveStreamId}, authorId={info.AuthorId}, authorName={info.AuthorName}");
+
                 var wsInfo = await GetDanmuWsInfo(info.LiveStreamId, info.AuthorId, html);
                 if (wsInfo != null)
                 {
                     info.Token = wsInfo.Item1;
                     info.WebSocketUrls = wsInfo.Item2;
+                    Logger.LogInfo($"[KS] WS信息(PC): token长度={info.Token?.Length ?? 0}, wsUrls数量={info.WebSocketUrls?.Count ?? 0}");
                 }
 
                 info.IsLive = !string.IsNullOrWhiteSpace(info.LiveStreamId);

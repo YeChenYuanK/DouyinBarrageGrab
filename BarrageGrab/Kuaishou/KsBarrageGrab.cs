@@ -518,6 +518,9 @@ namespace BarrageGrab.Kuaishou
                 var ksPayload = Serializer.Deserialize<KsPayload>(new ReadOnlyMemory<byte>(envelope.Payload));
                 if (ksPayload?.SendMessages == null) return;
 
+                if (ksPayload.SendMessages.Count > 0)
+                    Logger.LogInfo($"[KS] 收到Protobuf消息包: payloadType={envelope.PayloadType}, msgCount={ksPayload.SendMessages.Count}, types=[{string.Join(",", ksPayload.SendMessages.Select(m => m.MsgType))}]");
+
                 foreach (var sendMsg in ksPayload.SendMessages)
                 {
                     if (!IsNewMessage(sendMsg.MessageId)) continue;
