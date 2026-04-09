@@ -136,7 +136,21 @@ if defined MSBUILD_PATH (
 
     echo.
     echo [Restore] Restoring NuGet packages...
-    "%MSBUILD_PATH%" "%PROJECT_DIR%\WssBarrageService.csproj" /t:Restore /p:Configuration=%BUILD_CONFIG% /v:minimal
+
+    ::: Download nuget.exe if not exists
+    set "NUGET_EXE=%SCRIPT_DIR%nuget.exe"
+    if not exist "%NUGET_EXE%" (
+        echo [Download] Downloading nuget.exe...
+        powershell -Command "Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile '%NUGET_EXE%'"
+        if not exist "%NUGET_EXE%" (
+            echo [Error] Failed to download nuget.exe!
+            pause
+            exit /b 1
+        )
+    )
+
+    ::: Restore packages using nuget.exe
+    "%NUGET_EXE%" restore "%PROJECT_DIR%\WssBarrageService.csproj" -PackagesDirectory "%PROJECT_DIR%\packages" -Verbosity minimal
     if %ERRORLEVEL% neq 0 (
         echo [Error] NuGet restore failed!
         pause
