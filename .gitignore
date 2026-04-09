@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# 编译日志和工具
+build.log
+nuget.exe
+
 FiddlerCore4
 
 
