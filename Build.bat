@@ -1,36 +1,29 @@
 @echo off
-setlocal enabledelayedexpansion
 chcp 65001 >nul
 title DouyinBarrageGrab 编译脚本
 
-::: 使用 8.3 短路径格式彻底解决路径中的空格、引号和非法字符问题
-for /f "tokens=*" %%a in ("%~dp0") do set "BASE_DIR=%%~fsa"
-if "%BASE_DIR:~-1%"=="\" set "BASE_DIR=%BASE_DIR:~0,-1%"
-
-::: 切换到脚本所在驱动器和目录
-cd /d "%BASE_DIR%"
-
-::: 设置变量 (全部使用相对路径或清理后的绝对路径)
-set "LOG_FILE=%BASE_DIR%\build.log"
-set "SOLUTION_FILE=%BASE_DIR%\BarrageService.sln"
-set "PROJECT_DIR=%BASE_DIR%\BarrageGrab"
-set "OUTPUT_DIR=%BASE_DIR%\Output"
-set "NUGET_EXE=%BASE_DIR%\nuget.exe"
+set "SCRIPT_DIR=%~dp0"
+set "LOG_FILE=%SCRIPT_DIR%build.log"
+set "SOLUTION_FILE=%SCRIPT_DIR%BarrageService.sln"
+set "PROJECT_DIR=%SCRIPT_DIR%BarrageGrab"
+set "OUTPUT_DIR=%SCRIPT_DIR%Output"
+set "NUGET_EXE=%SCRIPT_DIR%nuget.exe"
 set "EXE_NAME=WssBarrageServer.exe"
 
 echo [信息] 编译开始时间: %DATE% %TIME% > "%LOG_FILE%"
+echo [信息] 根目录: %SCRIPT_DIR% >> "%LOG_FILE%"
 
 echo ===============================================
 echo   DouyinBarrageGrab - Windows 编译脚本
 echo ===============================================
-echo [信息] 根目录: %BASE_DIR%
 echo.
 
-::: 1. 查找 MSBuild
-echo [步骤 1] 正在查找编译工具...
+:: ========== 步骤1: 查找 MSBuild ==========
+echo [步骤1] 正在查找 MSBuild...
+echo [步骤1] 正在查找 MSBuild... >> "%LOG_FILE%"
 set "MSBUILD_PATH="
 
-::: 尝试 vswhere
+:: vswhere 动态查找
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE%" set "VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
 
@@ -40,72 +33,93 @@ if exist "%VSWHERE%" (
     )
 )
 
-::: 尝试常用手动路径
+:: 备用硬编码路径（C/D 盘常见位置）
 if not defined MSBUILD_PATH (
-    for %%d in (C D E) do (
-        for %%v in (2022 2019) do (
-            for %%e in (Community Professional Enterprise BuildTools) do (
-                if not defined MSBUILD_PATH (
-                    if exist "%%d:\Program Files (x86)\Microsoft Visual Studio\%%v\%%e\MSBuild\Current\Bin\MSBuild.exe" (
-                        set "MSBUILD_PATH=%%d:\Program Files (x86)\Microsoft Visual Studio\%%v\%%e\MSBuild\Current\Bin\MSBuild.exe"
-                    )
-                )
-                if not defined MSBUILD_PATH (
-                    if exist "%%d:\Program Files\Microsoft Visual Studio\%%v\%%e\MSBuild\Current\Bin\MSBuild.exe" (
-                        set "MSBUILD_PATH=%%d:\Program Files\Microsoft Visual Studio\%%v\%%e\MSBuild\Current\Bin\MSBuild.exe"
-                    )
-                )
-            )
+    for %%p in (
+        "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+        "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+        "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
+        "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
+        "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+        "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+        "D:\Program Files\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+        "D:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+        "D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+        "D:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+    ) do (
+        if not defined MSBUILD_PATH (
+            if exist %%p set "MSBUILD_PATH=%%~p"
         )
     )
 )
 
 if not defined MSBUILD_PATH (
-    echo [错误] 找不到 MSBuild.exe，请确保安装了 Visual Studio 或 Build Tools。
+    echo [错误] 找不到 MSBuild.exe，请确保安装了 VS Build Tools 并勾选 .NET 桌面开发
+    echo [错误] 找不到 MSBuild.exe >> "%LOG_FILE%"
     pause
     exit /b 1
 )
-echo [信息] MSBuild: "%MSBUILD_PATH%"
-echo [信息] MSBuild: "%MSBUILD_PATH%" >> "%LOG_FILE%"
+echo [信息] MSBuild: %MSBUILD_PATH%
+echo [信息] MSBuild: %MSBUILD_PATH% >> "%LOG_FILE%"
 
-::: 2. 准备 NuGet
-echo [步骤 2] 正在准备 NuGet...
+:: ========== 步骤2: 准备 NuGet ==========
+echo.
+echo [步骤2] 正在准备 NuGet...
+echo [步骤2] 正在准备 NuGet... >> "%LOG_FILE%"
+
 if not exist "%NUGET_EXE%" (
-    echo   [下载] 正在从 nuget.org 下载...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile 'nuget.exe' -UseBasicParsing"
+    echo   [下载] 正在下载 nuget.exe...
+    echo   [下载] 正在下载 nuget.exe... >> "%LOG_FILE%"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile '%NUGET_EXE%' -UseBasicParsing"
 )
 
 if not exist "%NUGET_EXE%" (
-    echo [错误] 下载 nuget.exe 失败，请手动下载放置在: %NUGET_EXE%
+    echo [错误] nuget.exe 下载失败，请手动下载放到: %NUGET_EXE%
+    echo [错误] nuget.exe 下载失败 >> "%LOG_FILE%"
     pause
     exit /b 1
 )
+echo [信息] nuget.exe 就绪
+echo [信息] nuget.exe 就绪 >> "%LOG_FILE%"
 
-::: 3. 恢复包
-echo [步骤 3] 正在恢复项目依赖 (NuGet Restore)...
+:: ========== 步骤3: 恢复 NuGet 包 ==========
+echo.
+echo [步骤3] 正在恢复项目依赖...
+echo [步骤3] 正在恢复项目依赖... >> "%LOG_FILE%"
+
 "%NUGET_EXE%" restore "%SOLUTION_FILE%" -NoCache >> "%LOG_FILE%" 2>&1
 if %ERRORLEVEL% neq 0 (
     echo [错误] NuGet 恢复失败，请查看 build.log
+    echo [错误] NuGet 恢复失败 >> "%LOG_FILE%"
     pause
     exit /b 1
 )
+echo [成功] NuGet 恢复完成
+echo [成功] NuGet 恢复完成 >> "%LOG_FILE%"
 
-::: 4. 编译
-echo [步骤 4] 正在编译项目 (Release 模式)...
+:: ========== 步骤4: 编译 ==========
+echo.
+echo [步骤4] 正在编译项目 (Release)...
+echo [步骤4] 正在编译项目 (Release)... >> "%LOG_FILE%"
+
 "%MSBUILD_PATH%" "%SOLUTION_FILE%" /p:Configuration=Release /p:Platform="Any CPU" /t:Rebuild /v:minimal >> "%LOG_FILE%" 2>&1
 if %ERRORLEVEL% neq 0 (
     echo [错误] 编译失败，请查看 build.log
+    echo [错误] 编译失败 >> "%LOG_FILE%"
     pause
     exit /b 1
 )
 
-::: 5. 整理输出
-echo [步骤 5] 正在整理输出文件...
+:: ========== 步骤5: 整理输出 ==========
+echo.
+echo [步骤5] 正在整理输出文件...
 if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
+
 set "BIN_DIR=%PROJECT_DIR%\bin\Release"
 
 if not exist "%BIN_DIR%\%EXE_NAME%" (
-    echo [错误] 找不到编译生成的 EXE: %BIN_DIR%\%EXE_NAME%
+    echo [错误] 找不到编译输出: %BIN_DIR%\%EXE_NAME%
+    echo [错误] 找不到编译输出: %BIN_DIR%\%EXE_NAME% >> "%LOG_FILE%"
     pause
     exit /b 1
 )
@@ -119,11 +133,6 @@ if not exist "%OUTPUT_DIR%\logs" mkdir "%OUTPUT_DIR%\logs"
 if exist "%PROJECT_DIR%\Scripts" (
     if not exist "%OUTPUT_DIR%\Scripts" mkdir "%OUTPUT_DIR%\Scripts"
     xcopy /y /e /q "%PROJECT_DIR%\Scripts" "%OUTPUT_DIR%\Scripts" >nul 2>&1
-)
-
-if exist "%PROJECT_DIR%\Configs" (
-    if not exist "%OUTPUT_DIR%\Configs" mkdir "%OUTPUT_DIR%\Configs"
-    copy /y "%PROJECT_DIR%\Configs\*" "%OUTPUT_DIR%\Configs\" >nul 2>&1
 )
 
 echo.
