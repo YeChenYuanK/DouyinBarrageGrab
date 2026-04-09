@@ -319,12 +319,16 @@ namespace BarrageGrab.Proxy
             var processName = base.GetProcessName(processid);
             var contentType = e.HttpClient.Response.ContentType ?? "";
             var isLiveCompan = processName == "直播伴侣";
+            var isWs = e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket;
+
+            // 记录所有 WebSocket CONNECT 请求，方便调试
+            if (isWs)
+            {
+                Logger.LogInfo($"[WS连接] Host={hostname} URI={uri} Process={processName} 抖音正则={webcastBarrageReg.IsMatch(uri)}");
+            }
 
             //ws 方式 - 抖音
-            if (
-                e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
-                webcastBarrageReg.IsMatch(uri)
-               )
+            if (isWs && webcastBarrageReg.IsMatch(uri))
             {
                 e.DataReceived += WebSocket_DataReceived;
                 var urix = new Uri(uri);

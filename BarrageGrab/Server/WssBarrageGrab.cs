@@ -115,6 +115,7 @@ namespace BarrageGrab
         //ws数据处理
         private void Proxy_OnWebSocketData(object sender, WsMessageEventArgs e)
         {
+            Logger.LogInfo($"[WS入口] ★★★ Proxy_OnWebSocketData 被调用 Host={e.HostName} Process={e.ProcessName} Len={e.Payload?.Length ?? -1} NeedDecomp={e.NeedDecompress}");
             if (!appsetting.ProcessFilter.Contains(e.ProcessName))
             {
                 Logger.LogInfo($"[WS] 进程被过滤: {e.ProcessName}，不在白名单内");
