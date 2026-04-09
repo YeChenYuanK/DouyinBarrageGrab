@@ -699,6 +699,7 @@ namespace BarrageGrab
                 this.socketServer.Start(Listen);//启动监听
 
                 // 如果配置了快手弹幕抓取，则自动连接
+                Logger.LogInfo($"[KS_CONFIG] KuaishouEnabled={AppSetting.Current.KuaishouEnabled}, KuaishouRoomId={AppSetting.Current.KuaishouRoomId}");
                 if (AppSetting.Current.KuaishouEnabled && !string.IsNullOrWhiteSpace(AppSetting.Current.KuaishouRoomId))
                 {
                     var roomId = AppSetting.Current.KuaishouRoomId;
