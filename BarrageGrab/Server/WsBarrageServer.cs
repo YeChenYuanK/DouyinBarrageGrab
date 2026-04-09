@@ -676,7 +676,7 @@ namespace BarrageGrab
                 var state = item.Value;
                 if (item.Value.Socket.IsAvailable)
                 {
-                    // 使用原始 JSON 格式
+                    // 使用原始 JSON 格式（抖音嵌套格式，快手扁平格式）
                     state.Socket.Send(pack.ToJson());
                 }
                 else
@@ -684,7 +684,7 @@ namespace BarrageGrab
                     offLines.Add(item.Key);
                 }
             }
-            //删除掉线的套接字        
+            //删除掉线的套接字
             offLines.ForEach(key => socketList.Remove(key));
         }
 
