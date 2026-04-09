@@ -493,15 +493,15 @@ namespace BarrageGrab
                     if (!Directory.Exists(outPath)) Directory.CreateDirectory(outPath);
                     AsarExtractDir(reader, value["files"] as Newtonsoft.Json.Linq.JObject, outPath, contentOffset);
                 }
-                else if (value["unpacked"] != null && value["unpacked"].Value<bool>())
+                else if (value["unpacked"] != null && (bool)value["unpacked"])
                 {
                     // unpacked 文件已在 app.asar.unpacked 中，跳过
                 }
                 else if (value["offset"] != null)
                 {
                     // 普通文件
-                    long offset = long.Parse(value["offset"].Value<string>());
-                    int size = value["size"].Value<int>();
+                    long offset = long.Parse((string)value["offset"]);
+                    int size = (int)value["size"];
 
                     reader.BaseStream.Seek(contentOffset + offset, SeekOrigin.Begin);
                     var data = reader.ReadBytes(size);
