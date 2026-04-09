@@ -9,7 +9,6 @@ echo ===============================================
 echo.
 
 ::: Check Windows
-echo [Check] OS...
 if not "%OS%"=="Windows_NT" (
     echo [Error] This script only runs on Windows!
     pause
@@ -33,11 +32,11 @@ echo.
 if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 
 ::: Check .NET Framework
-echo [Check] .NET Framework 4.6.2...
+echo [Check] .NET Framework 4.8...
 reg query "HKLM\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" /v Release >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo [Warn] .NET Framework 4.6.2+ not found
-    echo [Info] Download: https://dotnet.microsoft.com/download/dotnet-framework/net462
+    echo [Warn] .NET Framework 4.8 not found
+    echo [Info] Download: https://dotnet.microsoft.com/download/dotnet-framework/net48
 )
 echo.
 
@@ -71,9 +70,7 @@ if exist "%OUTPUT_DIR%\%EXE_NAME%" (
 )
 echo.
 
-::: Restore NuGet packages
-echo [Step 2] MSBuild will automatically restore NuGet packages during build...
-echo.
+::: Check solution file
 if not exist "%SOLUTION_DIR%BarrageService.sln" (
     echo [Error] BarrageService.sln not found!
     pause
@@ -81,12 +78,18 @@ if not exist "%SOLUTION_DIR%BarrageService.sln" (
 )
 echo.
 
-::: Build project
-echo [Step 3] Building project (Configuration=%BUILD_CONFIG%)...
-echo.
-
 ::: Find MSBuild
 set "MSBUILD_PATH="
+
+::: Try vswhere (Visual Studio 2017+)
+set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+if not exist "%VSWHERE%" set "VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
+
+if exist "%VSWHERE%" (
+    for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
+        if not defined MSBUILD_PATH set "MSBUILD_PATH=%%i"
+    )
+)
 
 ::: Try VS 2022 MSBuild
 if not defined MSBUILD_PATH (
@@ -122,7 +125,7 @@ if not defined MSBUILD_PATH (
     )
 )
 
-::: Try VS Build Tools 2022 (独立安装的 Build Tools)
+::: Try VS Build Tools 2022
 if not defined MSBUILD_PATH (
     if exist "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe" (
         set "MSBUILD_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
@@ -136,7 +139,7 @@ if not defined MSBUILD_PATH (
     )
 )
 
-::: Try Rider MSBuild (dynamic version detection)
+::: Try Rider MSBuild
 if not defined MSBUILD_PATH (
     for /d %%d in ("C:\Program Files\JetBrains\JetBrains Rider*") do (
         if exist "%%d\tools\MSBuild\Current\Bin\MSBuild.exe" (
@@ -147,27 +150,26 @@ if not defined MSBUILD_PATH (
 
 if defined MSBUILD_PATH (
     echo [Info] Using MSBuild: %MSBUILD_PATH%
-
     echo.
-    echo [Restore] Restoring NuGet packages...
 
-    ::: Download nuget.exe if not exists
+    ::: NuGet restore
+    echo [Step 2] Restoring NuGet packages...
     set "NUGET_EXE=%SCRIPT_DIR%nuget.exe"
+    
     if not exist "%NUGET_EXE%" (
         echo [Download] Downloading nuget.exe...
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile '%NUGET_EXE%'"
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile '%NUGET_EXE%' -UseBasicParsing"
     )
+    
     if not exist "%NUGET_EXE%" (
-        echo [Error] nuget.exe not found! Please manually download it from:
-        echo         https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
-        echo         and place it at: %NUGET_EXE%
+        echo [Error] nuget.exe not found!
+        echo [Info] Download from: https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+        echo [Info] Place it at: %NUGET_EXE%
         pause
         exit /b 1
     )
-    echo [Info] Using nuget.exe: %NUGET_EXE%
-
-    ::: Restore packages using nuget.exe
-    "%NUGET_EXE%" restore "%PROJECT_DIR%\WssBarrageService.csproj" -PackagesDirectory "%PROJECT_DIR%\packages" -Verbosity minimal
+    
+    "%NUGET_EXE%" restore "%SOLUTION_DIR%BarrageService.sln" -SolutionDirectory "%SOLUTION_DIR%" -NoCache
     if %ERRORLEVEL% neq 0 (
         echo [Error] NuGet restore failed!
         pause
@@ -176,18 +178,18 @@ if defined MSBUILD_PATH (
     echo [Success] NuGet packages restored.
     echo.
 
-    echo [Build] Building project...
+    ::: Build project
+    echo [Step 3] Building project (Configuration=%BUILD_CONFIG%)...
     "%MSBUILD_PATH%" "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="Any CPU" /t:Rebuild /v:minimal
 ) else (
     echo [Error] MSBuild not found!
     echo.
     echo [Info] This project requires .NET Framework MSBuild to compile.
-    echo [Info] dotnet msbuild cannot build .NET Framework 4.8 projects.
     echo.
     echo [Info] Please install one of the following:
     echo   1. Visual Studio 2022 (Community is free):
     echo      https://visualstudio.microsoft.com/downloads/
-    echo      - Select "ASP.NET and web development" workload
+    echo      - Select ".NET desktop development" workload
     echo.
     echo   2. Visual Studio Build Tools 2022:
     echo      https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022
@@ -220,35 +222,35 @@ if not exist "%SRC_EXE%" (
 copy /y "%SRC_EXE%" "%OUTPUT_DIR%\" >nul
 echo   Copied %EXE_NAME%
 
-:: Copy exe.config (required for .NET Framework runtime)
+::: Copy exe.config
 if exist "%PROJECT_DIR%\bin\%BUILD_CONFIG%\%EXE_NAME%.config" (
     copy /y "%PROJECT_DIR%\bin\%BUILD_CONFIG%\%EXE_NAME%.config" "%OUTPUT_DIR%\" >nul
     echo   Copied %EXE_NAME%.config
 )
 
-:: Copy rootCert.pfx (for HTTPS proxy)
+::: Copy rootCert.pfx
 if exist "%PROJECT_DIR%\bin\%BUILD_CONFIG%\rootCert.pfx" (
     copy /y "%PROJECT_DIR%\bin\%BUILD_CONFIG%\rootCert.pfx" "%OUTPUT_DIR%\" >nul
     echo   Copied rootCert.pfx
 )
 
-:: Copy logs folder (create if not exists)
+::: Copy logs folder
 if not exist "%OUTPUT_DIR%\logs" mkdir "%OUTPUT_DIR%\logs"
 
-:: Copy config
+::: Copy config
 if exist "%PROJECT_DIR%\AppConfig.json" (
     copy /y "%PROJECT_DIR%\AppConfig.json" "%OUTPUT_DIR%\" >nul
     echo   Copied AppConfig.json
 )
 
-:: Copy Scripts folder
+::: Copy Scripts folder
 if exist "%PROJECT_DIR%\Scripts\" (
     if not exist "%OUTPUT_DIR%\Scripts" mkdir "%OUTPUT_DIR%\Scripts"
     xcopy /y /e /q "%PROJECT_DIR%\Scripts\" "%OUTPUT_DIR%\Scripts\" >nul 2>&1
     echo   Copied Scripts folder
 )
 
-:: Copy Configs folder
+::: Copy Configs folder
 if exist "%PROJECT_DIR%\Configs\" (
     if not exist "%OUTPUT_DIR%\Configs" mkdir "%OUTPUT_DIR%\Configs"
     copy /y "%PROJECT_DIR%\Configs\*" "%OUTPUT_DIR%\Configs\" >nul 2>&1
@@ -262,12 +264,10 @@ if "%BUILD_CONFIG%"=="Release" (
         del /q "%OUTPUT_DIR%\*.pdb" >nul 2>&1
         echo   Deleted .pdb files
     )
-
     if exist "%OUTPUT_DIR%\*.xml" (
         del /q "%OUTPUT_DIR%\*.xml" >nul 2>&1
         echo   Deleted .xml files
     )
-
 )
 
 echo.
