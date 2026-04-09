@@ -707,7 +707,11 @@ namespace BarrageGrab
                     {
                         KsApiHelper.SetCookie(AppSetting.Current.KuaishouCookie);
                     }
-                    _ = ksGrab.ConnectAsync(roomId);
+                    _ = ksGrab.ConnectAsync(roomId).ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                            Logger.LogError(t.Exception?.InnerException ?? t.Exception, $"[KS] ConnectAsync 异常: {t.Exception?.InnerException?.Message ?? t.Exception?.Message}");
+                    });
                     Logger.PrintColor($"[启动] 快手弹幕抓取已启动，房间ID: {roomId}", ConsoleColor.Green);
                 }
             }
