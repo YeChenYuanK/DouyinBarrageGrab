@@ -98,6 +98,7 @@ StyleCopReport.xml
 *.tmp_proj
 *_wpftmp.csproj
 *.log
+!build.log
 *.vspscc
 *.vssscc
 .builds
