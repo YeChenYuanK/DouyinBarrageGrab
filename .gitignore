@@ -38,9 +38,9 @@ bld/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
-# 不忽略 Output 下的日志（用于提交日志排查问题）
-!Output/logs/
-!Output/logs/**
+# Output/logs 下的日志文件忽略，但保留目录占位符
+Output/logs/**/*.log
+Output/logs/*.log
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -102,7 +102,6 @@ StyleCopReport.xml
 *_wpftmp.csproj
 *.log
 !build.log
-!Output/logs/**/*.log
 *.vspscc
 *.vssscc
 .builds
