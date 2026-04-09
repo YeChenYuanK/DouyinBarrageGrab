@@ -1,0 +1,38 @@
+ 
+=============================================== 
+  DouyinBarrageGrab - Windows 一键编译脚本 
+=============================================== 
+ECHO is off.
+[信息] 项目目录: E:\DouyinBarrageGrab\BarrageGrab 
+[信息] 输出目录: E:\DouyinBarrageGrab\Output 
+[信息] 日志文件: E:\DouyinBarrageGrab\build.log 
+ECHO is off.
+ECHO is off.
+[信息] 编译模式: Release 
+ECHO is off.
+[步骤1] 清理旧构建文件... 
+ECHO is off.
+[步骤2] 查找 MSBuild... 
+[信息] MSBuild: D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe 
+ECHO is off.
+[步骤3] 恢复 NuGet 包... 
+[信息] nuget.exe: E:\DouyinBarrageGrab\nuget.exe 
+MSBuild 自动检测: 使用来自 "D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\bin" 的 msbuild 版本 "17.14.40.60911"。
+packages.config 中列出的所有包均已安装。
+  CACHE https://api.nuget.org/v3/vulnerabilities/index.json
+  CACHE https://api.nuget.org/v3-vulnerabilities/2026.04.09.00.05.32/vulnerability.base.json
+  CACHE https://api.nuget.org/v3-vulnerabilities/2026.04.09.00.05.32/2026.04.09.06.05.33/vulnerability.update.json
+警告: NU1902: Package 'BouncyCastle.Cryptography' 2.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-v435-xc8x-wvr9
+警告: NU1902: Package 'BouncyCastle.Cryptography' 2.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-m44j-cfrm-g8qc
+警告: NU1902: Package 'BouncyCastle.Cryptography' 2.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-8xfc-gm6g-vgpv
+警告: NU1903: Package 'System.Net.Http' 4.3.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-7jgj-8wvc-jh57
+警告: NU1903: Package 'System.Text.RegularExpressions' 4.3.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-cmhx-cq75-c4mj
+[成功] NuGet 包恢复完成。 
+ECHO is off.
+[步骤4] 编译项目 (Configuration=Release)... 
+ECHO is off.
+适用于 .NET Framework MSBuild 版本 17.14.40+3e7442088
+
+E:\DouyinBarrageGrab\BarrageGrab\WssBarrageService.csproj(308,5): error : 这台计算机上缺少此项目引用的 NuGet 程序包。使用“NuGet 程序包还原”可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 ..\packages\Costura.Fody.5.7.0\build\Costura.Fody.props。
+ECHO is off.
+[错误] 编译失败！详情见 build.log 
