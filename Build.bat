@@ -160,7 +160,7 @@ echo [信息] 编译成功完成 >> "%LOG_FILE%"
 echo.
 echo [步骤6] 启动 %EXE_NAME%...
 echo [步骤6] 启动 %EXE_NAME%... >> "%LOG_FILE%"
-powershell -Command "Start-Process '%OUTPUT_DIR%\%EXE_NAME%'"
+start "" "%OUTPUT_DIR%\%EXE_NAME%"
 echo [信息] %EXE_NAME% 已启动
 echo [信息] %EXE_NAME% 已启动 >> "%LOG_FILE%"
 
