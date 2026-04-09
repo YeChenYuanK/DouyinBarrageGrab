@@ -728,6 +728,7 @@ namespace BarrageGrab.Proxy
                 "live-ws-pg-group3.kuaishou.com",
                 "live-ws-pg-group4.kuaishou.com",
                 "live-ws-pg-group5.kuaishou.com",
+                "p3-live.wsukwai.com",   // 快手直播伴侣弹幕WS域名
             };
 
             if (decryptSsls.Contains(hostname))
