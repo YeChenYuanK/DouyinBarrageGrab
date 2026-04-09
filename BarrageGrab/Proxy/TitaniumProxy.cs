@@ -369,6 +369,13 @@ namespace BarrageGrab.Proxy
                 Logger.LogInfo($"[WS连接] Host={hostname} URI={uri} Process={processName} 抖音={isDouyin} 快手={isKuaishou}");
             }
 
+            // 调试：记录 wsukwai 域名的所有请求（不管是否 WS）
+            if (hostname.Contains("wsukwai"))
+            {
+                var tunnelType = e.HttpClient.ConnectRequest?.TunnelType.ToString() ?? "null";
+                Logger.LogInfo($"[wsukwai调试] isWs={isWs} TunnelType={tunnelType} URI={uri} Process={processName}");
+            }
+
             //ws 方式 - 抖音
             if (isWs && webcastBarrageReg.IsMatch(uri))
             {
