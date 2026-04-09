@@ -39,7 +39,17 @@ namespace BarrageGrab.Kuaishou
         private const string MSG_STAT    = "STAT";
         private const string MSG_END     = "END";
 
-        // 心跳载荷：快手 WS 协议使用 JSON 心跳 {"type":"HEARTBEAT"}
+        // 快手 WS 消息类型常量（Protobuf payloadType）
+        private const int MSG_TYPE_AUTH = 200;        // 认证帧
+        private const int MSG_TYPE_HEARTBEAT = 201;   // 心跳帧
+        private const int MSG_TYPE_CHAT = 310;        // 弹幕消息
+        private const int MSG_TYPE_GIFT = 320;        // 礼物消息
+        private const int MSG_TYPE_LIKE = 330;        // 点赞消息
+        private const int MSG_TYPE_STAT = 340;        // 统计消息
+        private const int MSG_TYPE_ENTER = 350;       // 进入消息
+        private const int MSG_TYPE_FOLLOW = 360;      // 关注消息
+        
+        // 心跳载荷：快手 WS 协议使用 Protobuf 心跳（payloadType=201）
         private static readonly byte[] HEARTBEAT_PAYLOAD = Encoding.UTF8.GetBytes(@"{""type"":""HEARTBEAT""}");
 
         // ---- 私有字段 ----
@@ -177,25 +187,79 @@ namespace BarrageGrab.Kuaishou
         }
 
         /// <summary>
-        /// 发送认证/入场消息（快手 WS 握手后需发送 type=AUTH 的消息）
+        /// 发送认证/入场消息（快手 WS 握手后需发送认证帧）
+        /// 新版协议使用 Protobuf 格式：payloadType=200
         /// </summary>
         private async Task SendAuthAsync()
         {
             if (_roomInfo == null) return;
-            var auth = new
+            
+            try
             {
-                type = "AUTH",
-                liveStreamId = _roomInfo.LiveStreamId,
-                token = _roomInfo.Token ?? "",
-                pageId = Guid.NewGuid().ToString("N").Substring(0, 16)
-            };
-            var authJson = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(auth));
-            await _ws.SendAsync(new ArraySegment<byte>(authJson), WebSocketMessageType.Text, true, _cts.Token);
-            Logger.LogInfo("[KS] 已发送 AUTH 帧");
+                // 构建认证请求（FirstWSData.proto）
+                var authRequest = new KsAuthRequest
+                {
+                    Kpn = "LIVE_STREAM",
+                    Kpf = "WEB",
+                    LiveStreamId = _roomInfo.LiveStreamId,
+                    Token = _roomInfo.Token ?? "",
+                    PageId = GeneratePageId()
+                };
+                
+                // 先尝试 Protobuf 格式（新版协议）
+                try
+                {
+                    using (var ms = new MemoryStream())
+                    {
+                        Serializer.Serialize(ms, authRequest);
+                        var authPayload = ms.ToArray();
+                        
+                        var socketMsg = new Modles.ProtoEntity.KsSocketMessage
+                        {
+                            PayloadType = MSG_TYPE_AUTH.ToString(),
+                            Payload = authPayload
+                        };
+                        
+                        using (var msgStream = new MemoryStream())
+                        {
+                            Serializer.Serialize(msgStream, socketMsg);
+                            var msgBytes = msgStream.ToArray();
+                            await _ws.SendAsync(new ArraySegment<byte>(msgBytes), WebSocketMessageType.Binary, true, _cts.Token);
+                            Logger.LogInfo($"[KS] 已发送 Protobuf AUTH 帧 (payloadType={MSG_TYPE_AUTH}, payloadLen={authPayload.Length})");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarn($"[KS] Protobuf AUTH 失败，尝试 JSON 格式: {ex.Message}");
+                    
+                    // Fallback 到 JSON 格式（旧版协议）
+                    var auth = new
+                    {
+                        type = "AUTH",
+                        liveStreamId = _roomInfo.LiveStreamId,
+                        token = _roomInfo.Token ?? "",
+                        pageId = authRequest.PageId
+                    };
+                    var authJson = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(auth));
+                    await _ws.SendAsync(new ArraySegment<byte>(authJson), WebSocketMessageType.Text, true, _cts.Token);
+                    Logger.LogInfo("[KS] 已发送 JSON AUTH 帧（兼容旧版协议）");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "[KS] 发送 AUTH 帧失败: " + ex.Message);
+            }
+        }
+        
+        private static string GeneratePageId()
+        {
+            return Guid.NewGuid().ToString("N").Substring(0, 16);
         }
 
         /// <summary>
         /// 启动心跳定时器（快手需要每 20 秒发送一次心跳）
+        /// 优先使用 Protobuf 格式，失败则使用 JSON 格式
         /// </summary>
         private void StartHeartbeat()
         {
@@ -206,9 +270,43 @@ namespace BarrageGrab.Kuaishou
                 {
                     if (_ws?.State == WebSocketState.Open)
                     {
-                        await _ws.SendAsync(
-                            new ArraySegment<byte>(HEARTBEAT_PAYLOAD),
-                            WebSocketMessageType.Text, true, _cts.Token);
+                        // 优先尝试 Protobuf 格式心跳
+                        try
+                        {
+                            var heartbeat = new KsHeartbeatRequest
+                            {
+                                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                            };
+                            
+                            using (var ms = new MemoryStream())
+                            {
+                                Serializer.Serialize(ms, heartbeat);
+                                var payload = ms.ToArray();
+                                
+                                var socketMsg = new Modles.ProtoEntity.KsSocketMessage
+                                {
+                                    CompressionType = 0,
+                                    PayloadType = MSG_TYPE_HEARTBEAT.ToString(),
+                                    Payload = payload
+                                };
+                                
+                                using (var msgStream = new MemoryStream())
+                                {
+                                    Serializer.Serialize(msgStream, socketMsg);
+                                    var msgBytes = msgStream.ToArray();
+                                    await _ws.SendAsync(
+                                        new ArraySegment<byte>(msgBytes),
+                                        WebSocketMessageType.Binary, true, _cts.Token);
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            // Fallback 到 JSON 格式
+                            await _ws.SendAsync(
+                                new ArraySegment<byte>(HEARTBEAT_PAYLOAD),
+                                WebSocketMessageType.Text, true, _cts.Token);
+                        }
                     }
                 }
                 catch (Exception ex)

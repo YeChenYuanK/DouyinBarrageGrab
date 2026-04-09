@@ -84,9 +84,12 @@ namespace BarrageGrab.Kuaishou
 
         // 快手直播伴侣 WebSocket 弹幕服务器 Host（用于 TitaniumProxy 白名单）
         public const string KS_DANMU_WS_HOST = "live-ws-group.kuaishou.com";
-
-        // 快手弹幕 WebSocket 路径特征
-        public const string KS_DANMU_WS_PATH = "/api/kuaishou/live/web/im/init";
+        
+        // 快手弹幕 WebSocket 路径（新版本使用 /websocket）
+        public const string KS_DANMU_WS_PATH = "/websocket";
+        
+        // 旧版路径（保留作为备用）
+        public const string KS_DANMU_WS_PATH_LEGACY = "/api/kuaishou/live/web/im/init";
 
         // 快手弹幕心跳间隔（毫秒）
         public const int KS_HEARTBEAT_INTERVAL_MS = 20000;
@@ -137,16 +140,53 @@ namespace BarrageGrab.Kuaishou
 
                 var info = new KsRoomInfo { RoomId = userId };
 
-                // 提取 liveStream JSON 块
-                var liveStreamMatch = Regex.Match(html, @"liveStream"":(.*?),""obfuseData", RegexOptions.Singleline);
-                if (!liveStreamMatch.Success)
+                // 尝试多种正则匹配 liveStream JSON 块
+                JObject liveStream = null;
+                
+                // 方法1：标准匹配 liveStream":{...},"obfuseData
+                var liveStreamMatch = Regex.Match(html, @"""liveStream"":(\{.*?\})"",""?obfuseData", RegexOptions.Singleline);
+                if (liveStreamMatch.Success)
+                {
+                    var liveStreamJson = liveStreamMatch.Groups[1].Value;
+                    try { liveStream = JObject.Parse(liveStreamJson); }
+                    catch { }
+                }
+                
+                // 方法2：匹配 multiResolutionHlsPlayUrls 结构（real-url 项目方式）
+                if (liveStream == null)
+                {
+                    var hlsMatch = Regex.Match(html, @"""multiResolutionHlsPlayUrls"":\s*(\[.*?\])", RegexOptions.Singleline);
+                    if (hlsMatch.Success)
+                    {
+                        Logger.LogInfo("[KS] 使用 HLS 播放地址匹配方式");
+                    }
+                }
+                
+                // 方法3：从 window.__INITIAL_STATE__ 或类似变量中提取
+                if (liveStream == null)
+                {
+                    var stateMatch = Regex.Match(html, @"window\.__INITIAL_STATE__\s*=\s*({.+?})\s*;?\s*</script>", RegexOptions.Singleline);
+                    if (stateMatch.Success)
+                    {
+                        try
+                        {
+                            var state = JObject.Parse(stateMatch.Groups[1].Value);
+                            liveStream = state.SelectToken("$.liveStream") as JObject;
+                        }
+                        catch { }
+                    }
+                }
+                
+                if (liveStream == null)
                 {
                     Logger.LogWarn("[KS] 移动端页面未找到 liveStream 数据块");
+                    // 尝试打印页面中包含的关键字帮助调试
+                    if (html.Contains("liveStream"))
+                        Logger.LogInfo("[KS] 页面包含 liveStream 关键字，但正则匹配失败");
+                    if (html.Contains("liveStreamId"))
+                        Logger.LogInfo("[KS] 页面包含 liveStreamId 关键字");
                     return null;
                 }
-
-                var liveStreamJson = liveStreamMatch.Groups[1].Value;
-                var liveStream = JObject.Parse(liveStreamJson);
 
                 info.LiveStreamId = liveStream["liveStreamId"]?.Value<string>() ?? "";
                 info.AuthorId = liveStream["authorId"]?.Value<string>() ?? "";
@@ -274,21 +314,140 @@ namespace BarrageGrab.Kuaishou
 
         /// <summary>
         /// 构造默认 WS URL（快手标准弹幕接口）
+        /// 新版本使用 /websocket 路径，参数通过 Protobuf 认证帧发送
         /// </summary>
         private List<string> BuildDefaultWsUrls(string liveStreamId, string token)
         {
-            // 快手弹幕 WebSocket 地址格式（基于社区抓包分析）
-            var url = $"wss://{KS_DANMU_WS_HOST}{KS_DANMU_WS_PATH}" +
-                      $"?liveStreamId={Uri.EscapeDataString(liveStreamId)}" +
-                      $"&token={Uri.EscapeDataString(token ?? "")}" +
-                      $"&did=web_{Guid.NewGuid():N}";
-            return new List<string> { url };
+            // 快手弹幕 WebSocket 地址格式（新版本）
+            // 新版使用 /websocket 路径，认证参数通过 Protobuf 帧发送
+            var wsUrls = new List<string>();
+            
+            // 尝试多个可能的域名
+            var hosts = new[] {
+                "live-ws-group.kuaishou.com",
+                "live-ws.kuaishou.com",
+                "live-ws-pg-group1.kuaishou.com",
+                "live-ws-pg-group2.kuaishou.com",
+                "live-ws-pg-group3.kuaishou.com"
+            };
+            
+            foreach (var host in hosts)
+            {
+                // 新版 WebSocket 地址（/websocket 路径，参数在认证帧中）
+                var url1 = $"wss://{host}{KS_DANMU_WS_PATH}";
+                wsUrls.Add(url1);
+                
+                // 备用：带查询参数的旧版格式
+                var url2 = $"wss://{host}{KS_DANMU_WS_PATH_LEGACY}" +
+                           $"?liveStreamId={Uri.EscapeDataString(liveStreamId)}" +
+                           $"&token={Uri.EscapeDataString(token ?? "")}" +
+                           $"&did=web_{Guid.NewGuid():N}";
+                wsUrls.Add(url2);
+            }
+            
+            return wsUrls;
         }
 
         /// <summary>
         /// 通过快手 IM Init API 动态获取 token 和 WS 地址
         /// </summary>
         private async Task<Tuple<string, List<string>>> TryGetWsInfoFromApi(string liveStreamId, string authorId)
+        {
+            try
+            {
+                // 尝试新版 GraphQL API
+                var graphqlResult = await TryGetWsInfoFromGraphQL(liveStreamId, authorId);
+                if (graphqlResult != null) return graphqlResult;
+                
+                // Fallback 到旧版 API
+                var apiResult = await TryGetWsInfoFromLegacyApi(liveStreamId, authorId);
+                return apiResult;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarn("[KS] 获取 WS 信息失败: " + ex.Message);
+                return null;
+            }
+        }
+        
+        /// <summary>
+        /// 通过 GraphQL API 获取弹幕连接信息（新版方式）
+        /// </summary>
+        private async Task<Tuple<string, List<string>>> TryGetWsInfoFromGraphQL(string liveStreamId, string authorId)
+        {
+            try
+            {
+                var apiUrl = "https://live.kuaishou.com/live_graphql";
+                var body = new
+                {
+                    operationName = "liveDetail",
+                    variables = new
+                    {
+                        principalId = liveStreamId,
+                        page = "detail"
+                    },
+                    query = @"query liveDetail($principalId: String!, $page: String!) {
+                        liveDetail(principalId: $principalId, page: $page) {
+                            liveStream {
+                                id
+                                liveStreamId
+                                caption
+                                playUrls {
+                                    quality
+                                    url
+                                }
+                            }
+                            streamArgs {
+                                streamId
+                                token
+                            }
+                            chatRoomInfo {
+                                token
+                                webSocketUrls
+                            }
+                        }
+                    }"
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+                {
+                    Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json")
+                };
+                request.Headers.Add("User-Agent", PC_UA);
+                request.Headers.Add("Origin", "https://live.kuaishou.com");
+                request.Headers.Add("Referer", $"https://live.kuaishou.com/u/{authorId}");
+                if (!string.IsNullOrWhiteSpace(_cookie))
+                    request.Headers.Add("Cookie", _cookie);
+
+                var response = await _httpClient.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                var jobj = JObject.Parse(json);
+
+                var chatRoomInfo = jobj.SelectToken("$.data.liveDetail.chatRoomInfo");
+                if (chatRoomInfo == null)
+                {
+                    Logger.LogWarn("[KS] GraphQL API 未返回 chatRoomInfo");
+                    return null;
+                }
+
+                var token = chatRoomInfo["token"]?.Value<string>() ?? "";
+                var wsUrls = chatRoomInfo["webSocketUrls"]?.Select(u => u.Value<string>()).ToList()
+                             ?? new List<string>();
+                
+                Logger.LogInfo($"[KS] GraphQL API 获取成功, token长度={token.Length}, wsUrl数量={wsUrls.Count}");
+                return Tuple.Create(token, wsUrls);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarn("[KS] GraphQL API 调用失败: " + ex.Message);
+                return null;
+            }
+        }
+        
+        /// <summary>
+        /// 通过旧版 API 获取弹幕连接信息
+        /// </summary>
+        private async Task<Tuple<string, List<string>>> TryGetWsInfoFromLegacyApi(string liveStreamId, string authorId)
         {
             try
             {
@@ -326,11 +485,12 @@ namespace BarrageGrab.Kuaishou
                 var wsUrls = chatRoomInfo?["webSocketUrls"]?.Select(u => u.Value<string>()).ToList()
                              ?? new List<string>();
 
+                Logger.LogInfo($"[KS] 旧版 IM Init API 获取成功, token长度={token.Length}, wsUrl数量={wsUrls.Count}");
                 return Tuple.Create(token, wsUrls);
             }
             catch (Exception ex)
             {
-                Logger.LogWarn("[KS] IM Init API 调用失败: " + ex.Message);
+                Logger.LogWarn("[KS] 旧版 IM Init API 调用失败: " + ex.Message);
                 return null;
             }
         }

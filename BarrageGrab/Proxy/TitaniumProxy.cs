@@ -53,12 +53,26 @@ namespace BarrageGrab.Proxy
         private readonly Regex webcastBarrageReg = new Regex(@"webcast\d+-ws-web-\w+\.(douyin|amemv)\.com");
 
         // 快手弹幕 WebSocket 地址正则（用于识别和拦截快手弹幕流）
-        private readonly Regex ksBarrageReg = new Regex(@"(live-ws-group\.kuaishou\.com|.*kuaishou.*ws.*)");
+        private readonly Regex ksBarrageReg = new Regex(@"(live-ws.*\.kuaishou\.com|.*kuaishou.*ws.*|/websocket)");
 
         // 快手直播弹幕域名列表（用于识别快手弹幕请求）
         private readonly string[] ksBarrageHosts = new[] {
+            // WebSocket 弹幕服务器
             "live-ws-group.kuaishou.com",
-            "live-ws.kuaishou.com"
+            "live-ws.kuaishou.com",
+            "live-ws-pg-group1.kuaishou.com",
+            "live-ws-pg-group2.kuaishou.com",
+            "live-ws-pg-group3.kuaishou.com",
+            "live-ws-pg-group4.kuaishou.com",
+            "live-ws-pg-group5.kuaishou.com",
+            // API 和页面
+            "live.kuaishou.com",
+            "m.gifshow.com",
+            "www.kuaishou.com",
+            // CDN 和资源
+            "cdn.gifshow.com",
+            "tx2.a.kwimgs.com",
+            "ali.a.kwimgs.com"
         };
 
         public override string HttpUpstreamProxy { get { return proxyServer?.UpStreamHttpProxy?.ToString() ?? ""; } }
@@ -220,12 +234,33 @@ namespace BarrageGrab.Proxy
         /// </summary>
         private bool CheckKuaishouProcess(string processName)
         {
-            var ksProcessNames = new[] { "快手直播伴侣", "kscloudtv", "KSCloudTV", "kuaishou", "快手" };
+            // 扩展快手进程名列表
+            var ksProcessNames = new[] {
+                "快手直播伴侣",      // 中文名
+                "kscloudtv",        // 快手直播伴侣英文
+                "KSCloudTV",        
+                "kuaishou",         // 快手主程序
+                "快手",              // 简写
+                "kuaishoupay",      // 快手支付相关
+                "ksnebula",         // 快手星芒
+                "gifshow",          // 快手旧名
+                "KSApp",            // Mac 版快手
+                "KwaiMix"           // 快手国际版
+            };
+            
             foreach (var name in ksProcessNames)
             {
                 if (processName.Contains(name) || AppSetting.Current.ProcessFilter.Any(f => f.Contains(name)))
                     return true;
             }
+            
+            // 也检查用户配置的白名单进程是否包含快手相关关键字
+            foreach (var filter in AppSetting.Current.ProcessFilter)
+            {
+                if (filter.Contains("kuaishou") || filter.Contains("kscloud") || filter.Contains("gifshow"))
+                    return true;
+            }
+            
             return false;
         }
 
@@ -324,7 +359,9 @@ namespace BarrageGrab.Proxy
             // 记录所有 WebSocket CONNECT 请求，方便调试
             if (isWs)
             {
-                Logger.LogInfo($"[WS连接] Host={hostname} URI={uri} Process={processName} 抖音正则={webcastBarrageReg.IsMatch(uri)}");
+                var isDouyin = webcastBarrageReg.IsMatch(uri);
+                var isKuaishou = IsKuaishouBarrageRequest(hostname, uri);
+                Logger.LogInfo($"[WS连接] Host={hostname} URI={uri} Process={processName} 抖音={isDouyin} 快手={isKuaishou}");
             }
 
             //ws 方式 - 抖音
@@ -336,14 +373,20 @@ namespace BarrageGrab.Proxy
                 Logger.LogInfo($"[抖音] 订阅到新的弹幕流地址，roomid:{roomid}");
             }
 
-            //ws 方式 - 快手
-            if (
-                e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
-                IsKuaishouBarrageRequest(hostname, uri)
-               )
+            //ws 方式 - 快手（扩展检测）
+            if (isWs && IsKuaishouBarrageRequest(hostname, uri))
             {
                 e.DataReceived += WebSocket_DataReceived;
-                Logger.LogInfo($"[快手] 订阅到新的弹幕流地址，hostname:{hostname}");
+                
+                // 提取更多信息用于调试
+                var urix = new Uri(uri.Contains("://") ? uri : $"wss://{hostname}{uri}");
+                var liveStreamId = urix.GetQueryParam("liveStreamId") ?? "N/A";
+                var token = urix.GetQueryParam("token");
+                var tokenPreview = !string.IsNullOrEmpty(token) && token.Length > 10 
+                    ? token.Substring(0, 10) + "..." 
+                    : (token ?? "N/A");
+                
+                Logger.LogInfo($"[快手] 订阅到新的弹幕流地址，hostname:{hostname} liveStreamId:{liveStreamId} token:{tokenPreview}");
             }
 
             //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)

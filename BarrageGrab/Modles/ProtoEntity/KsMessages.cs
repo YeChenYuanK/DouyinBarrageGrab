@@ -5,15 +5,86 @@ namespace BarrageGrab.Modles.ProtoEntity
 {
     /// <summary>
     /// 快手 WebSocket 外层数据包
+    /// payloadType 值：
+    /// 200 = 认证请求
+    /// 201 = 心跳
+    /// 310 = 弹幕消息
+    /// 320 = 礼物消息
+    /// 330 = 点赞消息
+    /// 340 = 统计消息
+    /// 350 = 进入消息
+    /// 360 = 关注消息
     /// </summary>
     [ProtoContract]
     public class KsSocketMessage
     {
+        /// <summary>
+        /// 压缩类型（0=无压缩）
+        /// </summary>
         [ProtoMember(1)]
+        public int CompressionType { get; set; }
+
+        /// <summary>
+        /// 消息类型（字符串或数字）
+        /// </summary>
+        [ProtoMember(2)]
         public string PayloadType { get; set; } = "";
 
-        [ProtoMember(2)]
+        /// <summary>
+        /// 消息载荷（二进制）
+        /// </summary>
+        [ProtoMember(3)]
         public byte[] Payload { get; set; }
+    }
+
+    /// <summary>
+    /// 快手认证请求（连接 WebSocket 后发送的第一个消息）
+    /// </summary>
+    [ProtoContract]
+    public class KsAuthRequest
+    {
+        /// <summary>
+        /// 平台标识（固定值 "LIVE_STREAM"）
+        /// </summary>
+        [ProtoMember(1)]
+        public string Kpn { get; set; } = "";
+
+        /// <summary>
+        /// 平台类型（固定值 "WEB"）
+        /// </summary>
+        [ProtoMember(2)]
+        public string Kpf { get; set; } = "";
+
+        /// <summary>
+        /// 直播间 ID
+        /// </summary>
+        [ProtoMember(3)]
+        public string LiveStreamId { get; set; } = "";
+
+        /// <summary>
+        /// 认证令牌
+        /// </summary>
+        [ProtoMember(4)]
+        public string Token { get; set; } = "";
+
+        /// <summary>
+        /// 页面 ID
+        /// </summary>
+        [ProtoMember(5)]
+        public string PageId { get; set; } = "";
+    }
+    
+    /// <summary>
+    /// 快手心跳请求
+    /// </summary>
+    [ProtoContract]
+    public class KsHeartbeatRequest
+    {
+        /// <summary>
+        /// 当前时间戳（毫秒）
+        /// </summary>
+        [ProtoMember(1)]
+        public long Timestamp { get; set; }
     }
 
     /// <summary>
