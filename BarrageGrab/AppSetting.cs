@@ -54,6 +54,7 @@ namespace BarrageGrab
                 KuaishouHeartbeatInterval = int.TryParse(ksHeartbeat, out var hb) ? hb : 20000;
                 var ksReconnect = AppSettings["kuaishouMaxReconnect"]?.Trim() ?? "-1";
                 KuaishouMaxReconnect = int.TryParse(ksReconnect, out var recon) ? recon : -1;
+                KuaishouLiveCompanPath = AppSettings["kuaishouLiveCompanPath"]?.Trim() ?? "";
 
                 ConfigComPort();
                 ConfigFilter();
@@ -699,5 +700,10 @@ namespace BarrageGrab
         /// 快手弹幕自动重连次数（-1=无限重连）
         /// </summary>
         public int KuaishouMaxReconnect { get; set; } = -1;
+
+        /// <summary>
+        /// 快手直播伴侣 exe 文件位置（留空则自动查找）
+        /// </summary>
+        public string KuaishouLiveCompanPath { get; set; } = string.Empty;
     }
 }

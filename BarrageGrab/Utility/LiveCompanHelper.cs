@@ -252,5 +252,249 @@ namespace BarrageGrab
             var textNode = node.OwnerDocument.CreateTextNode(text);
             node.AppendChild(textNode);
         }
+
+        #region 快手直播伴侣支持
+
+        /// <summary>
+        /// 初始化快手直播伴侣环境（注入代理参数）
+        /// </summary>
+        public static void KuaishouSwitchSetup()
+        {
+            if (!AppSetting.Current.LiveCompanHookSwitch) return;
+
+            var exePath = GetKuaishouExePath();
+            if (string.IsNullOrEmpty(exePath))
+            {
+                Logger.LogWarn("未找到快手直播伴侣(kwailive.exe)，跳过快手伴侣环境设置");
+                return;
+            }
+
+            Logger.LogInfo($"找到快手直播伴侣: {exePath}");
+
+            var resourcesDir = Path.Combine(Path.GetDirectoryName(exePath), "resources");
+            var asarPath = Path.Combine(resourcesDir, "app.asar");
+            var appDir = Path.Combine(resourcesDir, "app");
+
+            // 如果已经解包过（app 目录存在），直接修改 index.js
+            if (Directory.Exists(appDir))
+            {
+                Logger.LogInfo("检测到已解包的 app 目录，直接修改 index.js");
+                PatchKuaishouIndexJs(appDir);
+                return;
+            }
+
+            if (!File.Exists(asarPath))
+            {
+                Logger.LogWarn($"未找到 app.asar: {asarPath}，跳过快手伴侣环境设置");
+                return;
+            }
+
+            // 解包 asar 到 app 目录
+            Logger.LogInfo($"正在解包 {asarPath} ...");
+            AsarExtract(asarPath, appDir);
+
+            // 修改 index.js
+            PatchKuaishouIndexJs(appDir);
+
+            // 备份并禁用原 asar（Electron 优先加载同名目录）
+            var asarBakPath = asarPath + ".bak";
+            if (!File.Exists(asarBakPath))
+            {
+                File.Move(asarPath, asarBakPath);
+                Logger.LogInfo($"已备份 app.asar -> app.asar.bak，Electron 将加载解包目录");
+            }
+            else
+            {
+                // bak 已存在，只需确保原 asar 不存在
+                if (File.Exists(asarPath)) File.Delete(asarPath);
+                Logger.LogInfo("app.asar.bak 已存在，删除 app.asar，使用解包目录");
+            }
+
+            Logger.LogInfo("快手直播伴侣环境初始化完成");
+        }
+
+        private static void PatchKuaishouIndexJs(string appDir)
+        {
+            var indexJsPath = Path.Combine(appDir, "index.js");
+            if (!File.Exists(indexJsPath))
+            {
+                // 递归查找 index.js（可能在子目录）
+                var found = Directory.GetFiles(appDir, "index.js", SearchOption.TopDirectoryOnly);
+                if (found.Length == 0)
+                {
+                    Logger.LogWarn($"未找到 index.js，路径: {appDir}");
+                    return;
+                }
+                indexJsPath = found[0];
+            }
+
+            Logger.LogInfo($"正在配置 {indexJsPath}");
+            var content = File.ReadAllText(indexJsPath, Encoding.UTF8);
+            CheckBackFile(indexJsPath);
+            var newContent = SetIndexJsContent(content);
+            if (newContent != content && !newContent.IsNullOrWhiteSpace())
+            {
+                File.WriteAllText(indexJsPath, newContent, Encoding.UTF8);
+                Logger.LogInfo("快手直播伴侣 index.js 代理参数已注入");
+            }
+            else
+            {
+                Logger.LogInfo("快手直播伴侣 index.js 代理参数已是最新，无需修改");
+            }
+        }
+
+        /// <summary>
+        /// 获取快手直播伴侣的 exe 路径
+        /// 查找顺序：1.配置指定路径 2.运行中的进程 3.扫描常见目录
+        /// </summary>
+        public static string GetKuaishouExePath()
+        {
+            // 1. 优先使用配置中手动指定的路径
+            if (!string.IsNullOrWhiteSpace(AppSetting.Current.KuaishouLiveCompanPath))
+            {
+                if (File.Exists(AppSetting.Current.KuaishouLiveCompanPath))
+                    return AppSetting.Current.KuaishouLiveCompanPath;
+                Logger.LogWarn($"配置的快手直播伴侣路径不存在: {AppSetting.Current.KuaishouLiveCompanPath}");
+            }
+
+            // 2. 从运行中进程查找（最可靠）
+            try
+            {
+                var procs = Process.GetProcessesByName("kwailive");
+                foreach (var p in procs)
+                {
+                    try
+                    {
+                        var path = p.MainModule?.FileName;
+                        if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                        {
+                            Logger.LogInfo($"从运行进程找到快手直播伴侣: {path}");
+                            return path;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarn($"从进程查找快手直播伴侣失败: {ex.Message}");
+            }
+
+            // 3. 扫描所有盘符下的 KwaiLive 目录
+            var drives = DriveInfo.GetDrives()
+                .Where(d => d.IsReady && (d.DriveType == DriveType.Fixed || d.DriveType == DriveType.Removable))
+                .Select(d => d.RootDirectory.FullName);
+
+            foreach (var drive in drives)
+            {
+                var kwaiLiveDir = Path.Combine(drive, "KwaiLive", "bin");
+                if (!Directory.Exists(kwaiLiveDir)) continue;
+
+                // bin 下按版本号排序，取最新版本
+                var versionDirs = Directory.GetDirectories(kwaiLiveDir)
+                    .OrderByDescending(d => d)
+                    .ToArray();
+
+                foreach (var versionDir in versionDirs)
+                {
+                    var exePath = Path.Combine(versionDir, "kwailive.exe");
+                    if (File.Exists(exePath))
+                    {
+                        Logger.LogInfo($"扫描盘符找到快手直播伴侣: {exePath}");
+                        return exePath;
+                    }
+                }
+            }
+
+            // 4. 查 LocalAppData
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var localKwaiDir = Path.Combine(localAppData, "KwaiLive", "bin");
+            if (Directory.Exists(localKwaiDir))
+            {
+                var versionDirs = Directory.GetDirectories(localKwaiDir).OrderByDescending(d => d);
+                foreach (var versionDir in versionDirs)
+                {
+                    var exePath = Path.Combine(versionDir, "kwailive.exe");
+                    if (File.Exists(exePath)) return exePath;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        #region asar 解包实现
+
+        /// <summary>
+        /// 将 app.asar 解包到目标目录
+        /// asar 格式：[4字节对齐头大小][4字节头大小][4字节对象大小][JSON头][文件内容...]
+        /// </summary>
+        private static void AsarExtract(string asarPath, string outputDir)
+        {
+            using (var fs = new FileStream(asarPath, FileMode.Open, FileAccess.Read))
+            using (var reader = new BinaryReader(fs))
+            {
+                // 读取头部：前16字节是 pickle 封装
+                // 格式: [4: payload_size][4: header_size][4: header_obj_size][4: padding]
+                var pickleSizeBytes = reader.ReadInt32(); // = 4
+                var headerSize = reader.ReadInt32();
+                var headerObjSize = reader.ReadInt32();
+                reader.ReadInt32(); // padding
+
+                // 读取 JSON 头
+                var headerJson = Encoding.UTF8.GetString(reader.ReadBytes(headerObjSize));
+                var header = Newtonsoft.Json.Linq.JObject.Parse(headerJson);
+
+                // 文件内容起始偏移 = 8（两个Int32）+ 8（两个Int32）+ headerSize对齐后的大小
+                // 实际上 asar 头部总共占 8 + headerSize 字节（含JSON）
+                long contentOffset = 8 + headerSize;
+
+                // 递归提取
+                if (!Directory.Exists(outputDir)) Directory.CreateDirectory(outputDir);
+                AsarExtractDir(reader, header["files"] as Newtonsoft.Json.Linq.JObject, outputDir, contentOffset);
+            }
+
+            Logger.LogInfo($"asar 解包完成 -> {outputDir}");
+        }
+
+        private static void AsarExtractDir(BinaryReader reader, Newtonsoft.Json.Linq.JObject files, string outputDir, long contentOffset)
+        {
+            if (files == null) return;
+            foreach (var prop in files.Properties())
+            {
+                var name = prop.Name;
+                var value = prop.Value as Newtonsoft.Json.Linq.JObject;
+                if (value == null) continue;
+
+                var outPath = Path.Combine(outputDir, name);
+
+                if (value["files"] != null)
+                {
+                    // 目录
+                    if (!Directory.Exists(outPath)) Directory.CreateDirectory(outPath);
+                    AsarExtractDir(reader, value["files"] as Newtonsoft.Json.Linq.JObject, outPath, contentOffset);
+                }
+                else if (value["unpacked"] != null && value["unpacked"].Value<bool>())
+                {
+                    // unpacked 文件已在 app.asar.unpacked 中，跳过
+                }
+                else if (value["offset"] != null)
+                {
+                    // 普通文件
+                    long offset = long.Parse(value["offset"].Value<string>());
+                    int size = value["size"].Value<int>();
+
+                    reader.BaseStream.Seek(contentOffset + offset, SeekOrigin.Begin);
+                    var data = reader.ReadBytes(size);
+
+                    var dir = Path.GetDirectoryName(outPath);
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                    File.WriteAllBytes(outPath, data);
+                }
+            }
+        }
+
+        #endregion
+
+        #endregion
     }
 }

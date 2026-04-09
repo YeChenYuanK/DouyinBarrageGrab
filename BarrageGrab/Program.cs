@@ -60,6 +60,7 @@ namespace BarrageGrab
         {
             AppRuntime.Init();
             LiveCompanHelper.SwitchSetup();
+            LiveCompanHelper.KuaishouSwitchSetup();
             WinApi.SetConsoleCtrlHandler(controlCtr, true);//捕获控制台关闭
             WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
             AppRuntime.DisplayConsole(!AppSetting.Current.HideConsole);//控制控制台可见
