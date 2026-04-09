@@ -17,11 +17,12 @@ if not "%OS%"=="Windows_NT" (
 
 ::: 获取目录
 set "SCRIPT_DIR=%~dp0"
-set "PROJECT_DIR=%SCRIPT_DIR%BarrageGrab"
+if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+set "PROJECT_DIR=%SCRIPT_DIR%\BarrageGrab"
 set "SOLUTION_DIR=%SCRIPT_DIR%"
 
 ::: 输出设置
-set "OUTPUT_DIR=%SCRIPT_DIR%Output"
+set "OUTPUT_DIR=%SCRIPT_DIR%\Output"
 set "EXE_NAME=WssBarrageServer.exe"
 
 echo [信息] 项目目录: %PROJECT_DIR%
@@ -71,7 +72,7 @@ if exist "%OUTPUT_DIR%\%EXE_NAME%" (
 echo.
 
 ::: 检查解决方案文件
-if not exist "%SOLUTION_DIR%BarrageService.sln" (
+if not exist "%SOLUTION_DIR%\BarrageService.sln" (
     echo [错误] 找不到 BarrageService.sln！
     pause
     exit /b 1
@@ -131,11 +132,21 @@ if not defined MSBUILD_PATH (
         set "MSBUILD_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
     )
 )
+if not defined MSBUILD_PATH (
+    if exist "D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe" (
+        set "MSBUILD_PATH=D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+    )
+)
 
 ::: 尝试 VS Build Tools 2019
 if not defined MSBUILD_PATH (
     if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe" (
         set "MSBUILD_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+    )
+)
+if not defined MSBUILD_PATH (
+    if exist "D:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe" (
+        set "MSBUILD_PATH=D:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
     )
 )
 
@@ -154,11 +165,11 @@ if defined MSBUILD_PATH (
 
     ::: 恢复 NuGet 包
     echo [步骤 2] 正在恢复 NuGet 包...
-    set "NUGET_EXE=%SCRIPT_DIR%nuget.exe"
+    set "NUGET_EXE=%SCRIPT_DIR%\nuget.exe"
     
     if not exist "%NUGET_EXE%" (
         echo [下载] 正在下载 nuget.exe...
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile '%NUGET_EXE%' -UseBasicParsing"
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile '%NUGET_EXE%' -UseBasicParsing"
     )
     
     if not exist "%NUGET_EXE%" (
@@ -169,7 +180,7 @@ if defined MSBUILD_PATH (
         exit /b 1
     )
     
-    "%NUGET_EXE%" restore "%SOLUTION_DIR%BarrageService.sln" -SolutionDirectory "%SOLUTION_DIR%" -NoCache
+    "%NUGET_EXE%" restore "%SOLUTION_DIR%\BarrageService.sln" -SolutionDirectory "%SOLUTION_DIR%" -NoCache
     if %ERRORLEVEL% neq 0 (
         echo [错误] NuGet 包恢复失败！
         pause
@@ -180,7 +191,7 @@ if defined MSBUILD_PATH (
 
     ::: 编译项目
     echo [步骤 3] 正在编译项目 (配置=%BUILD_CONFIG%)...
-    "%MSBUILD_PATH%" "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="Any CPU" /t:Rebuild /v:minimal
+    "%MSBUILD_PATH%" "%SOLUTION_DIR%\BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="Any CPU" /t:Rebuild /v:minimal
 ) else (
     echo [错误] 找不到 MSBuild！
     echo.
@@ -219,18 +230,18 @@ if not exist "%SRC_EXE%" (
     exit /b 1
 )
 
-copy /y "%SRC_EXE%" "%OUTPUT_DIR%\" >nul
+copy /y "%SRC_EXE%" "%OUTPUT_DIR%" >nul
 echo   已复制 %EXE_NAME%
 
 ::: 复制配置文件
 if exist "%PROJECT_DIR%\bin\%BUILD_CONFIG%\%EXE_NAME%.config" (
-    copy /y "%PROJECT_DIR%\bin\%BUILD_CONFIG%\%EXE_NAME%.config" "%OUTPUT_DIR%\" >nul
+    copy /y "%PROJECT_DIR%\bin\%BUILD_CONFIG%\%EXE_NAME%.config" "%OUTPUT_DIR%" >nul
     echo   已复制 %EXE_NAME%.config
 )
 
 ::: 复制证书文件
 if exist "%PROJECT_DIR%\bin\%BUILD_CONFIG%\rootCert.pfx" (
-    copy /y "%PROJECT_DIR%\bin\%BUILD_CONFIG%\rootCert.pfx" "%OUTPUT_DIR%\" >nul
+    copy /y "%PROJECT_DIR%\bin\%BUILD_CONFIG%\rootCert.pfx" "%OUTPUT_DIR%" >nul
     echo   已复制 rootCert.pfx
 )
 
@@ -239,21 +250,21 @@ if not exist "%OUTPUT_DIR%\logs" mkdir "%OUTPUT_DIR%\logs"
 
 ::: 复制配置文件
 if exist "%PROJECT_DIR%\AppConfig.json" (
-    copy /y "%PROJECT_DIR%\AppConfig.json" "%OUTPUT_DIR%\" >nul
+    copy /y "%PROJECT_DIR%\AppConfig.json" "%OUTPUT_DIR%" >nul
     echo   已复制 AppConfig.json
 )
 
 ::: 复制 Scripts 文件夹
-if exist "%PROJECT_DIR%\Scripts\" (
+if exist "%PROJECT_DIR%\Scripts" (
     if not exist "%OUTPUT_DIR%\Scripts" mkdir "%OUTPUT_DIR%\Scripts"
-    xcopy /y /e /q "%PROJECT_DIR%\Scripts\" "%OUTPUT_DIR%\Scripts\" >nul 2>&1
+    xcopy /y /e /q "%PROJECT_DIR%\Scripts" "%OUTPUT_DIR%\Scripts" >nul 2>&1
     echo   已复制 Scripts 文件夹
 )
 
 ::: 复制 Configs 文件夹
-if exist "%PROJECT_DIR%\Configs\" (
+if exist "%PROJECT_DIR%\Configs" (
     if not exist "%OUTPUT_DIR%\Configs" mkdir "%OUTPUT_DIR%\Configs"
-    copy /y "%PROJECT_DIR%\Configs\*" "%OUTPUT_DIR%\Configs\" >nul 2>&1
+    copy /y "%PROJECT_DIR%\Configs\*" "%OUTPUT_DIR%\Configs" >nul 2>&1
 )
 
 ::: 清理调试符号（Release 模式）
