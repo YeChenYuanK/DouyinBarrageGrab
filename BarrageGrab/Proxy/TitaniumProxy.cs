@@ -805,6 +805,9 @@ namespace BarrageGrab.Proxy
         // 为每个 kwailive 隧道连接维护未处理完的字节 buffer
         private readonly System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, List<byte>> _ksTunnelBuffers
             = new System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, List<byte>>();
+        // 标记该隧道是否已跳过 HTTP 升级握手头
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, bool> _ksTunnelHandshakeDone
+            = new System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, bool>();
 
         // 处理隧道解密后的原始数据（用于 IP 直连的快手弹幕 WS）
         private void TunnelDecryptedDataReceived(object sender, DataEventArgs e)
@@ -819,6 +822,45 @@ namespace BarrageGrab.Proxy
             {
                 var buf = _ksTunnelBuffers.GetOrAdd(args, _ => new List<byte>());
                 buf.AddRange(new ArraySegment<byte>(e.Buffer, e.Offset, e.Count));
+
+                // 跳过 HTTP 升级握手（GET ... / HTTP/1.1 101 ...）
+                bool handshakeDone = _ksTunnelHandshakeDone.GetOrAdd(args, _ => false);
+                if (!handshakeDone)
+                {
+                    var bufArr = buf.ToArray();
+                    // 查找 \r\n\r\n（HTTP 头结束标志）
+                    int headerEnd = -1;
+                    for (int i = 0; i <= bufArr.Length - 4; i++)
+                    {
+                        if (bufArr[i] == 0x0D && bufArr[i+1] == 0x0A && bufArr[i+2] == 0x0D && bufArr[i+3] == 0x0A)
+                        {
+                            headerEnd = i + 4;
+                            break;
+                        }
+                    }
+                    if (headerEnd < 0)
+                    {
+                        // 还没收到完整的 HTTP 头，等待更多数据
+                        // 但如果前两字节不像 HTTP（不是 'G','P','H' 等），说明不是 HTTP 握手直接是 WS 帧
+                        if (bufArr.Length >= 1 && bufArr[0] != 0x47 && bufArr[0] != 0x48 && bufArr[0] != 0x50)
+                        {
+                            // 直接是 WS 帧，无握手
+                            _ksTunnelHandshakeDone[args] = true;
+                            handshakeDone = true;
+                        }
+                        else
+                        {
+                            return; // 等待完整 HTTP 头
+                        }
+                    }
+                    else
+                    {
+                        buf.RemoveRange(0, headerEnd);
+                        _ksTunnelHandshakeDone[args] = true;
+                        handshakeDone = true;
+                        Logger.LogInfo($"[KS_TUNNEL] 跳过HTTP握手 {headerEnd}字节 hostname:{hostname} 剩余:{buf.Count}字节");
+                    }
+                }
 
                 while (buf.Count >= 2)
                 {
@@ -884,6 +926,7 @@ namespace BarrageGrab.Proxy
             {
                 Logger.LogInfo($"[KS_TUNNEL] 解析帧出错: {ex.Message}");
                 _ksTunnelBuffers.TryRemove(args, out _);
+                _ksTunnelHandshakeDone.TryRemove(args, out _);
             }
         }
 
