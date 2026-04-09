@@ -291,14 +291,19 @@ namespace BarrageGrab.Proxy
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
 
-            // 对 kwailive 进程的所有请求（含IP直连WS）订阅 DataReceived
+            // 只对 WS 升级请求订阅 DataReceived（防止普通HTTP请求误订阅导致解析错误）
+            // WS 升级请求特征：Upgrade: websocket 头，或 ConnectRequest.TunnelType == Websocket
             bool isKwaiProcess = processName != null && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
             bool isKuaishouDomain = IsKuaishouBarrageRequest(hostname, uri);
-            if (isKwaiProcess || isKuaishouDomain)
+            bool isTunnelWs = e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket;
+            var upgradeHeader = e.HttpClient.Request.Headers.GetFirstHeader("Upgrade")?.Value ?? "";
+            bool isWsUpgrade = upgradeHeader.IndexOf("websocket", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            if ((isKwaiProcess || isKuaishouDomain) && (isTunnelWs || isWsUpgrade))
             {
                 e.DataReceived -= WebSocket_DataReceived;
                 e.DataReceived += WebSocket_DataReceived;
-                Logger.LogInfo($"[KS_REQ] 订阅DataReceived hostname:{hostname} Process:{processName}");
+                Logger.LogInfo($"[KS_REQ] 订阅DataReceived hostname:{hostname} Process:{processName} isTunnelWs={isTunnelWs} isWsUpgrade={isWsUpgrade}");
             }
 
             return Task.CompletedTask;
