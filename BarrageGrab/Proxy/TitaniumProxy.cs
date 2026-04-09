@@ -802,6 +802,10 @@ namespace BarrageGrab.Proxy
             return Task.CompletedTask;
         }
 
+        // 为每个 kwailive 隧道连接维护未处理完的字节 buffer
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, List<byte>> _ksTunnelBuffers
+            = new System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, List<byte>>();
+
         // 处理隧道解密后的原始数据（用于 IP 直连的快手弹幕 WS）
         private void TunnelDecryptedDataReceived(object sender, DataEventArgs e)
         {
@@ -813,31 +817,73 @@ namespace BarrageGrab.Proxy
 
             try
             {
-                var decoder = args.WebSocketDecoderReceive;
-                if (decoder == null) return;
+                var buf = _ksTunnelBuffers.GetOrAdd(args, _ => new List<byte>());
+                buf.AddRange(new ArraySegment<byte>(e.Buffer, e.Offset, e.Count));
 
-                foreach (var frame in decoder.Decode(e.Buffer, e.Offset, e.Count))
+                while (buf.Count >= 2)
                 {
-                    if (frame.OpCode == WebsocketOpCode.Continuation || frame.OpCode == WebsocketOpCode.Ping || frame.OpCode == WebsocketOpCode.Pong)
-                        continue;
+                    var data = buf.ToArray();
+                    int idx = 0;
+                    byte b0 = data[idx++];
+                    byte b1 = data[idx++];
+                    bool masked = (b1 & 0x80) != 0;
+                    int opcode = b0 & 0x0F;
+                    long payloadLen = b1 & 0x7F;
 
-                    var payload = frame.Data.ToArray();
-                    if (payload.Length == 0) continue;
-
-                    Logger.LogInfo($"[KS_TUNNEL] 收到数据帧 hostname:{hostname} OpCode:{frame.OpCode} size:{payload.Length}");
-
-                    base.FireWsEvent(new WsMessageEventArgs()
+                    if (payloadLen == 126)
                     {
-                        ProcessID = processid,
-                        HostName = hostname,
-                        Payload = payload,
-                        ProcessName = base.GetProcessName(processid)
-                    });
+                        if (data.Length < idx + 2) break;
+                        payloadLen = (data[idx] << 8) | data[idx + 1];
+                        idx += 2;
+                    }
+                    else if (payloadLen == 127)
+                    {
+                        if (data.Length < idx + 8) break;
+                        payloadLen = 0;
+                        for (int i = 0; i < 8; i++) payloadLen = (payloadLen << 8) | data[idx + i];
+                        idx += 8;
+                    }
+
+                    int maskLen = masked ? 4 : 0;
+                    long totalLen = idx + maskLen + payloadLen;
+                    if (data.Length < totalLen) break;
+
+                    byte[] payload = new byte[payloadLen];
+                    if (masked)
+                    {
+                        byte[] mask = new byte[] { data[idx], data[idx + 1], data[idx + 2], data[idx + 3] };
+                        idx += 4;
+                        for (long i = 0; i < payloadLen; i++)
+                            payload[i] = (byte)(data[idx + i] ^ mask[i % 4]);
+                    }
+                    else
+                    {
+                        Array.Copy(data, idx, payload, 0, payloadLen);
+                    }
+
+                    buf.RemoveRange(0, (int)totalLen);
+
+                    // opcode: 0=continuation, 1=text, 2=binary, 8=close, 9=ping, 10=pong
+                    if (opcode == 1 || opcode == 2)
+                    {
+                        if (payload.Length > 0)
+                        {
+                            Logger.LogInfo($"[KS_TUNNEL] 收到WS帧 hostname:{hostname} opcode:{opcode} size:{payload.Length}");
+                            base.FireWsEvent(new WsMessageEventArgs()
+                            {
+                                ProcessID = processid,
+                                HostName = hostname,
+                                Payload = payload,
+                                ProcessName = base.GetProcessName(processid)
+                            });
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogInfo($"[KS_TUNNEL] 解析帧出错: {ex.Message}");
+                _ksTunnelBuffers.TryRemove(args, out _);
             }
         }
 
