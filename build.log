@@ -1,23 +1,15 @@
+[信息] 编译开始时间: 周四 2026/04/09 20:35:43.79 
+=============================================== 
+  DouyinBarrageGrab - Windows 编译脚本 
+=============================================== 
  
-=============================================== 
-  DouyinBarrageGrab - Windows 一键编译脚本 
-=============================================== 
-ECHO is off.
 [信息] 项目目录: E:\DouyinBarrageGrab\BarrageGrab 
 [信息] 输出目录: E:\DouyinBarrageGrab\Output 
 [信息] 日志文件: E:\DouyinBarrageGrab\build.log 
-ECHO is off.
-ECHO is off.
+ 
+[检查] .NET Framework 4.8... 
+ 
+ 
 [信息] 编译模式: Release 
-ECHO is off.
-[步骤1] 清理旧构建文件... 
-ECHO is off.
-[步骤2] 查找 MSBuild... 
-[信息] MSBuild: D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe 
-ECHO is off.
-[步骤3] 恢复 NuGet 包... 
-[下载] 正在下载 nuget.exe... 
-OK
-[信息] nuget.exe: E:\DouyinBarrageGrab\nuget.exe 
-路径中具有非法字符。
-[错误] NuGet 包恢复失败！详情见 build.log 
+ 
+ 
