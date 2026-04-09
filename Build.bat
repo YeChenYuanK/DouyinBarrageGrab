@@ -113,12 +113,26 @@ if not defined MSBUILD_PATH (
 )
 if not defined MSBUILD_PATH (
     if exist "C:\Program Files\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\MSBuild.exe" (
-        set "MSBUILD_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\MSBuild.exe"
+        set "MSBUILD_PATH=C:\Program Files\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\MSBuild.exe"
     )
 )
 if not defined MSBUILD_PATH (
     if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe" (
         set "MSBUILD_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
+    )
+)
+
+::: Try VS Build Tools 2022 (独立安装的 Build Tools)
+if not defined MSBUILD_PATH (
+    if exist "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe" (
+        set "MSBUILD_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+    )
+)
+
+::: Try VS Build Tools 2019
+if not defined MSBUILD_PATH (
+    if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe" (
+        set "MSBUILD_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
     )
 )
 
@@ -165,9 +179,24 @@ if defined MSBUILD_PATH (
     echo [Build] Building project...
     "%MSBUILD_PATH%" "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="Any CPU" /t:Rebuild /v:minimal
 ) else (
-    :::: Fallback to dotnet msbuild
-    echo [Warn] .NET Framework MSBuild not found, using dotnet msbuild...
-    dotnet msbuild "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="Any CPU" /t:Rebuild /v:minimal
+    echo [Error] MSBuild not found!
+    echo.
+    echo [Info] This project requires .NET Framework MSBuild to compile.
+    echo [Info] dotnet msbuild cannot build .NET Framework 4.8 projects.
+    echo.
+    echo [Info] Please install one of the following:
+    echo   1. Visual Studio 2022 (Community is free):
+    echo      https://visualstudio.microsoft.com/downloads/
+    echo      - Select "ASP.NET and web development" workload
+    echo.
+    echo   2. Visual Studio Build Tools 2022:
+    echo      https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022
+    echo      - Select ".NET desktop build tools"
+    echo.
+    echo   3. JetBrains Rider (includes MSBuild)
+    echo.
+    pause
+    exit /b 1
 )
 
 if %ERRORLEVEL% neq 0 (
