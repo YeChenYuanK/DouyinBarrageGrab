@@ -7,8 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using BarrageGrab.Kuaishou;
 using BarrageGrab.Modles;
-using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Modles.ProtoEntity;
+using JsonEntity = BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Proxy;
 using BarrageGrab.Proxy.ProxyEventArgs;
 using Newtonsoft.Json;
@@ -316,7 +316,7 @@ namespace BarrageGrab
                     ["SecUid"] = msg.User?.UserId ?? ""
                 }
             };
-            var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.弹幕消息);
+            var pack = JsonEntity.BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), JsonEntity.PackMsgType.弹幕消息);
             this.OnKuaishouProxyBarrage?.Invoke(this, new KsBarragePusher.BarrageEventArgs(pack));
         }
 
@@ -335,7 +335,7 @@ namespace BarrageGrab
                 ["GiftName"] = msg.GiftName ?? "",
                 ["Count"] = msg.Count
             };
-            var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.礼物消息);
+            var pack = JsonEntity.BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), JsonEntity.PackMsgType.礼物消息);
             this.OnKuaishouProxyBarrage?.Invoke(this, new KsBarragePusher.BarrageEventArgs(pack));
         }
 
@@ -352,7 +352,7 @@ namespace BarrageGrab
                 },
                 ["Count"] = msg.Count
             };
-            var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.点赞消息);
+            var pack = JsonEntity.BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), JsonEntity.PackMsgType.点赞消息);
             this.OnKuaishouProxyBarrage?.Invoke(this, new KsBarragePusher.BarrageEventArgs(pack));
         }
 
@@ -368,7 +368,7 @@ namespace BarrageGrab
                     ["SecUid"] = msg.User?.UserId ?? ""
                 }
             };
-            var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.进直播间);
+            var pack = JsonEntity.BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), JsonEntity.PackMsgType.进直播间);
             this.OnKuaishouProxyBarrage?.Invoke(this, new KsBarragePusher.BarrageEventArgs(pack));
         }
 
@@ -384,7 +384,7 @@ namespace BarrageGrab
                     ["SecUid"] = msg.User?.UserId ?? ""
                 }
             };
-            var pack = BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), PackMsgType.关注消息);
+            var pack = JsonEntity.BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), JsonEntity.PackMsgType.关注消息);
             this.OnKuaishouProxyBarrage?.Invoke(this, new KsBarragePusher.BarrageEventArgs(pack));
         }
 
