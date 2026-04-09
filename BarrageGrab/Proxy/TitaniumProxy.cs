@@ -700,7 +700,7 @@ namespace BarrageGrab.Proxy
             e.DecryptSsl = CheckHost(hostname);
 
             // 记录所有 CONNECT 隧道请求，用于排查快手WS域名
-            Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName}");
+            Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName} WildcardTest={hostname.WildcardMatchAny("*wsukwai*")} ContainsTest={hostname.Contains("wsukwai")}");
 
 
             //ws 方式

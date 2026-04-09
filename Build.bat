@@ -115,6 +115,12 @@ echo.
 echo [步骤5] 正在整理输出文件...
 if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 
+:: 清空 Output 目录下的旧文件（保留 logs 子目录）
+echo [信息] 清空旧输出文件...
+if exist "%OUTPUT_DIR%\%EXE_NAME%" del /f /q "%OUTPUT_DIR%\%EXE_NAME%"
+if exist "%OUTPUT_DIR%\%EXE_NAME%.config" del /f /q "%OUTPUT_DIR%\%EXE_NAME%.config"
+if exist "%OUTPUT_DIR%\rootCert.pfx" del /f /q "%OUTPUT_DIR%\rootCert.pfx"
+
 set "BIN_DIR=%PROJECT_DIR%\bin\Release"
 
 if not exist "%BIN_DIR%\%EXE_NAME%" (
