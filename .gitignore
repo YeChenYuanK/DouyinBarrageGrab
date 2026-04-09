@@ -38,6 +38,9 @@ bld/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
+# 不忽略 Output 下的日志（用于提交日志排查问题）
+!Output/logs/
+!Output/logs/**
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
