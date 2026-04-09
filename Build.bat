@@ -133,10 +133,10 @@ if not defined MSBUILD_PATH (
 
 if defined MSBUILD_PATH (
     echo [Info] Using MSBuild: %MSBUILD_PATH%
-    
+
     echo.
     echo [Restore] Restoring NuGet packages...
-    "%MSBUILD_PATH%" "%SOLUTION_DIR%BarrageService.sln" /t:Restore /p:Configuration=%BUILD_CONFIG% /v:minimal
+    "%MSBUILD_PATH%" "%PROJECT_DIR%\WssBarrageService.csproj" /t:Restore /p:Configuration=%BUILD_CONFIG% /v:minimal
     if %ERRORLEVEL% neq 0 (
         echo [Error] NuGet restore failed!
         pause
@@ -144,7 +144,7 @@ if defined MSBUILD_PATH (
     )
     echo [Success] NuGet packages restored.
     echo.
-    
+
     echo [Build] Building project...
     "%MSBUILD_PATH%" "%SOLUTION_DIR%BarrageService.sln" /p:Configuration=%BUILD_CONFIG% /p:Platform="Any CPU" /t:Rebuild /v:minimal
 ) else (
