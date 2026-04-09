@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -65,7 +64,7 @@ namespace BarrageGrab.Kuaishou
 
     /// <summary>
     /// 快手 API 辅助类：负责获取直播间信息、WebSocket 连接参数
-    /// 参考 https://github.com/wbt5/real-url
+    /// 使用 HttpWebRequest（.NET 内置），无需 NuGet System.Net.Http 包
     /// </summary>
     public class KsApiHelper
     {
@@ -84,10 +83,10 @@ namespace BarrageGrab.Kuaishou
 
         // 快手直播伴侣 WebSocket 弹幕服务器 Host（用于 TitaniumProxy 白名单）
         public const string KS_DANMU_WS_HOST = "live-ws-group.kuaishou.com";
-        
+
         // 快手弹幕 WebSocket 路径（新版本使用 /websocket）
         public const string KS_DANMU_WS_PATH = "/websocket";
-        
+
         // 旧版路径（保留作为备用）
         public const string KS_DANMU_WS_PATH_LEGACY = "/api/kuaishou/live/web/im/init";
 
@@ -95,18 +94,14 @@ namespace BarrageGrab.Kuaishou
         public const int KS_HEARTBEAT_INTERVAL_MS = 20000;
 
         // ---- 私有字段 ----
-        private readonly HttpClient _httpClient;
-        private static string _cookie = ""; // 可配置 Cookie 以提升稳定性
+        private static string _cookie = "";
+        private const int TIMEOUT_MS = 15000;
 
         public KsApiHelper()
         {
-            var handler = new HttpClientHandler()
-            {
-                UseCookies = false,
-                AllowAutoRedirect = true,
-                ServerCertificateCustomValidationCallback = (msg, cert, chain, err) => true
-            };
-            _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
+            // 关闭全局证书验证（兼容自签名证书）
+            ServicePointManager.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
         }
 
         /// <summary>
@@ -117,14 +112,10 @@ namespace BarrageGrab.Kuaishou
         /// <summary>
         /// 通过快手主播的短ID/用户ID 获取直播间信息及 WebSocket 连接参数
         /// </summary>
-        /// <param name="userId">快手主播的直播间短链 ID（例如 https://live.kuaishou.com/u/xxxxx 中的 xxxxx）</param>
         public async Task<KsRoomInfo> GetRoomInfoAsync(string userId)
         {
-            // 优先尝试移动端页面（更稳定）
             var info = await TryGetFromMobilePage(userId);
             if (info != null && info.IsLive) return info;
-
-            // 移动端失败时 fallback 到 PC 端
             info = await TryGetFromPcPage(userId);
             return info;
         }
@@ -135,56 +126,40 @@ namespace BarrageGrab.Kuaishou
             try
             {
                 var url = string.Format(KS_MOBILE_LIVE_URL, userId);
-                var html = await GetHtml(url, MOBILE_UA);
+                var html = await GetHtmlAsync(url, MOBILE_UA);
                 if (string.IsNullOrWhiteSpace(html)) return null;
 
                 var info = new KsRoomInfo { RoomId = userId };
 
-                // 尝试多种正则匹配 liveStream JSON 块
                 JObject liveStream = null;
-                
-                // 方法1：标准匹配 liveStream":{...},"obfuseData
-                var liveStreamMatch = Regex.Match(html, @"""liveStream"":(\{.*?\})"",""?obfuseData", RegexOptions.Singleline);
-                if (liveStreamMatch.Success)
+
+                // 方法1：标准匹配
+                var m = Regex.Match(html, @"""liveStream"":(\{.*?\})"",""?obfuseData", RegexOptions.Singleline);
+                if (m.Success)
                 {
-                    var liveStreamJson = liveStreamMatch.Groups[1].Value;
-                    try { liveStream = JObject.Parse(liveStreamJson); }
-                    catch { }
+                    try { liveStream = JObject.Parse(m.Groups[1].Value); } catch { }
                 }
-                
-                // 方法2：匹配 multiResolutionHlsPlayUrls 结构（real-url 项目方式）
+
+                // 方法2：window.__INITIAL_STATE__
                 if (liveStream == null)
                 {
-                    var hlsMatch = Regex.Match(html, @"""multiResolutionHlsPlayUrls"":\s*(\[.*?\])", RegexOptions.Singleline);
-                    if (hlsMatch.Success)
-                    {
-                        Logger.LogInfo("[KS] 使用 HLS 播放地址匹配方式");
-                    }
-                }
-                
-                // 方法3：从 window.__INITIAL_STATE__ 或类似变量中提取
-                if (liveStream == null)
-                {
-                    var stateMatch = Regex.Match(html, @"window\.__INITIAL_STATE__\s*=\s*({.+?})\s*;?\s*</script>", RegexOptions.Singleline);
-                    if (stateMatch.Success)
+                    var sm = Regex.Match(html, @"window\.__INITIAL_STATE__\s*=\s*({.+?})\s*;?\s*</script>", RegexOptions.Singleline);
+                    if (sm.Success)
                     {
                         try
                         {
-                            var state = JObject.Parse(stateMatch.Groups[1].Value);
+                            var state = JObject.Parse(sm.Groups[1].Value);
                             liveStream = state.SelectToken("$.liveStream") as JObject;
                         }
                         catch { }
                     }
                 }
-                
+
                 if (liveStream == null)
                 {
                     Logger.LogWarn("[KS] 移动端页面未找到 liveStream 数据块");
                     if (html.Contains("liveStream"))
                         Logger.LogInfo("[KS] 页面包含 liveStream 关键字，但正则匹配失败");
-                    if (html.Contains("liveStreamId"))
-                        Logger.LogInfo("[KS] 页面包含 liveStreamId 关键字");
-                    // 打印页面前 2000 字符帮助调试
                     Logger.LogInfo("[KS] 移动端页面内容(前2000字符): " + (html.Length > 2000 ? html.Substring(0, 2000) : html));
                     return null;
                 }
@@ -195,9 +170,8 @@ namespace BarrageGrab.Kuaishou
                 info.Title = liveStream["caption"]?.Value<string>() ?? "";
                 info.CoverUrl = liveStream["coverUrls"]?.FirstOrDefault()?.Value<string>() ?? "";
 
-                Logger.LogInfo($"[KS] 移动端页面解析成功: liveStreamId={info.LiveStreamId}, authorId={info.AuthorId}, authorName={info.AuthorName}, isLive={!string.IsNullOrWhiteSpace(info.LiveStreamId)}");
+                Logger.LogInfo($"[KS] 移动端页面解析成功: liveStreamId={info.LiveStreamId}, authorId={info.AuthorId}, authorName={info.AuthorName}");
 
-                // 获取 WebSocket 弹幕连接信息
                 var wsInfo = await GetDanmuWsInfo(info.LiveStreamId, info.AuthorId, html);
                 if (wsInfo != null)
                 {
@@ -225,12 +199,11 @@ namespace BarrageGrab.Kuaishou
             try
             {
                 var url = string.Format(KS_PC_LIVE_URL, userId);
-                var html = await GetHtml(url, PC_UA);
+                var html = await GetHtmlAsync(url, PC_UA);
                 if (string.IsNullOrWhiteSpace(html)) return null;
 
                 var info = new KsRoomInfo { RoomId = userId };
 
-                // 快手 PC 页面中的直播信息嵌在 __INITIAL_STATE__ 或类似变量里
                 var stateMatch = Regex.Match(html,
                     @"window\.__INITIAL_STATE__\s*=\s*(\{.*?\})(?:\s*;?\s*</script>|window\.)",
                     RegexOptions.Singleline);
@@ -242,8 +215,6 @@ namespace BarrageGrab.Kuaishou
                 }
 
                 var state = JObject.Parse(stateMatch.Groups[1].Value);
-
-                // 尝试从 state 里提取直播数据
                 var liveData = state.SelectToken("..liveStream") ?? state.SelectToken("..liveDetail");
                 if (liveData == null)
                 {
@@ -263,7 +234,6 @@ namespace BarrageGrab.Kuaishou
                 {
                     info.Token = wsInfo.Item1;
                     info.WebSocketUrls = wsInfo.Item2;
-                    Logger.LogInfo($"[KS] WS信息(PC): token长度={info.Token?.Length ?? 0}, wsUrls数量={info.WebSocketUrls?.Count ?? 0}");
                 }
 
                 info.IsLive = !string.IsNullOrWhiteSpace(info.LiveStreamId);
@@ -276,30 +246,20 @@ namespace BarrageGrab.Kuaishou
             }
         }
 
-        // -------------------- 获取弹幕 WebSocket 连接信息 --------------------
-        /// <summary>
-        /// 查询弹幕 WebSocket 连接 token 和服务器地址
-        /// </summary>
+        // -------------------- 获取弹幕 WS 连接信息 --------------------
         private async Task<Tuple<string, List<string>>> GetDanmuWsInfo(string liveStreamId, string authorId, string rawHtml = null)
         {
             if (string.IsNullOrWhiteSpace(liveStreamId)) return null;
             try
             {
-                // 快手弹幕直连参数可以从页面 HTML 中的初始 token 提取
-                // 也可以通过 im/init API 动态获取
                 var token = TryExtractTokenFromHtml(rawHtml);
-
-                // 构造默认 WS 地址（即使 API 获取失败也能直连）
                 var wsUrls = BuildDefaultWsUrls(liveStreamId, token);
 
-                // 尝试通过 API 动态刷新 token 和 WS 地址
                 var apiResult = await TryGetWsInfoFromApi(liveStreamId, authorId);
                 if (apiResult != null)
                 {
-                    if (!string.IsNullOrWhiteSpace(apiResult.Item1))
-                        token = apiResult.Item1;
-                    if (apiResult.Item2 != null && apiResult.Item2.Any())
-                        wsUrls = apiResult.Item2;
+                    if (!string.IsNullOrWhiteSpace(apiResult.Item1)) token = apiResult.Item1;
+                    if (apiResult.Item2 != null && apiResult.Item2.Any()) wsUrls = apiResult.Item2;
                 }
 
                 return Tuple.Create(token, wsUrls);
@@ -311,28 +271,16 @@ namespace BarrageGrab.Kuaishou
             }
         }
 
-        /// <summary>
-        /// 尝试从原始 HTML 中提取初始 token
-        /// </summary>
         private string TryExtractTokenFromHtml(string html)
         {
             if (string.IsNullOrWhiteSpace(html)) return "";
-            // 常见特征：\"token\":\"xxxxx\"
             var m = Regex.Match(html, @"""token""\s*:\s*""([^""]{10,})""");
             return m.Success ? m.Groups[1].Value : "";
         }
 
-        /// <summary>
-        /// 构造默认 WS URL（快手标准弹幕接口）
-        /// 新版本使用 /websocket 路径，参数通过 Protobuf 认证帧发送
-        /// </summary>
         private List<string> BuildDefaultWsUrls(string liveStreamId, string token)
         {
-            // 快手弹幕 WebSocket 地址格式（新版本）
-            // 新版使用 /websocket 路径，认证参数通过 Protobuf 帧发送
             var wsUrls = new List<string>();
-            
-            // 尝试多个可能的域名
             var hosts = new[] {
                 "live-ws-group.kuaishou.com",
                 "live-ws.kuaishou.com",
@@ -340,38 +288,24 @@ namespace BarrageGrab.Kuaishou
                 "live-ws-pg-group2.kuaishou.com",
                 "live-ws-pg-group3.kuaishou.com"
             };
-            
             foreach (var host in hosts)
             {
-                // 新版 WebSocket 地址（/websocket 路径，参数在认证帧中）
-                var url1 = $"wss://{host}{KS_DANMU_WS_PATH}";
-                wsUrls.Add(url1);
-                
-                // 备用：带查询参数的旧版格式
-                var url2 = $"wss://{host}{KS_DANMU_WS_PATH_LEGACY}" +
+                wsUrls.Add($"wss://{host}{KS_DANMU_WS_PATH}");
+                wsUrls.Add($"wss://{host}{KS_DANMU_WS_PATH_LEGACY}" +
                            $"?liveStreamId={Uri.EscapeDataString(liveStreamId)}" +
                            $"&token={Uri.EscapeDataString(token ?? "")}" +
-                           $"&did=web_{Guid.NewGuid():N}";
-                wsUrls.Add(url2);
+                           $"&did=web_{Guid.NewGuid():N}");
             }
-            
             return wsUrls;
         }
 
-        /// <summary>
-        /// 通过快手 IM Init API 动态获取 token 和 WS 地址
-        /// </summary>
         private async Task<Tuple<string, List<string>>> TryGetWsInfoFromApi(string liveStreamId, string authorId)
         {
             try
             {
-                // 尝试新版 GraphQL API
                 var graphqlResult = await TryGetWsInfoFromGraphQL(liveStreamId, authorId);
                 if (graphqlResult != null) return graphqlResult;
-                
-                // Fallback 到旧版 API
-                var apiResult = await TryGetWsInfoFromLegacyApi(liveStreamId, authorId);
-                return apiResult;
+                return await TryGetWsInfoFromLegacyApi(liveStreamId, authorId);
             }
             catch (Exception ex)
             {
@@ -379,60 +313,28 @@ namespace BarrageGrab.Kuaishou
                 return null;
             }
         }
-        
-        /// <summary>
-        /// 通过 GraphQL API 获取弹幕连接信息（新版方式）
-        /// </summary>
+
         private async Task<Tuple<string, List<string>>> TryGetWsInfoFromGraphQL(string liveStreamId, string authorId)
         {
             try
             {
                 var apiUrl = "https://live.kuaishou.com/live_graphql";
-                var body = new
+                var bodyObj = new
                 {
                     operationName = "liveDetail",
-                    variables = new
-                    {
-                        principalId = liveStreamId,
-                        page = "detail"
-                    },
+                    variables = new { principalId = liveStreamId, page = "detail" },
                     query = @"query liveDetail($principalId: String!, $page: String!) {
                         liveDetail(principalId: $principalId, page: $page) {
-                            liveStream {
-                                id
-                                liveStreamId
-                                caption
-                                playUrls {
-                                    quality
-                                    url
-                                }
-                            }
-                            streamArgs {
-                                streamId
-                                token
-                            }
-                            chatRoomInfo {
-                                token
-                                webSocketUrls
-                            }
+                            chatRoomInfo { token webSocketUrls }
                         }
                     }"
                 };
+                var bodyJson = JsonConvert.SerializeObject(bodyObj);
 
-                var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
-                {
-                    Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json")
-                };
-                request.Headers.Add("User-Agent", PC_UA);
-                request.Headers.Add("Origin", "https://live.kuaishou.com");
-                request.Headers.Add("Referer", $"https://live.kuaishou.com/u/{authorId}");
-                if (!string.IsNullOrWhiteSpace(_cookie))
-                    request.Headers.Add("Cookie", _cookie);
+                var json = await PostJsonAsync(apiUrl, bodyJson, PC_UA, $"https://live.kuaishou.com/u/{authorId}");
+                if (json == null) return null;
 
-                var response = await _httpClient.SendAsync(request);
-                var json = await response.Content.ReadAsStringAsync();
                 var jobj = JObject.Parse(json);
-
                 var chatRoomInfo = jobj.SelectToken("$.data.liveDetail.chatRoomInfo");
                 if (chatRoomInfo == null)
                 {
@@ -441,9 +343,7 @@ namespace BarrageGrab.Kuaishou
                 }
 
                 var token = chatRoomInfo["token"]?.Value<string>() ?? "";
-                var wsUrls = chatRoomInfo["webSocketUrls"]?.Select(u => u.Value<string>()).ToList()
-                             ?? new List<string>();
-                
+                var wsUrls = chatRoomInfo["webSocketUrls"]?.Select(u => u.Value<string>()).ToList() ?? new List<string>();
                 Logger.LogInfo($"[KS] GraphQL API 获取成功, token长度={token.Length}, wsUrl数量={wsUrls.Count}");
                 return Tuple.Create(token, wsUrls);
             }
@@ -453,36 +353,19 @@ namespace BarrageGrab.Kuaishou
                 return null;
             }
         }
-        
-        /// <summary>
-        /// 通过旧版 API 获取弹幕连接信息
-        /// </summary>
+
         private async Task<Tuple<string, List<string>>> TryGetWsInfoFromLegacyApi(string liveStreamId, string authorId)
         {
             try
             {
-                // 快手网页端弹幕连接初始化接口
                 var apiUrl = "https://live.kuaishou.com/api/kuaishou/live/web/im/init";
-                var body = new
-                {
-                    liveStreamId = liveStreamId,
-                    pageId = GeneratePageId()
-                };
+                var bodyObj = new { liveStreamId = liveStreamId, pageId = GeneratePageId() };
+                var bodyJson = JsonConvert.SerializeObject(bodyObj);
 
-                var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
-                {
-                    Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json")
-                };
-                request.Headers.Add("User-Agent", PC_UA);
-                request.Headers.Add("Origin", "https://live.kuaishou.com");
-                request.Headers.Add("Referer", $"https://live.kuaishou.com/u/{authorId}");
-                if (!string.IsNullOrWhiteSpace(_cookie))
-                    request.Headers.Add("Cookie", _cookie);
+                var json = await PostJsonAsync(apiUrl, bodyJson, PC_UA, $"https://live.kuaishou.com/u/{authorId}");
+                if (json == null) return null;
 
-                var response = await _httpClient.SendAsync(request);
-                var json = await response.Content.ReadAsStringAsync();
                 var jobj = JObject.Parse(json);
-
                 var result = jobj["result"]?.Value<int>() ?? 0;
                 if (result != 1)
                 {
@@ -492,9 +375,7 @@ namespace BarrageGrab.Kuaishou
 
                 var chatRoomInfo = jobj["data"]?["chatRoomInfo"];
                 var token = chatRoomInfo?["token"]?.Value<string>() ?? "";
-                var wsUrls = chatRoomInfo?["webSocketUrls"]?.Select(u => u.Value<string>()).ToList()
-                             ?? new List<string>();
-
+                var wsUrls = chatRoomInfo?["webSocketUrls"]?.Select(u => u.Value<string>()).ToList() ?? new List<string>();
                 Logger.LogInfo($"[KS] 旧版 IM Init API 获取成功, token长度={token.Length}, wsUrl数量={wsUrls.Count}");
                 return Tuple.Create(token, wsUrls);
             }
@@ -505,23 +386,74 @@ namespace BarrageGrab.Kuaishou
             }
         }
 
-        // -------------------- 辅助方法 --------------------
-        private async Task<string> GetHtml(string url, string userAgent)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Add("User-Agent", userAgent);
-            request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-            request.Headers.Add("Accept-Language", "zh-CN,zh;q=0.9");
-            if (!string.IsNullOrWhiteSpace(_cookie))
-                request.Headers.Add("Cookie", _cookie);
+        // -------------------- HTTP 辅助（HttpWebRequest，无需 NuGet HttpClient）--------------------
 
-            var response = await _httpClient.SendAsync(request);
-            if (!response.IsSuccessStatusCode)
+        private async Task<string> GetHtmlAsync(string url, string userAgent)
+        {
+            return await Task.Run(() =>
             {
-                Logger.LogWarn($"[KS] HTTP {(int)response.StatusCode} for {url}");
-                return null;
-            }
-            return await response.Content.ReadAsStringAsync();
+                try
+                {
+                    var req = (HttpWebRequest)WebRequest.Create(url);
+                    req.Method = "GET";
+                    req.UserAgent = userAgent;
+                    req.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+                    req.Headers.Add("Accept-Language", "zh-CN,zh;q=0.9");
+                    req.Timeout = TIMEOUT_MS;
+                    req.AllowAutoRedirect = true;
+                    if (!string.IsNullOrWhiteSpace(_cookie))
+                        req.Headers.Add("Cookie", _cookie);
+
+                    using (var resp = (HttpWebResponse)req.GetResponse())
+                    using (var sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                    {
+                        return sr.ReadToEnd();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarn($"[KS] GET {url} 失败: {ex.Message}");
+                    return null;
+                }
+            });
+        }
+
+        private async Task<string> PostJsonAsync(string url, string jsonBody, string userAgent, string referer)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    var bodyBytes = Encoding.UTF8.GetBytes(jsonBody);
+                    var req = (HttpWebRequest)WebRequest.Create(url);
+                    req.Method = "POST";
+                    req.UserAgent = userAgent;
+                    req.ContentType = "application/json";
+                    req.ContentLength = bodyBytes.Length;
+                    req.Timeout = TIMEOUT_MS;
+                    req.AllowAutoRedirect = true;
+                    req.Headers.Add("Origin", "https://live.kuaishou.com");
+                    req.Referer = referer;
+                    if (!string.IsNullOrWhiteSpace(_cookie))
+                        req.Headers.Add("Cookie", _cookie);
+
+                    using (var stream = req.GetRequestStream())
+                    {
+                        stream.Write(bodyBytes, 0, bodyBytes.Length);
+                    }
+
+                    using (var resp = (HttpWebResponse)req.GetResponse())
+                    using (var sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                    {
+                        return sr.ReadToEnd();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarn($"[KS] POST {url} 失败: {ex.Message}");
+                    return null;
+                }
+            });
         }
 
         private static string GeneratePageId()
@@ -529,6 +461,6 @@ namespace BarrageGrab.Kuaishou
             return Guid.NewGuid().ToString("N").Substring(0, 16);
         }
 
-        public void Dispose() => _httpClient?.Dispose();
+        public void Dispose() { }
     }
 }
