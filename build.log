@@ -16,12 +16,18 @@ ECHO is off.
 [信息] MSBuild: D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe 
 ECHO is off.
 [步骤3] 恢复 NuGet 包... 
+[下载] 正在下载 nuget.exe... 
+OK
 [信息] nuget.exe: E:\DouyinBarrageGrab\nuget.exe 
+NoCache 已弃用，并且已重命名为 NoHttpCache。请转而使用 NoHttpCache。
 MSBuild 自动检测: 使用来自 "D:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\bin" 的 msbuild 版本 "17.14.40.60911"。
 packages.config 中列出的所有包均已安装。
-  CACHE https://api.nuget.org/v3/vulnerabilities/index.json
-  CACHE https://api.nuget.org/v3-vulnerabilities/2026.04.09.00.05.32/vulnerability.base.json
-  CACHE https://api.nuget.org/v3-vulnerabilities/2026.04.09.00.05.32/2026.04.09.06.05.33/vulnerability.update.json
+  GET https://api.nuget.org/v3/vulnerabilities/index.json
+  OK https://api.nuget.org/v3/vulnerabilities/index.json 243ms
+  GET https://api.nuget.org/v3-vulnerabilities/2026.04.09.00.05.32/vulnerability.base.json
+  GET https://api.nuget.org/v3-vulnerabilities/2026.04.09.00.05.32/2026.04.09.06.05.33/vulnerability.update.json
+  OK https://api.nuget.org/v3-vulnerabilities/2026.04.09.00.05.32/vulnerability.base.json 239ms
+  OK https://api.nuget.org/v3-vulnerabilities/2026.04.09.00.05.32/2026.04.09.06.05.33/vulnerability.update.json 409ms
 警告: NU1902: Package 'BouncyCastle.Cryptography' 2.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-v435-xc8x-wvr9
 警告: NU1902: Package 'BouncyCastle.Cryptography' 2.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-m44j-cfrm-g8qc
 警告: NU1902: Package 'BouncyCastle.Cryptography' 2.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-8xfc-gm6g-vgpv
