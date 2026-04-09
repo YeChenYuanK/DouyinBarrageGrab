@@ -144,6 +144,11 @@ if exist "%BIN_DIR%\%EXE_NAME%.config" copy /y "%BIN_DIR%\%EXE_NAME%.config" "%O
 if exist "%BIN_DIR%\rootCert.pfx" copy /y "%BIN_DIR%\rootCert.pfx" "%OUTPUT_DIR%\" >nul
 if not exist "%OUTPUT_DIR%\logs" mkdir "%OUTPUT_DIR%\logs"
 
+:: 复制 NuGet 依赖 dll（如 System.Net.Http）到 Output 目录
+for %%f in ("%BIN_DIR%\*.dll") do (
+    copy /y "%%f" "%OUTPUT_DIR%\" >nul 2>&1
+)
+
 echo.
 echo ===============================================
 echo   编译成功！
