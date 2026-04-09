@@ -315,31 +315,46 @@ namespace BarrageGrab
 
         private static void PatchKuaishouIndexJs(string appDir)
         {
-            var indexJsPath = Path.Combine(appDir, "index.js");
-            if (!File.Exists(indexJsPath))
+            // 快手 asar 结构: .vite/build/main.js 是主进程入口
+            // 按优先级依次查找
+            var candidates = new[]
             {
-                // 递归查找 index.js（可能在子目录）
-                var found = Directory.GetFiles(appDir, "index.js", SearchOption.TopDirectoryOnly);
-                if (found.Length == 0)
-                {
-                    Logger.LogWarn($"未找到 index.js，路径: {appDir}");
-                    return;
-                }
-                indexJsPath = found[0];
+                Path.Combine(appDir, ".vite", "build", "main.js"),
+                Path.Combine(appDir, "index.js"),
+                Path.Combine(appDir, "main.js"),
+            };
+
+            string targetPath = null;
+            foreach (var c in candidates)
+            {
+                if (File.Exists(c)) { targetPath = c; break; }
             }
 
-            Logger.LogInfo($"正在配置 {indexJsPath}");
-            var content = File.ReadAllText(indexJsPath, Encoding.UTF8);
-            CheckBackFile(indexJsPath);
+            // 找不到时递归搜索 main.js
+            if (targetPath == null)
+            {
+                var found = Directory.GetFiles(appDir, "main.js", SearchOption.AllDirectories);
+                if (found.Length > 0) targetPath = found[0];
+            }
+
+            if (targetPath == null)
+            {
+                Logger.LogWarn($"未找到快手主进程入口 js，路径: {appDir}");
+                return;
+            }
+
+            Logger.LogInfo($"正在配置 {targetPath}");
+            var content = File.ReadAllText(targetPath, Encoding.UTF8);
+            CheckBackFile(targetPath);
             var newContent = SetIndexJsContent(content);
             if (newContent != content && !newContent.IsNullOrWhiteSpace())
             {
-                File.WriteAllText(indexJsPath, newContent, Encoding.UTF8);
-                Logger.LogInfo("快手直播伴侣 index.js 代理参数已注入");
+                File.WriteAllText(targetPath, newContent, Encoding.UTF8);
+                Logger.LogInfo("快手直播伴侣主进程 js 代理参数已注入");
             }
             else
             {
-                Logger.LogInfo("快手直播伴侣 index.js 代理参数已是最新，无需修改");
+                Logger.LogInfo("快手直播伴侣主进程 js 代理参数已是最新，无需修改");
             }
         }
 
@@ -438,15 +453,20 @@ namespace BarrageGrab
                 var pickleSizeBytes = reader.ReadInt32(); // = 4
                 var headerSize = reader.ReadInt32();
                 var headerObjSize = reader.ReadInt32();
-                reader.ReadInt32(); // padding
+                reader.ReadInt32(); // padding（第4个Int32，字节12-15）
 
-                // 读取 JSON 头
+                // 读取 JSON 头（从字节16开始，长度 headerObjSize）
                 var headerJson = Encoding.UTF8.GetString(reader.ReadBytes(headerObjSize));
                 var header = Newtonsoft.Json.Linq.JObject.Parse(headerJson);
 
-                // 文件内容起始偏移 = 8（两个Int32）+ 8（两个Int32）+ headerSize对齐后的大小
-                // 实际上 asar 头部总共占 8 + headerSize 字节（含JSON）
-                long contentOffset = 8 + headerSize;
+                // asar 头部实际布局：
+                //   字节 0-3  : pickle outer size (=4)
+                //   字节 4-7  : headerSize（pickle inner payload，含后续所有头部字段）
+                //   字节 8-11 : headerObjSize（JSON 字符串长度）
+                //   字节 12-15: padding（第4个 Int32）
+                //   字节 16 ~ 16+headerObjSize-1 : JSON 内容
+                // contentOffset = 16 + headerObjSize（按 4 字节对齐到 headerSize+8）
+                long contentOffset = 16 + headerObjSize;
 
                 // 递归提取
                 if (!Directory.Exists(outputDir)) Directory.CreateDirectory(outputDir);
