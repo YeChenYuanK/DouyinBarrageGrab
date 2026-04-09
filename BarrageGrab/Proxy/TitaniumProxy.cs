@@ -372,6 +372,7 @@ namespace BarrageGrab.Proxy
             //ws 方式 - 抖音
             if (isWs && webcastBarrageReg.IsMatch(uri))
             {
+                e.DataReceived -= WebSocket_DataReceived;
                 e.DataReceived += WebSocket_DataReceived;
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
@@ -381,6 +382,7 @@ namespace BarrageGrab.Proxy
             //ws 方式 - 快手（扩展检测）
             if (isWs && IsKuaishouBarrageRequest(hostname, uri))
             {
+                e.DataReceived -= WebSocket_DataReceived;
                 e.DataReceived += WebSocket_DataReceived;
                 
                 // 提取更多信息用于调试
@@ -697,20 +699,13 @@ namespace BarrageGrab.Proxy
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
 
-            e.DecryptSsl = CheckHost(hostname);
+            // 只对已知直播客户端进程做 SSL 解密，其他进程（游戏App、浏览器等）直接透传
+            var knownLiveProcesses = new[] { "直播伴侣", "kwailive", "webcast_mate", "douyin" };
+            bool isLiveProcess = knownLiveProcesses.Any(p => processName != null && processName.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0);
 
-            // 记录所有 CONNECT 隧道请求，用于排查快手WS域名
-            Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName} WildcardTest={hostname.WildcardMatchAny("*wsukwai*")} ContainsTest={hostname.Contains("wsukwai")}");
+            e.DecryptSsl = isLiveProcess && CheckHost(hostname);
 
-
-            //ws 方式
-            //if (
-            //    e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
-            //    webcastBarrageReg.IsMatch(url)
-            //   )
-            //{
-            //    e.HttpClient.Request.RequestUri = new Uri("wss:////localhost:8828");
-            //}
+            Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName}");
         }
 
         //检测域名白名单
@@ -725,16 +720,14 @@ namespace BarrageGrab.Proxy
                 "*-webcast-platform.bytetos.com", //新的脚本地址
                 "*webcast*", //所有带webcast的域名
 
-                // ---- 快手直播域名 ----
-                KS_LIVE_HOST,         // 快手网页直播主页
-                KS_MOBILE_HOST,      // 快手移动端
-                KS_WS_HOST,          // 快手弹幕WebSocket服务器
-                KS_API_HOST,         // 快手API接口
-                "*kuaishou*",        // 所有带 kuaishou 的域名
-                "*gifshow*",         // gifshow 快手旧域名
-                "*wsukwai*",         // 快手直播伴侣弹幕WS域名
-                "*kwimgs*",          // 快手图片/资源CDN
-                "*yximgs*",          // 快手图片/资源CDN(旧)
+                // ---- 快手直播域名（精确匹配，避免宽泛通配符导致 Titanium 崩溃）----
+                "live-ws-group.kuaishou.com",
+                "live-ws.kuaishou.com",
+                "live-ws-pg-group1.kuaishou.com",
+                "live-ws-pg-group2.kuaishou.com",
+                "live-ws-pg-group3.kuaishou.com",
+                "live-ws-pg-group4.kuaishou.com",
+                "live-ws-pg-group5.kuaishou.com",
             };
 
             if (decryptSsls.Contains(hostname))
