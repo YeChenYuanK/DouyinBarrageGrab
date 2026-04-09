@@ -115,34 +115,57 @@ namespace BarrageGrab
         //ws数据处理
         private void Proxy_OnWebSocketData(object sender, WsMessageEventArgs e)
         {
-            if (!appsetting.ProcessFilter.Contains(e.ProcessName)) return;
+            if (!appsetting.ProcessFilter.Contains(e.ProcessName))
+            {
+                Logger.LogInfo($"[WS] 进程被过滤: {e.ProcessName}，不在白名单内");
+                return;
+            }
             var buff = e.Payload;
-            if (buff.Length == 0) return;
+            if (buff.Length == 0)
+            {
+                Logger.LogInfo($"[WS] 空数据包，跳过");
+                return;
+            }
+
+            Logger.LogInfo($"[WS] 收到数据 Host={e.HostName} Process={e.ProcessName} Len={buff.Length} NeedDecompress={e.NeedDecompress}");
 
             // 判断是否为快手弹幕请求
             if (e.HostName != null && (e.HostName.Contains("kuaishou") || e.HostName.Contains("ksapis")))
             {
+                Logger.LogInfo($"[WS] 识别为快手域名，转交ProcessKuaishouWsData");
                 ProcessKuaishouWsData(e);
                 return;
             }
 
             //如果需要Gzip解压缩，但是开头字节不符合Gzip特征字节 则不处理
-            if (e.NeedDecompress && buff[0] != 0x08) return;
+            if (e.NeedDecompress && buff[0] != 0x08)
+            {
+                Logger.LogInfo($"[WS] Gzip数据但字节头不对({buff[0]:X2})，跳过");
+                return;
+            }
 
             try
             {
                 var enty = Serializer.Deserialize<WssResponse>(new ReadOnlyMemory<byte>(buff));
-                if (enty == null) return;
+                if (enty == null)
+                {
+                    Logger.LogInfo($"[WS] WssResponse解析为null，跳过");
+                    return;
+                }
 
                 //检测包格式
-                if (!enty.Headers.Any(a => a.Key == "compress_type" && a.Value == "gzip")) return;
+                if (!enty.Headers.Any(a => a.Key == "compress_type" && a.Value == "gzip"))
+                {
+                    Logger.LogInfo($"[WS] 无compress_type=gzip头，跳过");
+                    return;
+                }
 
                 byte[] allBuff;
                 //解压gzip
                 allBuff = e.NeedDecompress ? Decompress(enty.Payload) : enty.Payload;
                 var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(allBuff));
 
-
+                Logger.LogInfo($"[WS] 抖音解析成功，消息数={response.Messages.Count}");
                 response.Messages.ForEach(f => DoMessage(f, e.ProcessName));
             }
             catch (Exception ex)
@@ -156,6 +179,8 @@ namespace BarrageGrab
         {
             var buff = e.Payload;
             if (buff.Length == 0) return;
+
+            Logger.LogInfo($"[快手] ProcessKuaishouWsData 收到数据 Len={buff.Length}");
 
             try
             {
@@ -180,10 +205,20 @@ namespace BarrageGrab
         private void ProcessKuaishouProtobuf(byte[] buff, string processName)
         {
             var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(new ReadOnlyMemory<byte>(buff));
-            if (envelope?.Payload == null) return;
+            if (envelope?.Payload == null)
+            {
+                Logger.LogInfo($"[快手] KsSocketMessage 解析失败或Payload为空");
+                return;
+            }
 
             var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(envelope.Payload));
-            if (ksPayload?.SendMessages == null) return;
+            if (ksPayload?.SendMessages == null)
+            {
+                Logger.LogInfo($"[快手] KsPayload.SendMessages 为空");
+                return;
+            }
+
+            Logger.LogInfo($"[快手] Protobuf解析成功，消息数={ksPayload.SendMessages.Count}");
 
             foreach (var sendMsg in ksPayload.SendMessages)
             {
@@ -306,6 +341,7 @@ namespace BarrageGrab
         // 触发快手弹幕事件（转发给游戏）
         private void FireKuaishouChat(Modles.ProtoEntity.KsChatMessage msg)
         {
+            Logger.LogInfo($"[快手] 触发弹幕事件: {msg.User?.Nickname}: {msg.Content}");
             var data = new JObject
             {
                 ["Content"] = msg.Content ?? "",
