@@ -18,6 +18,20 @@ echo   DouyinBarrageGrab - Windows 编译脚本
 echo ===============================================
 echo.
 
+:: ========== 步骤0: 关闭正在运行的 exe ==========
+echo [步骤0] 检查并关闭正在运行的 %EXE_NAME%...
+echo [步骤0] 检查并关闭正在运行的 %EXE_NAME%... >> "%LOG_FILE%"
+tasklist /FI "IMAGENAME eq %EXE_NAME%" 2>nul | findstr /i "%EXE_NAME%" >nul
+if %ERRORLEVEL% equ 0 (
+    taskkill /F /IM "%EXE_NAME%" >nul 2>&1
+    echo [信息] 已关闭 %EXE_NAME%
+    echo [信息] 已关闭 %EXE_NAME% >> "%LOG_FILE%"
+    timeout /t 2 /nobreak >nul
+) else (
+    echo [信息] %EXE_NAME% 未在运行，跳过
+    echo [信息] %EXE_NAME% 未在运行，跳过 >> "%LOG_FILE%"
+)
+
 :: ========== 步骤1: 查找 MSBuild ==========
 echo [步骤1] 正在查找 MSBuild...
 echo [步骤1] 正在查找 MSBuild... >> "%LOG_FILE%"
@@ -56,7 +70,6 @@ if not defined MSBUILD_PATH (
 if not defined MSBUILD_PATH (
     echo [错误] 找不到 MSBuild.exe，请确保安装了 VS Build Tools 并勾选 .NET 桌面开发
     echo [错误] 找不到 MSBuild.exe >> "%LOG_FILE%"
-    pause
     exit /b 1
 )
 echo [信息] MSBuild: %MSBUILD_PATH%
@@ -76,7 +89,6 @@ if not exist "%NUGET_EXE%" (
 if not exist "%NUGET_EXE%" (
     echo [错误] nuget.exe 下载失败，请手动下载放到: %NUGET_EXE%
     echo [错误] nuget.exe 下载失败 >> "%LOG_FILE%"
-    pause
     exit /b 1
 )
 echo [信息] nuget.exe 就绪
@@ -91,7 +103,6 @@ echo [步骤3] 正在恢复项目依赖... >> "%LOG_FILE%"
 if %ERRORLEVEL% neq 0 (
     echo [错误] NuGet 恢复失败，请查看 build.log
     echo [错误] NuGet 恢复失败 >> "%LOG_FILE%"
-    pause
     exit /b 1
 )
 echo [成功] NuGet 恢复完成
@@ -106,7 +117,6 @@ echo [步骤4] 正在编译项目 (Release)... >> "%LOG_FILE%"
 if %ERRORLEVEL% neq 0 (
     echo [错误] 编译失败，请查看 build.log
     echo [错误] 编译失败 >> "%LOG_FILE%"
-    pause
     exit /b 1
 )
 
@@ -126,7 +136,6 @@ set "BIN_DIR=%PROJECT_DIR%\bin\Release"
 if not exist "%BIN_DIR%\%EXE_NAME%" (
     echo [错误] 找不到编译输出: %BIN_DIR%\%EXE_NAME%
     echo [错误] 找不到编译输出: %BIN_DIR%\%EXE_NAME% >> "%LOG_FILE%"
-    pause
     exit /b 1
 )
 
@@ -141,5 +150,13 @@ echo   编译成功！
 echo   输出目录: %OUTPUT_DIR%
 echo ===============================================
 echo [信息] 编译成功完成 >> "%LOG_FILE%"
-pause
+
+:: ========== 步骤6: 启动 exe ==========
+echo.
+echo [步骤6] 启动 %EXE_NAME%...
+echo [步骤6] 启动 %EXE_NAME%... >> "%LOG_FILE%"
+powershell -Command "Start-Process '%OUTPUT_DIR%\%EXE_NAME%'"
+echo [信息] %EXE_NAME% 已启动
+echo [信息] %EXE_NAME% 已启动 >> "%LOG_FILE%"
+
 exit /b 0
