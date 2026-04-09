@@ -292,6 +292,45 @@ namespace BarrageGrab.Proxy
             var processName = base.GetProcessName(processid);
             var contentType = e.HttpClient.Response.ContentType ?? "";
 
+            // ===== 快手进程 DEBUG 日志（找 roomId/liveStreamId 用，稳定后可删除）=====
+            try
+            {
+                bool isKwaiProcess = processName != null && (
+                    processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    processName.IndexOf("kscloudtv", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    processName.IndexOf("kuaishou", StringComparison.OrdinalIgnoreCase) >= 0
+                );
+                if (isKwaiProcess)
+                {
+                    var statusCode = e.HttpClient.Response.StatusCode;
+                    var ct = contentType?.Split(';')[0]?.Trim() ?? "";
+                    // 只记录 JSON/文本响应，跳过图片/视频等二进制
+                    bool isTextLike = ct.Contains("json") || ct.Contains("text") || ct.Contains("javascript") || ct.Contains("xml");
+                    if (isTextLike)
+                    {
+                        try
+                        {
+                            var body = await e.GetResponseBodyAsString();
+                            var snippet = body?.Length > 800 ? body.Substring(0, 800) + "..." : body;
+                            Logger.LogInfo($"[KS_DEBUG] Process={processName} Status={statusCode} URL={uri}\nBody={snippet}");
+                        }
+                        catch
+                        {
+                            Logger.LogInfo($"[KS_DEBUG] Process={processName} Status={statusCode} URL={uri} (body read failed)");
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogInfo($"[KS_DEBUG] Process={processName} Status={statusCode} ContentType={ct} URL={uri}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_DEBUG] 日志异常: {ex.Message}");
+            }
+            // ===== END DEBUG =====
+
             //处理直播伴侣开播更新
             await HookSelfLive(e);
 
