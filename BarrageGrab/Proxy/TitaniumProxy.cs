@@ -450,25 +450,21 @@ namespace BarrageGrab.Proxy
                 Logger.LogInfo($"[抖音] 订阅到新的弹幕流地址，roomid:{roomid}");
             }
 
-            //ws 方式 - 快手
-            // kwailive 进程可能用 IP 直连，TunnelType 也可能是 Https 而非 Websocket
-            // 因此只要是 kwailive 进程且 DecryptSsl=True 的连接，都尝试订阅 DataReceived
+            //ws 方式 - 快手（仅当 TunnelType 是 Websocket 时才订阅，避免对普通HTTP响应误订阅）
             bool isKuaishouBarrage = IsKuaishouBarrageRequest(hostname, uri);
-            bool isKwaiProcess = processName != null && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
-            bool shouldHookKs = isKuaishouBarrage || isKwaiProcess;
-            if (shouldHookKs)
+            if (isWs && isKuaishouBarrage)
             {
                 e.DataReceived -= WebSocket_DataReceived;
                 e.DataReceived += WebSocket_DataReceived;
                 
-                var urix2 = new Uri(uri.Contains("://") ? uri : $"https://{hostname}{uri}");
+                var urix2 = new Uri(uri.Contains("://") ? uri : $"wss://{hostname}{uri}");
                 var liveStreamId2 = urix2.GetQueryParam("liveStreamId") ?? "N/A";
                 var token2 = urix2.GetQueryParam("token");
                 var tokenPreview2 = !string.IsNullOrEmpty(token2) && token2.Length > 10 
                     ? token2.Substring(0, 10) + "..." 
                     : (token2 ?? "N/A");
                 
-                Logger.LogInfo($"[快手] 订阅DataReceived hostname:{hostname} isWs={isWs} TunnelType={e.HttpClient.ConnectRequest?.TunnelType} liveStreamId:{liveStreamId2} token:{tokenPreview2}");
+                Logger.LogInfo($"[快手] 订阅DataReceived hostname:{hostname} liveStreamId:{liveStreamId2} token:{tokenPreview2}");
             }
 
             //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)
