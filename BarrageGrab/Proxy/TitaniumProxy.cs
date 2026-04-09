@@ -749,7 +749,9 @@ namespace BarrageGrab.Proxy
             var knownLiveProcesses = new[] { "直播伴侣", "kwailive", "webcast_mate", "douyin" };
             bool isLiveProcess = knownLiveProcesses.Any(p => processName != null && processName.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0);
 
-            e.DecryptSsl = isLiveProcess && CheckHost(hostname);
+            // DEBUG：kwailive 进程解密所有 HTTPS（包括 IP 直连），方便找到开播 API（稳定后改回 CheckHost）
+            bool isKwaiDebug = processName != null && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
+            e.DecryptSsl = isKwaiDebug ? true : (isLiveProcess && CheckHost(hostname));
 
             Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName}");
         }
