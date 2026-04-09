@@ -72,27 +72,9 @@ if exist "%OUTPUT_DIR%\%EXE_NAME%" (
 echo.
 
 ::: Restore NuGet packages
-echo [Step 2] Restoring NuGet packages...
-if exist "%SOLUTION_DIR%BarrageService.sln" (
-    where dotnet >nul 2>&1
-    if %ERRORLEVEL% equ 0 (
-        echo [Info] Using dotnet restore...
-        dotnet restore "%SOLUTION_DIR%BarrageService.sln"
-        if %ERRORLEVEL% neq 0 (
-            echo [Warn] dotnet restore failed, trying nuget...
-            nuget restore "%SOLUTION_DIR%BarrageService.sln"
-        )
-    ) else (
-        where nuget >nul 2>&1
-        if %ERRORLEVEL% equ 0 (
-            echo [Info] Using nuget restore...
-            nuget restore "%SOLUTION_DIR%BarrageService.sln"
-        ) else (
-            echo [Warn] NuGet not found, skipping restore
-        )
-    )
-
-) else (
+echo [Step 2] MSBuild will automatically restore NuGet packages during build...
+echo.
+if not exist "%SOLUTION_DIR%BarrageService.sln" (
     echo [Error] BarrageService.sln not found!
     pause
     exit /b 1
