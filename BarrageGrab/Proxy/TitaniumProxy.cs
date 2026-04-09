@@ -756,7 +756,17 @@ namespace BarrageGrab.Proxy
             bool isKwaiDebug = processName != null && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
             e.DecryptSsl = isKwaiDebug ? true : (isLiveProcess && CheckHost(hostname));
 
-            Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName}");
+            // 对 kwailive 进程的所有隧道连接都订阅 DataReceived（包括IP直连的弹幕WS）
+            if (isKwaiDebug)
+            {
+                e.DataReceived -= WebSocket_DataReceived;
+                e.DataReceived += WebSocket_DataReceived;
+                Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName} [已订阅DataReceived]");
+            }
+            else
+            {
+                Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName}");
+            }
         }
 
         //检测域名白名单
