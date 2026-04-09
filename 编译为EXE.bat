@@ -72,22 +72,22 @@ set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE%" set "VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
 
 if exist "%VSWHERE%" (
-    for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) do (
+    for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
         set "MSBUILD_PATH=%%i"
     )
 )
 
-:: 备用：手动检测常见路径
+:: 备用：手动检测常见路径（含 BuildTools）
 if not defined MSBUILD_PATH (
     for %%p in (
+        "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
         "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
         "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
         "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
-        "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+        "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
         "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe"
         "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\MSBuild.exe"
         "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
-        "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
     ) do (
         if not defined MSBUILD_PATH (
             if exist %%p set "MSBUILD_PATH=%%~p"
@@ -106,9 +106,14 @@ if not defined MSBUILD_PATH (
 
 if not defined MSBUILD_PATH (
     echo [错误] 未找到 MSBuild！
-    echo [提示] 请安装以下任意一项:
-    echo   - Visual Studio 2022/2019 (含"使用 C++ 的桌面开发"或".NET 桌面开发"工作负荷)
+    echo.
+    echo [诊断] 检查以下路径是否存在 MSBuild.exe:
+    echo   C:\Program Files\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\
+    echo   C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\
+    echo.
+    echo [提示] 请安装以下任意一项（安装时勾选".NET 桌面开发"工作负荷）:
     echo   - VS Build Tools 2022: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022
+    echo   - Visual Studio 2022 Community: https://visualstudio.microsoft.com/downloads/
     pause
     exit /b 1
 )
