@@ -448,25 +448,23 @@ namespace BarrageGrab
             using (var fs = new FileStream(asarPath, FileMode.Open, FileAccess.Read))
             using (var reader = new BinaryReader(fs))
             {
-                // 读取头部：前16字节是 pickle 封装
-                // 格式: [4: payload_size][4: header_size][4: header_obj_size][4: padding]
-                var pickleSizeBytes = reader.ReadInt32(); // = 4
+                // asar 头部 Pickle 格式（Chromium Pickle 双层封装）：
+                //   字节 0-3  : outer pickle size = 4
+                //   字节 4-7  : headerSize（inner pickle 总字节数，含后续字段）
+                //   字节 8-11 : inner pickle payload size（= headerSize - 4）
+                //   字节12-15 : jsonLength（真实 JSON 字节数，由 Pickle 的 WriteString 写入）
+                //   字节16 ~  : JSON 内容（共 jsonLength 字节）
+                // 文件内容区起始 = 8 + headerSize（外层2个int32 + headerSize字节）
+                reader.ReadInt32(); // outer pickle size (= 4)
                 var headerSize = reader.ReadInt32();
-                var headerObjSize = reader.ReadInt32();
-                reader.ReadInt32(); // padding（第4个Int32，字节12-15）
+                reader.ReadInt32(); // inner pickle payload size
+                var jsonLength = reader.ReadInt32(); // 真实 JSON 字节数
 
-                // 读取 JSON 头（从字节16开始，长度 headerObjSize）
-                var headerJson = Encoding.UTF8.GetString(reader.ReadBytes(headerObjSize));
+                // 读取 JSON 头
+                var headerJson = Encoding.UTF8.GetString(reader.ReadBytes(jsonLength));
                 var header = Newtonsoft.Json.Linq.JObject.Parse(headerJson);
 
-                // asar 头部实际布局：
-                //   字节 0-3  : pickle outer size (=4)
-                //   字节 4-7  : headerSize（pickle inner payload，含后续所有头部字段）
-                //   字节 8-11 : headerObjSize（JSON 字符串长度）
-                //   字节 12-15: padding（第4个 Int32）
-                //   字节 16 ~ 16+headerObjSize-1 : JSON 内容
-                // contentOffset = 16 + headerObjSize（按 4 字节对齐到 headerSize+8）
-                long contentOffset = 16 + headerObjSize;
+                long contentOffset = 8 + headerSize;
 
                 // 递归提取
                 if (!Directory.Exists(outputDir)) Directory.CreateDirectory(outputDir);
