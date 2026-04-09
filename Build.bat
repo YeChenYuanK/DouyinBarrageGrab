@@ -141,8 +141,8 @@ if defined MSBUILD_PATH (
     set "NUGET_EXE=%SCRIPT_DIR%nuget.exe"
     if not exist "%NUGET_EXE%" (
         echo [Download] Downloading nuget.exe...
-        powershell -Command "Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile '%NUGET_EXE%'"
-        if not exist "%NUGET_EXE%" (
+        powershell -Command "& {Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile '%NUGET_EXE%'; if ((Get-Item '%NUGET_EXE%').Length -gt 100KB) { exit 0 } else { exit 1 }}"
+        if %ERRORLEVEL% neq 0 (
             echo [Error] Failed to download nuget.exe!
             pause
             exit /b 1
