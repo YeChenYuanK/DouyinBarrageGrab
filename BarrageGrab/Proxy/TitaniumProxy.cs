@@ -689,8 +689,13 @@ namespace BarrageGrab.Proxy
         {
             string url = e.HttpClient.Request.RequestUri.ToString();
             string hostname = e.HttpClient.Request.RequestUri.Host;
+            var processid = e.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processid);
 
             e.DecryptSsl = CheckHost(hostname);
+
+            // 记录所有 CONNECT 隧道请求，用于排查快手WS域名
+            Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName}");
 
 
             //ws 方式
