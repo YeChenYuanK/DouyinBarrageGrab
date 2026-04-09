@@ -127,13 +127,7 @@ if not exist "%BIN_DIR%\%EXE_NAME%" (
 copy /y "%BIN_DIR%\%EXE_NAME%" "%OUTPUT_DIR%\" >nul
 if exist "%BIN_DIR%\%EXE_NAME%.config" copy /y "%BIN_DIR%\%EXE_NAME%.config" "%OUTPUT_DIR%\" >nul
 if exist "%BIN_DIR%\rootCert.pfx" copy /y "%BIN_DIR%\rootCert.pfx" "%OUTPUT_DIR%\" >nul
-if exist "%PROJECT_DIR%\AppConfig.json" copy /y "%PROJECT_DIR%\AppConfig.json" "%OUTPUT_DIR%\" >nul
 if not exist "%OUTPUT_DIR%\logs" mkdir "%OUTPUT_DIR%\logs"
-
-if exist "%PROJECT_DIR%\Scripts" (
-    if not exist "%OUTPUT_DIR%\Scripts" mkdir "%OUTPUT_DIR%\Scripts"
-    xcopy /y /e /q "%PROJECT_DIR%\Scripts" "%OUTPUT_DIR%\Scripts" >nul 2>&1
-)
 
 echo.
 echo ===============================================
