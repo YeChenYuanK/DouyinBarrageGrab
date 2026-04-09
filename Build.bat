@@ -103,10 +103,44 @@ echo.
 echo [Step 3] Building project (Configuration=%BUILD_CONFIG%)...
 echo.
 
-:::: Try Rider MSBuild first
-if exist "C:\Program Files\JetBrains\JetBrains Rider 2024.1\tools\MSBuild\Current\Bin\MSBuild.exe" (
-    set "MSBUILD_PATH=C:\Program Files\JetBrains\JetBrains Rider 2024.1\tools\MSBuild\Current\Bin\MSBuild.exe"
+::: Find MSBuild
+set "MSBUILD_PATH="
+
+::: Try VS 2022 MSBuild
+if not defined MSBUILD_PATH (
+    if exist "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" (
+        set "MSBUILD_PATH=C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+    )
 )
+if not defined MSBUILD_PATH (
+    if exist "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe" (
+        set "MSBUILD_PATH=C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
+    )
+)
+if not defined MSBUILD_PATH (
+    if exist "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe" (
+        set "MSBUILD_PATH=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
+    )
+)
+
+::: Try VS 2019 MSBuild
+if not defined MSBUILD_PATH (
+    if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe" (
+        set "MSBUILD_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe"
+    )
+)
+if not defined MSBUILD_PATH (
+    if exist "C:\Program Files\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\MSBuild.exe" (
+        set "MSBUILD_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\MSBuild.exe"
+    )
+)
+if not defined MSBUILD_PATH (
+    if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe" (
+        set "MSBUILD_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
+    )
+)
+
+::: Try Rider MSBuild (dynamic version detection)
 if not defined MSBUILD_PATH (
     for /d %%d in ("C:\Program Files\JetBrains\JetBrains Rider*") do (
         if exist "%%d\tools\MSBuild\Current\Bin\MSBuild.exe" (
