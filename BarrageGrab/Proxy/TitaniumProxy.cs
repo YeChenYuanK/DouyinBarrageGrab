@@ -53,11 +53,11 @@ namespace BarrageGrab.Proxy
         private readonly Regex webcastBarrageReg = new Regex(@"webcast\d+-ws-web-\w+\.(douyin|amemv)\.com");
 
         // 快手弹幕 WebSocket 地址正则（用于识别和拦截快手弹幕流）
-        private readonly Regex ksBarrageReg = new Regex(@"(live-ws.*\.kuaishou\.com|.*kuaishou.*ws.*|/websocket)");
+        private readonly Regex ksBarrageReg = new Regex(@"(live-ws.*\.kuaishou\.com|.*kuaishou.*ws.*|.*wsukwai\.com.*|/websocket)");
 
         // 快手直播弹幕域名列表（用于识别快手弹幕请求）
         private readonly string[] ksBarrageHosts = new[] {
-            // WebSocket 弹幕服务器
+            // WebSocket 弹幕服务器（kuaishou.com）
             "live-ws-group.kuaishou.com",
             "live-ws.kuaishou.com",
             "live-ws-pg-group1.kuaishou.com",
@@ -65,6 +65,10 @@ namespace BarrageGrab.Proxy
             "live-ws-pg-group3.kuaishou.com",
             "live-ws-pg-group4.kuaishou.com",
             "live-ws-pg-group5.kuaishou.com",
+            // WebSocket 弹幕服务器（wsukwai.com，快手直播伴侣实际使用）
+            "wsukwai.com",
+            "p3-live.wsukwai.com",
+            "live.wsukwai.com",
             // API 和页面
             "live.kuaishou.com",
             "m.gifshow.com",
@@ -72,7 +76,8 @@ namespace BarrageGrab.Proxy
             // CDN 和资源
             "cdn.gifshow.com",
             "tx2.a.kwimgs.com",
-            "ali.a.kwimgs.com"
+            "ali.a.kwimgs.com",
+            "static.yximgs.com",
         };
 
         public override string HttpUpstreamProxy { get { return proxyServer?.UpStreamHttpProxy?.ToString() ?? ""; } }
@@ -727,6 +732,9 @@ namespace BarrageGrab.Proxy
                 KS_API_HOST,         // 快手API接口
                 "*kuaishou*",        // 所有带 kuaishou 的域名
                 "*gifshow*",         // gifshow 快手旧域名
+                "*wsukwai*",         // 快手直播伴侣弹幕WS域名
+                "*kwimgs*",          // 快手图片/资源CDN
+                "*yximgs*",          // 快手图片/资源CDN(旧)
             };
 
             if (decryptSsls.Contains(hostname))
