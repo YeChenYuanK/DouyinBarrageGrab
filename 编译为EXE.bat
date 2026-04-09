@@ -150,7 +150,7 @@ if not exist "%NUGET_EXE%" (
 )
 call :log "[信息] nuget.exe: %NUGET_EXE%"
 
-"%NUGET_EXE%" restore "%PROJECT_DIR%\WssBarrageService.csproj" -PackagesDirectory "%PROJECT_DIR%\packages" >> "%LOG_FILE%" 2>&1
+"%NUGET_EXE%" restore "%PROJECT_DIR%\WssBarrageService.csproj" -PackagesDirectory "%PROJECT_DIR%\packages" -NoCache >> "%LOG_FILE%" 2>&1
 if %ERRORLEVEL% neq 0 (
     call :log "[错误] NuGet 包恢复失败！详情见 build.log"
     pause
