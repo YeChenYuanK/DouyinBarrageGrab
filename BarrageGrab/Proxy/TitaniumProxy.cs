@@ -144,6 +144,7 @@ namespace BarrageGrab.Proxy
 
             explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, ProxyPort, true);
             explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
+            explicitEndPoint.BeforeTunnelConnectResponse += ExplicitEndPoint_BeforeTunnelConnectResponse;
             proxyServer.AddEndPoint(explicitEndPoint);
         }
 
@@ -779,6 +780,65 @@ namespace BarrageGrab.Proxy
             e.DecryptSsl = isKwaiDebug ? true : (isLiveProcess && CheckHost(hostname));
 
             Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName}");
+        }
+
+        // 隧道建立后，对 kwailive 进程订阅 DecryptedDataReceived（含IP直连的弹幕WS）
+        private Task ExplicitEndPoint_BeforeTunnelConnectResponse(object sender, TunnelConnectSessionEventArgs e)
+        {
+            string hostname = e.HttpClient.Request.RequestUri.Host;
+            var processid = e.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processid);
+
+            bool isKwaiProcess = processName != null && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool isKuaishouDomain = IsKuaishouBarrageRequest(hostname, e.HttpClient.Request.RequestUri.ToString());
+
+            if (isKwaiProcess || isKuaishouDomain)
+            {
+                e.DecryptedDataReceived -= TunnelDecryptedDataReceived;
+                e.DecryptedDataReceived += TunnelDecryptedDataReceived;
+                Logger.LogInfo($"[KS_TUNNEL] 订阅DecryptedDataReceived hostname:{hostname} Process:{processName}");
+            }
+
+            return Task.CompletedTask;
+        }
+
+        // 处理隧道解密后的原始数据（用于 IP 直连的快手弹幕 WS）
+        private void TunnelDecryptedDataReceived(object sender, DataEventArgs e)
+        {
+            var args = sender as TunnelConnectSessionEventArgs;
+            if (args == null) return;
+
+            string hostname = args.HttpClient.Request.RequestUri.Host;
+            var processid = args.HttpClient.ProcessId.Value;
+
+            try
+            {
+                var decoder = args.WebSocketDecoderReceive;
+                if (decoder == null) return;
+
+                foreach (var frame in decoder.Decode(e.Buffer, e.Offset, e.Count))
+                {
+                    if (frame.OpCode == WebsocketOpCode.Continuation || frame.OpCode == WebsocketOpCode.Ping || frame.OpCode == WebsocketOpCode.Pong)
+                        continue;
+
+                    var payload = frame.Data.ToArray();
+                    if (payload.Length == 0) continue;
+
+                    Logger.LogInfo($"[KS_TUNNEL] 收到数据帧 hostname:{hostname} OpCode:{frame.OpCode} size:{payload.Length}");
+
+                    base.FireWsEvent(new WsMessageEventArgs()
+                    {
+                        ProcessID = processid,
+                        HostName = hostname,
+                        Payload = payload,
+                        ProcessName = base.GetProcessName(processid)
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_TUNNEL] 解析帧出错: {ex.Message}");
+            }
         }
 
         //检测域名白名单
