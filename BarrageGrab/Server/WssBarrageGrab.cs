@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Text;
 using System.Threading.Tasks;
 using BarrageGrab.Kuaishou;
@@ -257,6 +258,13 @@ namespace BarrageGrab
                     {
                         // ignore, continue scan
                     }
+
+                    // 最终兜底：做无 schema 的 protobuf 文本提取，先把评论文本打通
+                    if (TryProcessKuaishouGenericProtoText(inflated))
+                    {
+                        Logger.LogInfo($"[快手] GZIP解包后 通用文本提取命中 at={i}");
+                        return true;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -267,6 +275,134 @@ namespace BarrageGrab
                 if (hit >= 3) break;
             }
 
+            return false;
+        }
+
+        private readonly List<string> _ksFallbackTextDedup = new List<string>();
+
+        private bool TryProcessKuaishouGenericProtoText(byte[] data)
+        {
+            var candidates = new List<string>();
+            CollectProtoReadableStrings(data, 0, candidates, 0);
+            if (candidates.Count == 0) return false;
+
+            // 优先中文短句，过滤协议字段噪音
+            var selected = candidates
+                .Select(s => s?.Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Where(IsLikelyKuaishouChatText)
+                .OrderByDescending(s => s.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF))
+                .ThenBy(s => s.Length)
+                .FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(selected)) return false;
+            if (!TryPushKuaishouFallbackText(selected)) return false;
+
+            var msg = new Modles.ProtoEntity.KsChatMessage
+            {
+                Content = selected,
+                User = new Modles.ProtoEntity.KsUser
+                {
+                    Nickname = "快手用户",
+                    UserId = "",
+                    HeadUrl = ""
+                }
+            };
+            Logger.LogInfo($"[快手][Fallback] 通用文本提取命中: {selected}");
+            FireKuaishouChat(msg);
+            return true;
+        }
+
+        private bool TryPushKuaishouFallbackText(string text)
+        {
+            if (_ksFallbackTextDedup.Contains(text)) return false;
+            _ksFallbackTextDedup.Add(text);
+            while (_ksFallbackTextDedup.Count > 120) _ksFallbackTextDedup.RemoveAt(0);
+            return true;
+        }
+
+        private bool IsLikelyKuaishouChatText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            if (text.Length < 2 || text.Length > 50) return false;
+            if (text.Contains("http") || text.Contains("kwailive://") || text.Contains(".png") || text.Contains(".webp")) return false;
+            if (Regex.IsMatch(text, @"^[0-9a-fA-F\-]{16,}$")) return false; // guid/hash
+            var blacklist = new[]
+            {
+                "livePeakCup", "MERCHANT_", "lottie", "stickerImage", "正在看", "直播间正在开启", "host-name", "result"
+            };
+            if (blacklist.Any(k => text.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0)) return false;
+
+            var cjkCount = text.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF);
+            var letterOrDigit = text.Count(char.IsLetterOrDigit);
+            return cjkCount >= 2 || (letterOrDigit >= 4 && text.Any(ch => ch == ' '));
+        }
+
+        private void CollectProtoReadableStrings(byte[] data, int offset, List<string> output, int depth)
+        {
+            if (data == null || output == null || depth > 3) return;
+            int i = offset;
+            int end = data.Length;
+
+            while (i < end)
+            {
+                if (!TryReadVarint64(data, ref i, out ulong key)) break;
+                int wireType = (int)(key & 0x07);
+                switch (wireType)
+                {
+                    case 0: // varint
+                        if (!TryReadVarint64(data, ref i, out _)) return;
+                        break;
+                    case 1: // 64-bit
+                        i += 8;
+                        if (i > end) return;
+                        break;
+                    case 2: // length-delimited
+                        if (!TryReadVarint64(data, ref i, out ulong lenU)) return;
+                        if (lenU > int.MaxValue) return;
+                        int len = (int)lenU;
+                        if (len < 0 || i + len > end) return;
+
+                        if (len >= 2)
+                        {
+                            var seg = new byte[len];
+                            Buffer.BlockCopy(data, i, seg, 0, len);
+                            try
+                            {
+                                var str = Encoding.UTF8.GetString(seg);
+                                if (str.Any(ch => ch >= 0x20) && str.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF) > 0)
+                                {
+                                    output.Add(str);
+                                }
+                            }
+                            catch { }
+
+                            // 递归进入嵌套 message
+                            CollectProtoReadableStrings(seg, 0, output, depth + 1);
+                        }
+                        i += len;
+                        break;
+                    case 5: // 32-bit
+                        i += 4;
+                        if (i > end) return;
+                        break;
+                    default:
+                        return;
+                }
+            }
+        }
+
+        private bool TryReadVarint64(byte[] data, ref int idx, out ulong value)
+        {
+            value = 0;
+            int shift = 0;
+            while (idx < data.Length && shift <= 63)
+            {
+                byte b = data[idx++];
+                value |= ((ulong)(b & 0x7F)) << shift;
+                if ((b & 0x80) == 0) return true;
+                shift += 7;
+            }
             return false;
         }
 
