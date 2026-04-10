@@ -259,14 +259,15 @@ namespace BarrageGrab.Proxy
             
             foreach (var name in ksProcessNames)
             {
-                if (processName.Contains(name.ToLowerInvariant()) || AppSetting.Current.ProcessFilter.Any(f => f.Contains(name)))
+                if (processName.Contains(name.ToLowerInvariant()))
                     return true;
             }
             
-            // 也检查用户配置的白名单进程是否包含快手相关关键字
-            foreach (var filter in AppSetting.Current.ProcessFilter)
+            // 也检查用户配置里与“当前进程名”相关的快手关键字
+            foreach (var filter in AppSetting.Current.ProcessFilter.Select(f => (f ?? string.Empty).ToLowerInvariant()))
             {
-                if (filter.Contains("kuaishou") || filter.Contains("kscloud") || filter.Contains("gifshow"))
+                if (!processName.Contains(filter)) continue;
+                if (filter.Contains("kuaishou") || filter.Contains("kscloud") || filter.Contains("gifshow") || filter.Contains("kwailive"))
                     return true;
             }
             
