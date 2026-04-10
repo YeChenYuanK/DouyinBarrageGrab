@@ -156,12 +156,4 @@ echo   输出目录: %OUTPUT_DIR%
 echo ===============================================
 echo [信息] 编译成功完成 >> "%LOG_FILE%"
 
-:: ========== 步骤6: 启动 exe ==========
-echo.
-echo [步骤6] 启动 %EXE_NAME%...
-echo [步骤6] 启动 %EXE_NAME%... >> "%LOG_FILE%"
-start "" "%OUTPUT_DIR%\%EXE_NAME%"
-echo [信息] %EXE_NAME% 已启动
-echo [信息] %EXE_NAME% 已启动 >> "%LOG_FILE%"
-
 exit /b 0
