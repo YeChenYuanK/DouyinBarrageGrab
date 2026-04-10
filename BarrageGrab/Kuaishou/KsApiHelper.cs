@@ -140,6 +140,12 @@ namespace BarrageGrab.Kuaishou
                     try { liveStream = JObject.Parse(m.Groups[1].Value); } catch { }
                 }
 
+                // 方法1.5：通过键名定位并做花括号配对提取，兼容页面结构微调
+                if (liveStream == null)
+                {
+                    liveStream = TryExtractJsonObjectByKey(html, "\"liveStream\":");
+                }
+
                 // 方法2：window.__INITIAL_STATE__
                 if (liveStream == null)
                 {
@@ -531,6 +537,34 @@ namespace BarrageGrab.Kuaishou
             }
             
             return -1; // 未找到匹配的右括号
+        }
+
+        /// <summary>
+        /// 通过 key 定位 JSON 对象起始位置，并通过花括号配对提取对象
+        /// </summary>
+        private static JObject TryExtractJsonObjectByKey(string content, string key)
+        {
+            if (string.IsNullOrWhiteSpace(content) || string.IsNullOrWhiteSpace(key)) return null;
+
+            try
+            {
+                var keyIdx = content.IndexOf(key, StringComparison.OrdinalIgnoreCase);
+                if (keyIdx < 0) return null;
+
+                var braceIdx = content.IndexOf('{', keyIdx);
+                if (braceIdx < 0) return null;
+
+                var sub = content.Substring(braceIdx);
+                var endIdx = FindMatchingBrace(sub, 0);
+                if (endIdx < 0) return null;
+
+                var json = sub.Substring(0, endIdx + 1);
+                return JObject.Parse(json);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public void Dispose() { }
