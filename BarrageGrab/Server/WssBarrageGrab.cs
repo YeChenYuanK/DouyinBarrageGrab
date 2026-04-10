@@ -408,7 +408,8 @@ namespace BarrageGrab
                     if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(anchor))
                     {
                         Logger.LogInfo($"[KS_ROOM_JSON] anchor={anchor ?? "N/A"}, title={title ?? "N/A"}");
-                        Logger.PrintColor($"[快手房间] 主播: {anchor ?? "N/A"} | 标题: {title ?? "N/A"}", ConsoleColor.Cyan);
+                        // 恢复窗口提示：用于开播阶段快速观察，注意这里是 JSON 片段候选信息
+                        Logger.PrintColor($"[快手房间候选] 主播: {anchor ?? "N/A"} | 标题: {title ?? "N/A"}", ConsoleColor.Cyan);
                     }
 
                     if (IsKuaishouStateCallbackJobj(jobj))
