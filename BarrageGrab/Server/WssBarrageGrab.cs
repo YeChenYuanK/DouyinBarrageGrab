@@ -304,12 +304,10 @@ namespace BarrageGrab
                 .ThenBy(x => x.text.Length)
                 .FirstOrDefault();
             if (best == null) return false;
+            if (ContainsGuidLikeFragment(best.text)) return false;
             if (!TryPushKuaishouFallbackText(best.text)) return false;
 
-            var nickname = tokens
-                .Select(s => (s ?? string.Empty).Trim())
-                .FirstOrDefault(s => IsLikelyKuaishouNickname(s) && !string.Equals(s, best.text, StringComparison.Ordinal));
-            if (string.IsNullOrWhiteSpace(nickname)) nickname = "快手用户";
+            var nickname = ResolveKuaishouNickname(tokens, best.text);
 
             Logger.LogInfo($"[快手][Fallback][PROFILE] 命中评论 strategy={strategy}, nickname={nickname}, content={best.text}, fromBase64={best.fromBase64}, len={payload.Length}");
             FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
@@ -756,6 +754,7 @@ namespace BarrageGrab
 
         private readonly List<string> _ksFallbackTextDedup = new List<string>();
         private readonly object _ksFallbackTextDedupLock = new object();
+        private string _ksLastStableNickname = "";
 
         private bool TryProcessKuaishouGenericProtoText(byte[] data)
         {
@@ -808,8 +807,10 @@ namespace BarrageGrab
 
             if (fromBase64) score += 80;
             if (text.Length == 1 && char.IsDigit(text[0])) score += 120;
+            if (text == "0") score -= 300;
             if (text.IndexOf("主播", StringComparison.OrdinalIgnoreCase) >= 0) score += 60;
             if (text.IndexOf("你好", StringComparison.OrdinalIgnoreCase) >= 0) score += 30;
+            if (ContainsGuidLikeFragment(text)) score -= 200;
 
             // 纯昵称词倾向降分，避免把“王翠花”误当评论
             if (IsLikelyKuaishouNickname(text)) score -= 50;
@@ -826,8 +827,25 @@ namespace BarrageGrab
             if (text.IndexOf("主播", StringComparison.OrdinalIgnoreCase) >= 0) return false;
             if (text.IndexOf("你好", StringComparison.OrdinalIgnoreCase) >= 0) return false;
             if (text.IndexOf("欢迎", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            if (text.Contains("?") || text.Contains("�")) return false;
+            if (ContainsGuidLikeFragment(text)) return false;
             var cjkCount = text.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF);
             return cjkCount >= 2;
+        }
+
+        private string ResolveKuaishouNickname(List<string> tokens, string selectedText)
+        {
+            var nickname = (tokens ?? new List<string>())
+                .Select(s => (s ?? string.Empty).Trim())
+                .FirstOrDefault(s => IsLikelyKuaishouNickname(s) && !string.Equals(s, selectedText, StringComparison.Ordinal));
+            if (!string.IsNullOrWhiteSpace(nickname))
+            {
+                _ksLastStableNickname = nickname;
+                return nickname;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_ksLastStableNickname)) return _ksLastStableNickname;
+            return "快手用户";
         }
 
         private bool TryDecodeBase64Utf8(string text, out string decoded)
@@ -933,11 +951,12 @@ namespace BarrageGrab
             // 允许 "1" / "2" / "3" 这类单字符数字评论
             if (text.Length == 1)
             {
-                return char.IsDigit(text[0]);
+                return text[0] == '1' || text[0] == '2' || text[0] == '3' || text[0] == '4';
             }
             if (text.Length > 50) return false;
             if (text.Contains("http") || text.Contains("kwailive://") || text.Contains(".png") || text.Contains(".webp")) return false;
             if (Regex.IsMatch(text, @"^[0-9a-fA-F\-]{16,}$")) return false; // guid/hash
+            if (ContainsGuidLikeFragment(text)) return false;
             var blacklist = new[]
             {
                 "livePeakCup", "MERCHANT_", "lottie", "stickerImage", "正在看", "直播间正在开启", "host-name", "result",
@@ -949,6 +968,13 @@ namespace BarrageGrab
             var cjkCount = text.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF);
             var letterOrDigit = text.Count(char.IsLetterOrDigit);
             return cjkCount >= 2 || (letterOrDigit >= 4 && text.Any(ch => ch == ' '));
+        }
+
+        private bool ContainsGuidLikeFragment(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            // 典型 GUID 片段: 8-4-4-4-12 或其子串
+            return Regex.IsMatch(text, @"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}");
         }
 
         private void CollectProtoReadableStrings(byte[] data, int offset, List<string> output, int depth)
@@ -1340,7 +1366,7 @@ namespace BarrageGrab
         // 触发快手弹幕事件（转发给游戏）
         private void FireKuaishouChat(Modles.ProtoEntity.KsChatMessage msg)
         {
-            Logger.LogInfo($"[快手] 触发弹幕事件: {msg.User?.Nickname}: {msg.Content}");
+            Logger.LogInfo($"[快手][弹幕] {msg.User?.Nickname ?? "快手用户"}: {msg.Content ?? ""}");
             var data = new JObject
             {
                 ["Content"] = msg.Content ?? "",
