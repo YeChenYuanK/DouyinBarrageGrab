@@ -1674,10 +1674,39 @@ namespace BarrageGrab
                 var txtPath = Path.Combine(root, fileBase + ".txt");
                 File.WriteAllText(txtPath, text, Encoding.UTF8);
                 Logger.LogInfo($"[KS_RAW_DUMP] channel={channel} tag={safeTag} len={data.Length} file={fileBase}");
+                LogKuaishouRawIndex(channel, fileBase, text);
             }
             catch (Exception ex)
             {
                 Logger.LogInfo($"[KS_RAW_DUMP] failed channel={channel}: {ex.Message}");
+            }
+        }
+
+        private void LogKuaishouRawIndex(string channel, string fileBase, string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+            try
+            {
+                var patterns = new[]
+                {
+                    @"authorId[=:\""\\s]{0,6}[A-Za-z0-9_\-]{4,32}",
+                    @"liveStreamId[=:\""\\s]{0,6}[A-Za-z0-9_\-]{4,64}",
+                    @"nickname[=:\""\\s]{0,6}[^\\""\\r\\n]{2,48}",
+                    @"title[=:\""\\s]{0,6}[^\\""\\r\\n]{2,80}",
+                    @"/u/[A-Za-z0-9_\-]{4,32}",
+                    @"profile/[A-Za-z0-9_\-]{4,32}"
+                };
+                var hits = patterns
+                    .SelectMany(p => Regex.Matches(text, p, RegexOptions.IgnoreCase).Cast<Match>().Select(m => m.Value))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(20)
+                    .ToList();
+                if (hits.Count == 0) return;
+                Logger.LogInfo($"[KS_RAW_INDEX] channel={channel} file={fileBase} hits={string.Join(" | ", hits)}");
+            }
+            catch
+            {
+                // ignore
             }
         }
 
