@@ -273,13 +273,30 @@ namespace BarrageGrab.Kuaishou
                     return info;
                 }
 
+                string liveStreamIdSource = "";
                 info.LiveStreamId = liveData["liveStreamId"]?.Value<string>() ?? "";
+                if (!string.IsNullOrWhiteSpace(info.LiveStreamId))
+                {
+                    liveStreamIdSource = "liveData.liveStreamId";
+                }
+                if (string.IsNullOrWhiteSpace(info.LiveStreamId))
+                {
+                    info.LiveStreamId = liveData["id"]?.Value<string>() ?? "";
+                    if (!string.IsNullOrWhiteSpace(info.LiveStreamId))
+                    {
+                        liveStreamIdSource = "liveData.id";
+                    }
+                }
                 info.AuthorId = liveData["authorId"]?.Value<string>() ?? "";
                 info.AuthorName = liveData["author"]?["name"]?.Value<string>() ?? "";
                 info.Title = liveData["caption"]?.Value<string>() ?? "";
                 if (string.IsNullOrWhiteSpace(info.LiveStreamId))
                 {
                     info.LiveStreamId = state.SelectToken("$..liveStreamId")?.Value<string>() ?? "";
+                    if (!string.IsNullOrWhiteSpace(info.LiveStreamId))
+                    {
+                        liveStreamIdSource = "state.$..liveStreamId";
+                    }
                 }
                 if (string.IsNullOrWhiteSpace(info.AuthorId))
                 {
@@ -292,9 +309,14 @@ namespace BarrageGrab.Kuaishou
                 if (string.IsNullOrWhiteSpace(info.LiveStreamId))
                 {
                     var lsIdMatch = Regex.Match(html, @"""liveStreamId""\s*:\s*""([^""]+)""");
-                    if (lsIdMatch.Success) info.LiveStreamId = lsIdMatch.Groups[1].Value;
+                    if (lsIdMatch.Success)
+                    {
+                        info.LiveStreamId = lsIdMatch.Groups[1].Value;
+                        liveStreamIdSource = "html.regex.liveStreamId";
+                    }
                 }
                 Logger.LogInfo($"[KS_DIAG][PC] liveDataType={liveData.Type}, liveDataPreview={(liveData.ToString(Formatting.None).Length > 500 ? liveData.ToString(Formatting.None).Substring(0, 500) : liveData.ToString(Formatting.None))}");
+                Logger.LogInfo($"[KS_DIAG][PC] finalLiveStreamId={info.LiveStreamId}, source={liveStreamIdSource}");
 
                 Logger.LogInfo($"[KS] PC端页面解析成功: liveStreamId={info.LiveStreamId}, authorId={info.AuthorId}, authorName={info.AuthorName}");
 
