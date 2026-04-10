@@ -456,6 +456,14 @@ namespace BarrageGrab.Proxy
                 Logger.LogInfo($"[抖音] 订阅到新的弹幕流地址，roomid:{roomid}");
             }
 
+            // 全量镜像模式：所有WS会话都订阅原始DataReceived
+            if (isWs)
+            {
+                e.DataReceived -= WebSocket_DataReceived;
+                e.DataReceived += WebSocket_DataReceived;
+                Logger.LogInfo($"[RAW_MIRROR_WS_SUB] host={hostname} process={processName} uri={uri}");
+            }
+
             //ws 方式 - 快手（仅当 TunnelType 是 Websocket 时才订阅，避免对普通HTTP响应误订阅）
             bool isKuaishouBarrage = IsKuaishouBarrageRequest(hostname, uri);
             if (isWs && isKuaishouBarrage && CheckKuaishouProcess(processName))
@@ -473,8 +481,8 @@ namespace BarrageGrab.Proxy
                 Logger.LogInfo($"[快手] 订阅DataReceived hostname:{hostname} liveStreamId:{liveStreamId2} token:{tokenPreview2}");
             }
 
-            // 快手HTTP原始回包透传给WssBarrageGrab做零过滤落盘（不限制content-type）
-            if (!isWs && CheckKuaishouProcess(processName))
+            // 全量镜像模式：HTTP原始回包统一透传给上层做raw落盘（不限制进程/content-type）
+            if (!isWs)
             {
                 var ct = (contentType ?? string.Empty).ToLowerInvariant();
                 var payload = await e.GetResponseBody();
@@ -488,7 +496,7 @@ namespace BarrageGrab.Proxy
                         ProcessName = base.GetProcessName(processid),
                         Payload = payload
                     });
-                    Logger.LogInfo($"[KS_HTTP_RAW_FORWARD] host={hostname} ct={ct} len={payload.Length} uri={uri}");
+                    Logger.LogInfo($"[RAW_MIRROR_HTTP_FORWARD] host={hostname} process={processName} ct={ct} len={payload.Length} uri={uri}");
                 }
             }
 

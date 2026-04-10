@@ -118,6 +118,11 @@ namespace BarrageGrab
         private void Proxy_OnWebSocketData(object sender, WsMessageEventArgs e)
         {
             Logger.LogInfo($"[WS入口] ★★★ Proxy_OnWebSocketData 被调用 Host={e.HostName} Process={e.ProcessName} Len={e.Payload?.Length ?? -1} NeedDecomp={e.NeedDecompress}");
+            var buff = e.Payload;
+            if (buff != null && buff.Length > 0)
+            {
+                DumpKuaishouRawBytes("ws_any_raw", $"{e.HostName}|{e.ProcessName}", buff);
+            }
             var processName = (e.ProcessName ?? string.Empty).Trim();
             var hostName = (e.HostName ?? string.Empty).Trim().ToLowerInvariant();
             var allowByProcessFilter = appsetting.ProcessFilter != null && appsetting.ProcessFilter.Any(f =>
@@ -139,8 +144,7 @@ namespace BarrageGrab
                 Logger.LogInfo($"[WS] 进程被过滤: {e.ProcessName}，不在白名单内");
                 return;
             }
-            var buff = e.Payload;
-            if (buff.Length == 0)
+            if (buff == null || buff.Length == 0)
             {
                 Logger.LogInfo($"[WS] 空数据包，跳过");
                 return;
@@ -1630,6 +1634,7 @@ namespace BarrageGrab
             var payload = e.Payload;
             if (payload == null || payload.Length == 0) return;
 
+            DumpKuaishouRawBytes("http_any_raw", e.HostName ?? e.ProcessName, payload);
             if (IsLikelyKuaishouHttpEvent(e))
             {
                 DumpKuaishouRawBytes("http_raw", e.HostName ?? e.ProcessName, payload);
@@ -1673,6 +1678,10 @@ namespace BarrageGrab
                 var text = Encoding.UTF8.GetString(data);
                 var txtPath = Path.Combine(root, fileBase + ".txt");
                 File.WriteAllText(txtPath, text, Encoding.UTF8);
+                var b64Path = Path.Combine(root, fileBase + ".b64.txt");
+                File.WriteAllText(b64Path, Convert.ToBase64String(data), Encoding.ASCII);
+                var hexPath = Path.Combine(root, fileBase + ".hex.txt");
+                File.WriteAllText(hexPath, BitConverter.ToString(data).Replace("-", string.Empty), Encoding.ASCII);
                 Logger.LogInfo($"[KS_RAW_DUMP] channel={channel} tag={safeTag} len={data.Length} file={fileBase}");
                 LogKuaishouRawIndex(channel, fileBase, text);
                 LogKuaishouRawAllText(channel, fileBase, text);
