@@ -308,9 +308,13 @@ namespace BarrageGrab
                     catch { continue; }
 
                     var title = jobj.SelectToken("$..title")?.Value<string>();
-                    if (!string.IsNullOrWhiteSpace(title))
+                    var anchor = jobj.SelectToken("$..nickname")?.Value<string>()
+                                 ?? jobj.SelectToken("$..authorName")?.Value<string>()
+                                 ?? jobj.SelectToken("$..anchorName")?.Value<string>();
+                    if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(anchor))
                     {
-                        Logger.LogInfo($"[KS_STATE] title={title}");
+                        Logger.LogInfo($"[KS_ROOM_JSON] anchor={anchor ?? "N/A"}, title={title ?? "N/A"}");
+                        Logger.PrintColor($"[快手房间] 主播: {anchor ?? "N/A"} | 标题: {title ?? "N/A"}", ConsoleColor.Cyan);
                     }
 
                     if (IsKuaishouStateCallbackJobj(jobj))
@@ -466,8 +470,8 @@ namespace BarrageGrab
                 while (_ksRoomDedup.Count > 120) _ksRoomDedup.RemoveAt(0);
             }
 
-            Logger.LogInfo($"[KS_ROOM] sessionId={sessionId}, anchor={anchor}, title={roomTitle}, onlineHint={onlineHint}");
-            Logger.PrintColor($"[快手房间] 主播: {anchor} | 标题: {roomTitle} | 在线提示: {onlineHint} | session: {sessionId}", ConsoleColor.Cyan);
+            // 注意：hints 是候选语义片段，不保证是正式房间字段，避免误导只打印为候选信息
+            Logger.LogInfo($"[KS_ROOM_HINT] sessionId={sessionId}, anchorCandidate={anchor}, titleCandidate={roomTitle}, onlineHint={onlineHint}");
         }
 
         private void TryLogKuaishouRoleHint(List<string> hints)
