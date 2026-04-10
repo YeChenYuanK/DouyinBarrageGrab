@@ -248,6 +248,11 @@ namespace BarrageGrab
                     Logger.LogInfo($"[快手] GZIP命中 at={i} inflatedLen={inflated.Length}");
                     LogKuaishouPacketSignature(inflated, $"ksgzip:{i}");
                     TryLogKuaishouSessionInfo(inflated);
+                    if (TryProcessKuaishouJsonFragments(inflated))
+                    {
+                        Logger.LogInfo($"[快手] GZIP解包后 JSON片段解析命中 at={i}");
+                        return true;
+                    }
 
                     if (TryProcessKuaishouProtobufWithOffsets(inflated, processName))
                     {
@@ -283,6 +288,119 @@ namespace BarrageGrab
             }
 
             return false;
+        }
+
+        private bool TryProcessKuaishouJsonFragments(byte[] inflated)
+        {
+            try
+            {
+                var text = Encoding.UTF8.GetString(inflated);
+                if (string.IsNullOrWhiteSpace(text)) return false;
+
+                var candidates = ExtractJsonObjectCandidates(text, 16);
+                if (candidates.Count == 0) return false;
+
+                var foundStateCallback = false;
+                foreach (var json in candidates)
+                {
+                    JObject jobj;
+                    try { jobj = JObject.Parse(json); }
+                    catch { continue; }
+
+                    var title = jobj.SelectToken("$..title")?.Value<string>();
+                    if (!string.IsNullOrWhiteSpace(title))
+                    {
+                        Logger.LogInfo($"[KS_STATE] title={title}");
+                    }
+
+                    if (IsKuaishouStateCallbackJobj(jobj))
+                    {
+                        foundStateCallback = true;
+                    }
+
+                    foreach (var obj in jobj.DescendantsAndSelf().OfType<JObject>())
+                    {
+                        var content = obj["content"]?.Value<string>()
+                                   ?? obj["comment"]?.Value<string>()
+                                   ?? obj["text"]?.Value<string>()
+                                   ?? obj["message"]?.Value<string>()
+                                   ?? obj["msg"]?.Value<string>();
+                        if (!IsLikelyKuaishouChatText(content)) continue;
+                        if (!TryPushKuaishouFallbackText(content)) continue;
+
+                        var nickname = obj["nickname"]?.Value<string>()
+                                    ?? obj["userName"]?.Value<string>()
+                                    ?? obj["name"]?.Value<string>()
+                                    ?? "快手用户";
+                        if (string.IsNullOrWhiteSpace(nickname)) nickname = "快手用户";
+
+                        Logger.LogInfo($"[快手][Fallback][JSON] 命中评论 nickname={nickname}, content={content}");
+                        FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
+                        {
+                            Content = content,
+                            User = new Modles.ProtoEntity.KsUser
+                            {
+                                Nickname = nickname,
+                                UserId = "",
+                                HeadUrl = ""
+                            }
+                        });
+                        return true;
+                    }
+                }
+
+                // 识别为开播状态回调包时，视为“已处理”，避免后续误判为评论
+                return foundStateCallback;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool IsKuaishouStateCallbackJobj(JObject jobj)
+        {
+            if (jobj == null) return false;
+            var allText = jobj.ToString(Formatting.None);
+            if (string.IsNullOrWhiteSpace(allText)) return false;
+            var keys = new[] { "title", "livePeakCup", "start", "liveStatus", "room", "anchor", "welcome", "online" };
+            var score = keys.Count(k => allText.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0);
+            return score >= 3;
+        }
+
+        private List<string> ExtractJsonObjectCandidates(string text, int maxCount)
+        {
+            var list = new List<string>();
+            if (string.IsNullOrWhiteSpace(text)) return list;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] != '{') continue;
+                var depth = 0;
+                var inString = false;
+                var escaped = false;
+                for (int j = i; j < text.Length; j++)
+                {
+                    var c = text[j];
+                    if (escaped) { escaped = false; continue; }
+                    if (c == '\\') { escaped = true; continue; }
+                    if (c == '"') { inString = !inString; continue; }
+                    if (inString) continue;
+                    if (c == '{') depth++;
+                    if (c == '}') depth--;
+                    if (depth != 0) continue;
+
+                    var len = j - i + 1;
+                    if (len >= 24 && len <= 20000)
+                    {
+                        list.Add(text.Substring(i, len));
+                        if (list.Count >= maxCount) return list;
+                    }
+                    i = j;
+                    break;
+                }
+            }
+            return list;
         }
 
         private readonly List<string> _ksSessionDedup = new List<string>();
