@@ -1784,6 +1784,12 @@ namespace BarrageGrab
                 var score = ScoreKuaishouFlow(protocol, flowHost, flowPath, uri, processName, payloadLength, hintHits);
                 Logger.LogInfo($"[KS_FLOW_LEDGER] proto={protocol} process={processName} host={flowHost} path={flowPath} len={payloadLength} score={score} ct={contentType}");
                 Logger.LogInfo($"[KS_FLOW_SCORE] score={score} level={(score >= 80 ? "strong" : (score >= 40 ? "medium" : "weak"))} proto={protocol} host={flowHost} path={flowPath} hintHits={hintHits} uri={uri}");
+                if (protocol.Equals("ws", StringComparison.OrdinalIgnoreCase)
+                    && Regex.IsMatch(flowHost, @"^\d{1,3}(\.\d{1,3}){3}$")
+                    && score >= 50)
+                {
+                    Logger.LogInfo($"[KS_WS_ROUTE_CANDIDATE] host={flowHost} score={score} hintHits={hintHits} len={payloadLength} process={processName}");
+                }
 
                 var clusterKey = $"{protocol}|{flowHost}|{flowPath}";
                 lock (ksFlowLock)
@@ -1803,10 +1809,20 @@ namespace BarrageGrab
                     stat.LastSeen = DateTime.Now;
                     stat.TotalBytes += Math.Max(0, payloadLength);
                     if (score > stat.MaxScore) stat.MaxScore = score;
+                    if (protocol.Equals("ws", StringComparison.OrdinalIgnoreCase)
+                        && Regex.IsMatch(flowHost, @"^\d{1,3}(\.\d{1,3}){3}$")
+                        && score >= 50)
+                    {
+                        stat.WsCandidateHits++;
+                    }
 
                     if (stat.Count == 1 || stat.Count % 20 == 0)
                     {
                         Logger.LogInfo($"[KS_FLOW_CLUSTER] key={clusterKey} count={stat.Count} totalBytes={stat.TotalBytes} maxScore={stat.MaxScore} first={stat.FirstSeen:HH:mm:ss} last={stat.LastSeen:HH:mm:ss}");
+                    }
+                    if (stat.WsCandidateHits > 0 && (stat.WsCandidateHits == 1 || stat.WsCandidateHits % 5 == 0))
+                    {
+                        Logger.LogInfo($"[KS_WS_ROUTE_TOP] host={flowHost} candidateHits={stat.WsCandidateHits} count={stat.Count} totalBytes={stat.TotalBytes} maxScore={stat.MaxScore}");
                     }
                 }
             }
@@ -1912,6 +1928,7 @@ namespace BarrageGrab
             public int Count { get; set; }
             public long TotalBytes { get; set; }
             public int MaxScore { get; set; }
+            public int WsCandidateHits { get; set; }
             public DateTime FirstSeen { get; set; }
             public DateTime LastSeen { get; set; }
         }
