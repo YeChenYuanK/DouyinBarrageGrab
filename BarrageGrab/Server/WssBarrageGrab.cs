@@ -32,6 +32,8 @@ namespace BarrageGrab
         private readonly Dictionary<string, DateTime> ksRouteStateLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DateTime> ksHttpFocusLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DateTime> ksDecodedUrlLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, KsHttpHostStat> ksHttpHostStats = new Dictionary<string, KsHttpHostStat>(StringComparer.OrdinalIgnoreCase);
+        private DateTime ksHttpHostLastEmitAt = DateTime.MinValue;
 
         /// <summary>
         /// 进入直播间
@@ -1652,6 +1654,7 @@ namespace BarrageGrab
             if (IsLikelyKuaishouHttpEvent(e))
             {
                 RecordKuaishouFlow("http", e.HostName, e.RequestUri, e.ProcessName, payload.Length, string.Empty, TryDecodeFlowHintText(payload));
+                TrackKsHttpHost(e.HostName, e.ProcessName, payload.Length);
                 DumpKuaishouRawBytes("http_raw", e.HostName ?? e.ProcessName, payload);
                 TryLogKuaishouHttpPreflight(e, payload);
                 return;
@@ -1704,6 +1707,18 @@ namespace BarrageGrab
                     return;
                 }
 
+                var method = e.HttpClient?.Request?.Method?.ToString() ?? "UNKNOWN";
+                var status = (int?)(e.HttpClient?.Response?.StatusCode) ?? -1;
+                var location = e.HttpClient?.Response?.Headers?.GetFirstHeader("Location")?.Value ?? string.Empty;
+                var decodedLocation = SafeUrlDecode(location);
+                Logger.LogInfo($"[KS_HTTP_REQ_CANDIDATE] method={method} host={e.HostName} process={e.ProcessName} uri={uri}");
+                Logger.LogInfo($"[KS_HTTP_RESP_CANDIDATE] status={status} host={e.HostName} process={e.ProcessName} uri={uri} location={decodedLocation} hits={hits}");
+                if (!string.IsNullOrWhiteSpace(decodedLocation)
+                    && decodedLocation.IndexOf("live.kuaishou.com/u/", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    Logger.LogInfo($"[KS_URL_U_HIT] channel=http_location host={e.HostName} process={e.ProcessName} url={decodedLocation}");
+                }
+
                 if (process.Contains("kwailive"))
                 {
                     DumpKuaishouRawBytes("http_prefetch_non_wlog_raw", e.HostName ?? e.ProcessName, payload);
@@ -1737,6 +1752,48 @@ namespace BarrageGrab
                 ksHttpFocusLastLogAt[key] = now;
             }
             return true;
+        }
+
+        private void TrackKsHttpHost(string host, string processName, int payloadLength)
+        {
+            try
+            {
+                var h = NormalizeFlowHost(host);
+                var p = (processName ?? string.Empty).Trim().ToLowerInvariant();
+                lock (ksFlowLock)
+                {
+                    if (!ksHttpHostStats.TryGetValue(h, out var stat))
+                    {
+                        stat = new KsHttpHostStat { Host = h, Process = p, FirstSeen = DateTime.Now };
+                        ksHttpHostStats[h] = stat;
+                    }
+                    stat.Count++;
+                    stat.TotalBytes += Math.Max(0, payloadLength);
+                    stat.LastSeen = DateTime.Now;
+                    if (!string.IsNullOrWhiteSpace(p)) stat.Process = p;
+
+                    var now = DateTime.Now;
+                    if ((now - ksHttpHostLastEmitAt).TotalSeconds < 20) return;
+                    ksHttpHostLastEmitAt = now;
+
+                    var top = ksHttpHostStats.Values
+                        .Where(s => (now - s.LastSeen).TotalMinutes <= 5)
+                        .OrderByDescending(s => s.TotalBytes)
+                        .Take(10)
+                        .ToList();
+                    if (top.Count == 0) return;
+                    Logger.LogInfo("[KS_HTTP_HOST_TOP] ===== kwailive HTTP hosts top =====");
+                    foreach (var s in top)
+                    {
+                        var nonWlog = s.Host.IndexOf("wlog.gifshow.com", StringComparison.OrdinalIgnoreCase) < 0;
+                        Logger.LogInfo($"[KS_HTTP_HOST_TOP] host={s.Host} process={s.Process} count={s.Count} bytes={s.TotalBytes} nonWlog={nonWlog}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_HTTP_HOST_TOP] failed: {ex.Message}");
+            }
         }
 
         private bool IsLikelyKuaishouPreflightUri(string host, string uri)
@@ -2022,6 +2079,16 @@ namespace BarrageGrab
             public long TotalBytes { get; set; }
             public int MaxScore { get; set; }
             public int WsCandidateHits { get; set; }
+            public DateTime FirstSeen { get; set; }
+            public DateTime LastSeen { get; set; }
+        }
+
+        private class KsHttpHostStat
+        {
+            public string Host { get; set; }
+            public string Process { get; set; }
+            public int Count { get; set; }
+            public long TotalBytes { get; set; }
             public DateTime FirstSeen { get; set; }
             public DateTime LastSeen { get; set; }
         }
