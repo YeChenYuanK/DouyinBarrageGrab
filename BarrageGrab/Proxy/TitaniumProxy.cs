@@ -795,8 +795,9 @@ namespace BarrageGrab.Proxy
             var processName = base.GetProcessName(processid);
 
             bool isKwaiProcess = CheckKuaishouProcess(processName);
+            bool isKwaiObserveProcess = IsKuaishouObserveProcess(processName);
 
-            if (isKwaiProcess)
+            if (isKwaiObserveProcess)
             {
                 // 重置该隧道的解析状态，避免复用旧缓存
                 _ksTunnelBuffers[e] = new List<byte>();
@@ -806,9 +807,12 @@ namespace BarrageGrab.Proxy
                 e.DataReceived += TunnelRawDataReceived;
                 e.DataSent -= TunnelRawDataSent;
                 e.DataSent += TunnelRawDataSent;
-                e.DecryptedDataReceived -= TunnelDecryptedDataReceived;
-                e.DecryptedDataReceived += TunnelDecryptedDataReceived;
-                Logger.LogInfo($"[KS_TUNNEL] 官方客户端隧道捕获 hostname:{hostname} Process:{processName}");
+                if (isKwaiProcess)
+                {
+                    e.DecryptedDataReceived -= TunnelDecryptedDataReceived;
+                    e.DecryptedDataReceived += TunnelDecryptedDataReceived;
+                }
+                Logger.LogInfo($"[KS_TUNNEL] 官方客户端隧道捕获 hostname:{hostname} Process:{processName} decodeWs={isKwaiProcess}");
             }
 
             return Task.CompletedTask;
@@ -823,6 +827,29 @@ namespace BarrageGrab.Proxy
         // 记录隧道最后活跃时间，用于回收长期不活跃连接，防止缓存增长
         private readonly System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, DateTime> _ksTunnelLastSeenUtc
             = new System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, DateTime>();
+        // 快手流量画像（用于定位真实评论主通道）
+        private sealed class KsFlowProfile
+        {
+            public long RxPackets;
+            public long RxBytes;
+            public long TxPackets;
+            public long TxBytes;
+            public long RxLargePackets;
+            public int MaxRx;
+            public int MaxTx;
+            public DateTime LastSeenUtc;
+        }
+        private readonly ConcurrentDictionary<string, KsFlowProfile> _ksFlowProfiles = new ConcurrentDictionary<string, KsFlowProfile>();
+        private DateTime _ksFlowLastEmitUtc = DateTime.MinValue;
+        private readonly object _ksFlowEmitLock = new object();
+
+        private bool IsKuaishouObserveProcess(string processName)
+        {
+            if (string.IsNullOrWhiteSpace(processName)) return false;
+            return processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0
+                || processName.IndexOf("kwaiwebview", StringComparison.OrdinalIgnoreCase) >= 0
+                || CheckKuaishouProcess(processName);
+        }
 
         // 处理隧道解密后的原始数据（用于 IP 直连的快手弹幕 WS）
         private void TunnelDecryptedDataReceived(object sender, DataEventArgs e)
@@ -968,6 +995,10 @@ namespace BarrageGrab.Proxy
             var processName = base.GetProcessName(processId);
             var first = e.Buffer[e.Offset];
             Logger.LogInfo($"[KS_TUNNEL_RAW_RX] host:{host} process:{base.GetProcessName(processId)} recvCount:{e.Count} firstByte:0x{first:X2}");
+            if (IsKuaishouObserveProcess(processName))
+            {
+                UpdateKsFlowProfile(host, processName, e.Count, isRx: true);
+            }
 
             // 对快手直播伴侣的“非标准WS帧”通道做透传，交给上层做协议探测解析
             // 0x16/0x17 多为 TLS 握手/应用层密文，跳过避免噪音；其余字节流尝试上送
@@ -999,6 +1030,78 @@ namespace BarrageGrab.Proxy
             var processId = args.HttpClient.ProcessId.Value;
             var first = e.Buffer[e.Offset];
             Logger.LogInfo($"[KS_TUNNEL_RAW_TX] host:{host} process:{base.GetProcessName(processId)} sendCount:{e.Count} firstByte:0x{first:X2}");
+            var processName = base.GetProcessName(processId);
+            if (IsKuaishouObserveProcess(processName))
+            {
+                UpdateKsFlowProfile(host, processName, e.Count, isRx: false);
+            }
+        }
+
+        private void UpdateKsFlowProfile(string host, string processName, int size, bool isRx)
+        {
+            var key = $"{(processName ?? "unknown").ToLowerInvariant()}@{(host ?? "unknown").ToLowerInvariant()}";
+            _ksFlowProfiles.AddOrUpdate(key,
+                _ => new KsFlowProfile
+                {
+                    RxPackets = isRx ? 1 : 0,
+                    RxBytes = isRx ? size : 0,
+                    TxPackets = isRx ? 0 : 1,
+                    TxBytes = isRx ? 0 : size,
+                    RxLargePackets = (isRx && size >= 200) ? 1 : 0,
+                    MaxRx = isRx ? size : 0,
+                    MaxTx = isRx ? 0 : size,
+                    LastSeenUtc = DateTime.UtcNow
+                },
+                (_, old) =>
+                {
+                    if (isRx)
+                    {
+                        old.RxPackets++;
+                        old.RxBytes += size;
+                        if (size >= 200) old.RxLargePackets++;
+                        if (size > old.MaxRx) old.MaxRx = size;
+                    }
+                    else
+                    {
+                        old.TxPackets++;
+                        old.TxBytes += size;
+                        if (size > old.MaxTx) old.MaxTx = size;
+                    }
+                    old.LastSeenUtc = DateTime.UtcNow;
+                    return old;
+                });
+
+            TryEmitKsFlowProfile();
+        }
+
+        private void TryEmitKsFlowProfile()
+        {
+            var now = DateTime.UtcNow;
+            lock (_ksFlowEmitLock)
+            {
+                if ((now - _ksFlowLastEmitUtc).TotalSeconds < 20) return;
+                _ksFlowLastEmitUtc = now;
+            }
+
+            var hot = _ksFlowProfiles
+                .Where(kv => (now - kv.Value.LastSeenUtc).TotalMinutes <= 3)
+                .OrderByDescending(kv => kv.Value.RxBytes + kv.Value.TxBytes)
+                .Take(8)
+                .ToList();
+            if (!hot.Any()) return;
+
+            Logger.LogInfo("[KS_FLOW] ===== 快手流量画像 Top =====");
+            foreach (var kv in hot)
+            {
+                var key = kv.Key; // process@host
+                var v = kv.Value;
+                var host = key.Contains("@") ? key.Split('@')[1] : key;
+                var candidate = v.RxLargePackets > 0
+                                && !host.Contains("wlog.")
+                                && !host.Contains("log-sdk")
+                                && !host.Contains("ksapisrv");
+                Logger.LogInfo($"[KS_FLOW] {key} rxPkt={v.RxPackets} rxBytes={v.RxBytes} txPkt={v.TxPackets} txBytes={v.TxBytes} rxLarge={v.RxLargePackets} maxRx={v.MaxRx} candidate={candidate}");
+            }
         }
 
         private void TouchTunnelState(TunnelConnectSessionEventArgs args)
