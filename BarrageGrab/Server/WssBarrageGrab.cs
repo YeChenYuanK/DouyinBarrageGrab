@@ -1675,6 +1675,7 @@ namespace BarrageGrab
                 File.WriteAllText(txtPath, text, Encoding.UTF8);
                 Logger.LogInfo($"[KS_RAW_DUMP] channel={channel} tag={safeTag} len={data.Length} file={fileBase}");
                 LogKuaishouRawIndex(channel, fileBase, text);
+                LogKuaishouRawAllText(channel, fileBase, text);
             }
             catch (Exception ex)
             {
@@ -1703,6 +1704,34 @@ namespace BarrageGrab
                     .ToList();
                 if (hits.Count == 0) return;
                 Logger.LogInfo($"[KS_RAW_INDEX] channel={channel} file={fileBase} hits={string.Join(" | ", hits)}");
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        private void LogKuaishouRawAllText(string channel, string fileBase, string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+            try
+            {
+                var preview = new string(text.Take(2000).Select(c => char.IsControl(c) ? '.' : c).ToArray());
+                Logger.LogInfo($"[KS_RAW_ALL] channel={channel} file={fileBase} preview={preview}");
+
+                var tokens = Regex.Matches(text, @"[\u4e00-\u9fa5A-Za-z0-9_/\-:=?&%.]{2,80}")
+                    .Cast<Match>()
+                    .Select(m => m.Value)
+                    .Distinct()
+                    .Take(400)
+                    .ToList();
+                if (tokens.Count == 0) return;
+
+                for (int i = 0; i < tokens.Count; i += 40)
+                {
+                    var part = tokens.Skip(i).Take(40);
+                    Logger.LogInfo($"[KS_RAW_ALL_TOKENS] channel={channel} file={fileBase} part={i / 40 + 1} tokens={string.Join(" | ", part)}");
+                }
             }
             catch
             {
