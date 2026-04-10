@@ -125,9 +125,15 @@ namespace BarrageGrab
                 if (string.IsNullOrEmpty(filter)) return false;
                 return processName.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
             });
+            var isLikelyKuaishouProcess =
+                processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                processName.IndexOf("kscloud", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                processName.IndexOf("kuaishou", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                processName.IndexOf("gifshow", StringComparison.OrdinalIgnoreCase) >= 0;
             var isKuaishouHost = hostName.Contains("kuaishou") || hostName.Contains("wsukwai") || hostName.Contains("gifshow") || hostName.Contains("ksapis") || hostName.StartsWith("ksraw:");
-            // 快手官方客户端抓包场景允许按域名放行，避免进程名不一致导致误拦截
-            if (!allowByProcessFilter && !isKuaishouHost)
+            // 快手官方客户端抓包场景允许按域名放行，但仍要求进程特征，避免浏览器/其他应用噪音误触发
+            var allowKuaishouBypass = isKuaishouHost && (isLikelyKuaishouProcess || hostName.StartsWith("ksraw:"));
+            if (!allowByProcessFilter && !allowKuaishouBypass)
             {
                 Logger.LogInfo($"[WS] 进程被过滤: {e.ProcessName}，不在白名单内");
                 return;
@@ -280,6 +286,7 @@ namespace BarrageGrab
         }
 
         private readonly List<string> _ksSessionDedup = new List<string>();
+        private readonly object _ksSessionDedupLock = new object();
         private void TryLogKuaishouSessionInfo(byte[] inflated)
         {
             try
@@ -296,9 +303,12 @@ namespace BarrageGrab
 
                 if (!guid.Success && zh.Count == 0) return;
                 var key = $"{(guid.Success ? guid.Value : "noguid")}::{string.Join("|", zh)}";
-                if (_ksSessionDedup.Contains(key)) return;
-                _ksSessionDedup.Add(key);
-                while (_ksSessionDedup.Count > 80) _ksSessionDedup.RemoveAt(0);
+                lock (_ksSessionDedupLock)
+                {
+                    if (_ksSessionDedup.Contains(key)) return;
+                    _ksSessionDedup.Add(key);
+                    while (_ksSessionDedup.Count > 80) _ksSessionDedup.RemoveAt(0);
+                }
 
                 Logger.LogInfo($"[KS_SESSION] sessionId={(guid.Success ? guid.Value : "N/A")} hints={string.Join(",", zh)}");
                 TryEmitFallbackChatFromHints(zh);
@@ -310,6 +320,7 @@ namespace BarrageGrab
         }
 
         private readonly List<string> _ksHintEmitDedup = new List<string>();
+        private readonly object _ksHintEmitDedupLock = new object();
         private void TryEmitFallbackChatFromHints(List<string> hints)
         {
             if (hints == null || hints.Count == 0) return;
@@ -337,13 +348,17 @@ namespace BarrageGrab
 
         private bool TryPushHintEmitDedup(string text)
         {
-            if (_ksHintEmitDedup.Contains(text)) return false;
-            _ksHintEmitDedup.Add(text);
-            while (_ksHintEmitDedup.Count > 120) _ksHintEmitDedup.RemoveAt(0);
-            return true;
+            lock (_ksHintEmitDedupLock)
+            {
+                if (_ksHintEmitDedup.Contains(text)) return false;
+                _ksHintEmitDedup.Add(text);
+                while (_ksHintEmitDedup.Count > 120) _ksHintEmitDedup.RemoveAt(0);
+                return true;
+            }
         }
 
         private readonly List<string> _ksFallbackTextDedup = new List<string>();
+        private readonly object _ksFallbackTextDedupLock = new object();
 
         private bool TryProcessKuaishouGenericProtoText(byte[] data)
         {
@@ -380,10 +395,13 @@ namespace BarrageGrab
 
         private bool TryPushKuaishouFallbackText(string text)
         {
-            if (_ksFallbackTextDedup.Contains(text)) return false;
-            _ksFallbackTextDedup.Add(text);
-            while (_ksFallbackTextDedup.Count > 120) _ksFallbackTextDedup.RemoveAt(0);
-            return true;
+            lock (_ksFallbackTextDedupLock)
+            {
+                if (_ksFallbackTextDedup.Contains(text)) return false;
+                _ksFallbackTextDedup.Add(text);
+                while (_ksFallbackTextDedup.Count > 120) _ksFallbackTextDedup.RemoveAt(0);
+                return true;
+            }
         }
 
         private bool IsLikelyKuaishouChatText(string text)

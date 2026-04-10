@@ -797,6 +797,10 @@ namespace BarrageGrab.Proxy
 
             if (isKwaiProcess)
             {
+                // 重置该隧道的解析状态，避免复用旧缓存
+                _ksTunnelBuffers[e] = new List<byte>();
+                _ksTunnelHandshakeDone[e] = false;
+                TouchTunnelState(e);
                 e.DataReceived -= TunnelRawDataReceived;
                 e.DataReceived += TunnelRawDataReceived;
                 e.DataSent -= TunnelRawDataSent;
@@ -815,12 +819,16 @@ namespace BarrageGrab.Proxy
         // 标记该隧道是否已跳过 HTTP 升级握手头
         private readonly System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, bool> _ksTunnelHandshakeDone
             = new System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, bool>();
+        // 记录隧道最后活跃时间，用于回收长期不活跃连接，防止缓存增长
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, DateTime> _ksTunnelLastSeenUtc
+            = new System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, DateTime>();
 
         // 处理隧道解密后的原始数据（用于 IP 直连的快手弹幕 WS）
         private void TunnelDecryptedDataReceived(object sender, DataEventArgs e)
         {
             var args = sender as TunnelConnectSessionEventArgs;
             if (args == null) return;
+            TouchTunnelState(args);
 
             string hostname = args.HttpClient.Request.RequestUri.Host;
             var processid = args.HttpClient.ProcessId.Value;
@@ -944,6 +952,7 @@ namespace BarrageGrab.Proxy
                 Logger.LogInfo($"[KS_TUNNEL] 解析帧出错: {ex.Message}");
                 _ksTunnelBuffers.TryRemove(args, out _);
                 _ksTunnelHandshakeDone.TryRemove(args, out _);
+                _ksTunnelLastSeenUtc.TryRemove(args, out _);
             }
         }
 
@@ -952,6 +961,7 @@ namespace BarrageGrab.Proxy
         {
             var args = sender as TunnelConnectSessionEventArgs;
             if (args == null || e.Count <= 0) return;
+            TouchTunnelState(args);
             var host = args.HttpClient.Request.RequestUri.Host;
             var processId = args.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processId);
@@ -983,10 +993,33 @@ namespace BarrageGrab.Proxy
         {
             var args = sender as TunnelConnectSessionEventArgs;
             if (args == null || e.Count <= 0) return;
+            TouchTunnelState(args);
             var host = args.HttpClient.Request.RequestUri.Host;
             var processId = args.HttpClient.ProcessId.Value;
             var first = e.Buffer[e.Offset];
             Logger.LogInfo($"[KS_TUNNEL_RAW_TX] host:{host} process:{base.GetProcessName(processId)} sendCount:{e.Count} firstByte:0x{first:X2}");
+        }
+
+        private void TouchTunnelState(TunnelConnectSessionEventArgs args)
+        {
+            _ksTunnelLastSeenUtc[args] = DateTime.UtcNow;
+            if (_ksTunnelLastSeenUtc.Count > 256)
+            {
+                CleanupStaleTunnelState();
+            }
+        }
+
+        private void CleanupStaleTunnelState()
+        {
+            var now = DateTime.UtcNow;
+            foreach (var kv in _ksTunnelLastSeenUtc)
+            {
+                if ((now - kv.Value).TotalMinutes <= 10) continue;
+                var key = kv.Key;
+                _ksTunnelLastSeenUtc.TryRemove(key, out _);
+                _ksTunnelBuffers.TryRemove(key, out _);
+                _ksTunnelHandshakeDone.TryRemove(key, out _);
+            }
         }
 
         //检测域名白名单
