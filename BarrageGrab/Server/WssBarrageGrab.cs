@@ -31,6 +31,7 @@ namespace BarrageGrab
         private readonly Dictionary<string, KsFlowClusterStat> ksFlowClusters = new Dictionary<string, KsFlowClusterStat>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DateTime> ksRouteStateLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DateTime> ksHttpFocusLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DateTime> ksDecodedUrlLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// 进入直播间
@@ -2105,10 +2106,94 @@ namespace BarrageGrab
                     var part = tokens.Skip(i).Take(40);
                     Logger.LogInfo($"[KS_RAW_ALL_TOKENS] channel={channel} file={fileBase} part={i / 40 + 1} tokens={string.Join(" | ", part)}");
                 }
+
+                TryLogDecodedKuaishouUrls(channel, fileBase, text);
             }
             catch
             {
                 // ignore
+            }
+        }
+
+        private void TryLogDecodedKuaishouUrls(string channel, string fileBase, string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+            try
+            {
+                var urlCandidates = new List<string>();
+
+                foreach (Match m in Regex.Matches(text, @"https?://[^\s""'|]{8,600}", RegexOptions.IgnoreCase))
+                {
+                    if (!string.IsNullOrWhiteSpace(m.Value)) urlCandidates.Add(m.Value.Trim());
+                }
+                foreach (Match m in Regex.Matches(text, @"https?%3a%2f%2f[^\s""'|]{8,900}", RegexOptions.IgnoreCase))
+                {
+                    if (!string.IsNullOrWhiteSpace(m.Value)) urlCandidates.Add(m.Value.Trim());
+                }
+
+                var authorId = Regex.Match(text, @"authorId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,32})", RegexOptions.IgnoreCase).Groups[1].Value;
+                var liveStreamId = Regex.Match(text, @"liveStreamId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})", RegexOptions.IgnoreCase).Groups[1].Value;
+
+                foreach (var raw in urlCandidates.Distinct(StringComparer.OrdinalIgnoreCase).Take(20))
+                {
+                    var decoded = raw;
+                    for (int i = 0; i < 2; i++)
+                    {
+                        var next = SafeUrlDecode(decoded);
+                        if (string.Equals(next, decoded, StringComparison.Ordinal)) break;
+                        decoded = next;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(decoded)) continue;
+                    if (!decoded.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !decoded.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    if (!ShouldLogKsDecodedUrl(decoded, 8)) continue;
+
+                    var isUUrl = decoded.IndexOf("live.kuaishou.com/u/", StringComparison.OrdinalIgnoreCase) >= 0;
+                    var isLiveUrl = decoded.IndexOf("alive.kuaishou.com/live/", StringComparison.OrdinalIgnoreCase) >= 0
+                                 || decoded.IndexOf("live.kuaishou.com", StringComparison.OrdinalIgnoreCase) >= 0;
+                    if (!isUUrl && !isLiveUrl) continue;
+
+                    Logger.LogInfo($"[KS_URL_DECODED] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} url={decoded}");
+                    if (isUUrl)
+                    {
+                        Logger.LogInfo($"[KS_URL_U_HIT] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} url={decoded}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_URL_DECODED] failed: {ex.Message}");
+            }
+        }
+
+        private bool ShouldLogKsDecodedUrl(string url, int minSeconds)
+        {
+            var key = (url ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(key)) return false;
+
+            var now = DateTime.Now;
+            lock (ksFlowLock)
+            {
+                if (ksDecodedUrlLastLogAt.TryGetValue(key, out var lastAt) && (now - lastAt).TotalSeconds < minSeconds)
+                {
+                    return false;
+                }
+                ksDecodedUrlLastLogAt[key] = now;
+            }
+            return true;
+        }
+
+        private string SafeUrlDecode(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input ?? string.Empty;
+            try
+            {
+                return Uri.UnescapeDataString(input.Replace("+", "%20"));
+            }
+            catch
+            {
+                return input;
             }
         }
 
