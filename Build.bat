@@ -99,7 +99,7 @@ echo.
 echo [步骤3] 正在恢复项目依赖...
 echo [步骤3] 正在恢复项目依赖... >> "%LOG_FILE%"
 
-"%NUGET_EXE%" restore "%SOLUTION_FILE%" -NoCache >> "%LOG_FILE%" 2>&1
+"%NUGET_EXE%" restore "%SOLUTION_FILE%" -NoHttpCache >> "%LOG_FILE%" 2>&1
 if %ERRORLEVEL% neq 0 (
     echo [错误] NuGet 恢复失败，请查看 build.log
     echo [错误] NuGet 恢复失败 >> "%LOG_FILE%"
