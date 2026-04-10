@@ -823,6 +823,11 @@ namespace BarrageGrab.Proxy
             try
             {
                 var buf = _ksTunnelBuffers.GetOrAdd(args, _ => new List<byte>());
+                if (e.Count > 0)
+                {
+                    var first = e.Buffer[e.Offset];
+                    Logger.LogInfo($"[KS_TUNNEL_RAW] host:{hostname} process:{base.GetProcessName(processid)} recvCount:{e.Count} firstByte:0x{first:X2}");
+                }
                 buf.AddRange(new ArraySegment<byte>(e.Buffer, e.Offset, e.Count));
 
                 // 跳过 HTTP 升级握手（GET ... / HTTP/1.1 101 ...）
@@ -849,9 +854,14 @@ namespace BarrageGrab.Proxy
                             // 直接是 WS 帧，无握手
                             _ksTunnelHandshakeDone[args] = true;
                             handshakeDone = true;
+                            Logger.LogInfo($"[KS_TUNNEL] 识别为直接WS帧(无HTTP握手) hostname:{hostname} firstByte:0x{bufArr[0]:X2} bufferLen:{bufArr.Length}");
                         }
                         else
                         {
+                            if (bufArr.Length > 0)
+                            {
+                                Logger.LogInfo($"[KS_TUNNEL] 等待HTTP握手结束 hostname:{hostname} firstByte:0x{bufArr[0]:X2} bufferLen:{bufArr.Length}");
+                            }
                             return; // 等待完整 HTTP 头
                         }
                     }
