@@ -125,11 +125,21 @@ echo.
 echo [步骤5] 正在整理输出文件...
 if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 
-:: 清空 Output 目录下的旧文件（保留 logs 子目录）
-echo [信息] 清空旧输出文件...
-if exist "%OUTPUT_DIR%\%EXE_NAME%" del /f /q "%OUTPUT_DIR%\%EXE_NAME%"
-if exist "%OUTPUT_DIR%\%EXE_NAME%.config" del /f /q "%OUTPUT_DIR%\%EXE_NAME%.config"
-if exist "%OUTPUT_DIR%\rootCert.pfx" del /f /q "%OUTPUT_DIR%\rootCert.pfx"
+:: 保存 logs 子目录
+if exist "%OUTPUT_DIR%\logs" (
+    move "%OUTPUT_DIR%\logs" "%OUTPUT_DIR%\logs_bak" >nul 2>&1
+)
+
+:: 清空 Output 目录（删除所有文件和子目录）
+echo [信息] 清空 Output 目录...
+for %%f in ("%OUTPUT_DIR%\*") do del /f /q "%%f" >nul 2>&1
+for /d %%d in ("%OUTPUT_DIR%\*") do rmdir /s /q "%%d" >nul 2>&1
+
+:: 恢复 logs 子目录
+if exist "%OUTPUT_DIR%\logs_bak" (
+    move "%OUTPUT_DIR%\logs_bak" "%OUTPUT_DIR%\logs" >nul 2>&1
+)
+if not exist "%OUTPUT_DIR%\logs" mkdir "%OUTPUT_DIR%\logs"
 
 set "BIN_DIR=%PROJECT_DIR%\bin\Release"
 
@@ -139,15 +149,10 @@ if not exist "%BIN_DIR%\%EXE_NAME%" (
     exit /b 1
 )
 
+:: 复制编译产物
 copy /y "%BIN_DIR%\%EXE_NAME%" "%OUTPUT_DIR%\" >nul
 if exist "%BIN_DIR%\%EXE_NAME%.config" copy /y "%BIN_DIR%\%EXE_NAME%.config" "%OUTPUT_DIR%\" >nul
 if exist "%BIN_DIR%\rootCert.pfx" copy /y "%BIN_DIR%\rootCert.pfx" "%OUTPUT_DIR%\" >nul
-if not exist "%OUTPUT_DIR%\logs" mkdir "%OUTPUT_DIR%\logs"
-
-:: 复制 NuGet 依赖 dll（如 System.Net.Http）到 Output 目录
-for %%f in ("%BIN_DIR%\*.dll") do (
-    copy /y "%%f" "%OUTPUT_DIR%\" >nul 2>&1
-)
 
 echo.
 echo ===============================================
