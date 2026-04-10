@@ -218,8 +218,8 @@ namespace BarrageGrab
                 protobufErr = ex.Message;
             }
 
-            // 快手网页端常见 293/304B 资料包：包含等级字段与评论正文（如 1/2/3/主播你好）
-            if (TryProcessKuaishouProfileChatPacket(buff))
+            // 快手网页端常见资料包：评论正文常在外层帧切片后的 payload 中
+            if (TryProcessKuaishouProfileChatPacketWithCandidates(buff))
             {
                 return;
             }
@@ -238,11 +238,38 @@ namespace BarrageGrab
             }
         }
 
-        private bool TryProcessKuaishouProfileChatPacket(byte[] buff)
+        private bool TryProcessKuaishouProfileChatPacketWithCandidates(byte[] buff)
         {
             if (buff == null || buff.Length < 60) return false;
 
-            var tokens = ExtractProtoStringTokens(buff, maxTokens: 96);
+            // 先尝试原始包
+            if (TryProcessKuaishouProfileChatPacketCore(buff, "raw"))
+            {
+                return true;
+            }
+
+            // 再尝试外层帧切片候选（针对 Win 侧 433B/444B 这类包）
+            foreach (var candidate in BuildKuaishouDecodeCandidates(buff))
+            {
+                var len = candidate.Data.Length - candidate.Offset;
+                if (len < 60) continue;
+
+                var payload = new byte[len];
+                Buffer.BlockCopy(candidate.Data, candidate.Offset, payload, 0, len);
+                if (TryProcessKuaishouProfileChatPacketCore(payload, candidate.Strategy))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryProcessKuaishouProfileChatPacketCore(byte[] payload, string strategy)
+        {
+            if (payload == null || payload.Length < 60) return false;
+
+            var tokens = ExtractProtoStringTokens(payload, maxTokens: 96);
             if (tokens.Count == 0) return false;
 
             // 该簇在样本中稳定包含资料字段：level/rank/audience
@@ -284,7 +311,7 @@ namespace BarrageGrab
                 .FirstOrDefault(s => IsLikelyKuaishouNickname(s) && !string.Equals(s, best.text, StringComparison.Ordinal));
             if (string.IsNullOrWhiteSpace(nickname)) nickname = "快手用户";
 
-            Logger.LogInfo($"[快手][Fallback][PROFILE] 命中评论 nickname={nickname}, content={best.text}, fromBase64={best.fromBase64}, len={buff.Length}");
+            Logger.LogInfo($"[快手][Fallback][PROFILE] 命中评论 strategy={strategy}, nickname={nickname}, content={best.text}, fromBase64={best.fromBase64}, len={payload.Length}");
             FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
             {
                 Content = best.text,
@@ -321,7 +348,8 @@ namespace BarrageGrab
                         Logger.LogInfo($"[KS_REVERSE] classify=broadcast wire={wireSummary}");
                     }
                     LogKuaishouPacketSignature(inflated, $"ksgzip:{i}");
-                    TryLogKuaishouSessionInfo(inflated, allowFallbackEmit: !isBroadcastCandidate);
+                    // hints 更适合做观测，不再直接触发评论，避免“江北/王翠花”类误报
+                    TryLogKuaishouSessionInfo(inflated, allowFallbackEmit: false);
                     if (TryProcessKuaishouJsonFragments(inflated, allowChatEmit: !isBroadcastCandidate))
                     {
                         Logger.LogInfo($"[快手] GZIP解包后 JSON片段解析命中 at={i}");
