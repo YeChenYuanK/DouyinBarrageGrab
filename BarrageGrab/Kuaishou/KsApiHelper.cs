@@ -373,6 +373,7 @@ namespace BarrageGrab.Kuaishou
         {
             var wsUrls = new List<string>();
             var hosts = new[] {
+                "livejs-ws.kuaishou.cn",
                 "live-ws-group.kuaishou.com",
                 "live-ws.kuaishou.com",
                 "live-ws-pg-group1.kuaishou.com",
@@ -381,7 +382,14 @@ namespace BarrageGrab.Kuaishou
             };
             foreach (var host in hosts)
             {
-                wsUrls.Add($"wss://{host}{KS_DANMU_WS_PATH}");
+                if (host == "livejs-ws.kuaishou.cn")
+                {
+                    wsUrls.Add($"wss://{host}/group1");
+                }
+                else
+                {
+                    wsUrls.Add($"wss://{host}{KS_DANMU_WS_PATH}");
+                }
                 wsUrls.Add($"wss://{host}{KS_DANMU_WS_PATH_LEGACY}" +
                            $"?liveStreamId={Uri.EscapeDataString(liveStreamId)}" +
                            $"&token={Uri.EscapeDataString(token ?? "")}" +

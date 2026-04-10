@@ -53,7 +53,7 @@ namespace BarrageGrab.Proxy
         private readonly Regex webcastBarrageReg = new Regex(@"webcast\d+-ws-web-\w+\.(douyin|amemv)\.com");
 
         // 快手弹幕 WebSocket 地址正则（用于识别和拦截快手弹幕流）
-        private readonly Regex ksBarrageReg = new Regex(@"(live-ws.*\.kuaishou\.com|.*kuaishou.*ws.*|.*wsukwai\.com.*|/websocket)");
+        private readonly Regex ksBarrageReg = new Regex(@"(live-ws.*\.kuaishou\.com|livejs-ws\.kuaishou\.cn|.*ws.*kuaishou.*|.*kuaishou.*ws.*|.*wsukwai\.com.*|/websocket|/group\d+)");
 
         // 快手直播弹幕域名列表（用于识别快手弹幕请求）
         private readonly string[] ksBarrageHosts = new[] {
@@ -65,6 +65,7 @@ namespace BarrageGrab.Proxy
             "live-ws-pg-group3.kuaishou.com",
             "live-ws-pg-group4.kuaishou.com",
             "live-ws-pg-group5.kuaishou.com",
+            "livejs-ws.kuaishou.cn",
             // WebSocket 弹幕服务器（wsukwai.com，快手直播伴侣实际使用）
             "wsukwai.com",
             "p3-live.wsukwai.com",
@@ -962,6 +963,7 @@ namespace BarrageGrab.Proxy
                 "live-ws-pg-group3.kuaishou.com",
                 "live-ws-pg-group4.kuaishou.com",
                 "live-ws-pg-group5.kuaishou.com",
+                "livejs-ws.kuaishou.cn",
                 "p3-live.wsukwai.com",   // 快手直播伴侣弹幕WS域名
             };
 
