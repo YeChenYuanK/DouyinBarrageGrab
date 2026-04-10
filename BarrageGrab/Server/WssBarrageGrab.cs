@@ -466,26 +466,20 @@ namespace BarrageGrab
             {
                 if (inflated == null || inflated.Length == 0) return;
                 var hash = ComputeSha1Hex(inflated).Substring(0, 12);
-                lock (_ksStateTextProbeDedupLock)
-                {
-                    if (_ksStateTextProbeDedup.Contains(hash)) return;
-                    _ksStateTextProbeDedup.Add(hash);
-                    if (_ksStateTextProbeDedup.Count > 300) _ksStateTextProbeDedup.Clear();
-                }
 
                 var text = Encoding.UTF8.GetString(inflated);
                 if (string.IsNullOrWhiteSpace(text)) return;
 
                 var keywordRegex = new Regex(@"开播|下播|标题|直播间|liveStatus|startTime|liveTitle|welcome|online", RegexOptions.IgnoreCase);
-                var keywordHits = keywordRegex.Matches(text).Cast<Match>().Select(m => m.Value).Distinct().Take(12).ToList();
-                var zhChunks = Regex.Matches(text, @"[\u4e00-\u9fa5A-Za-z0-9_\-:]{3,36}")
+                var keywordHits = keywordRegex.Matches(text).Cast<Match>().Select(m => m.Value).Distinct().Take(32).ToList();
+                var zhChunks = Regex.Matches(text, @"[\u4e00-\u9fa5A-Za-z0-9_\-:]{2,64}")
                     .Cast<Match>()
                     .Select(m => m.Value)
                     .Where(s => s.IndexOf("http", StringComparison.OrdinalIgnoreCase) < 0)
                     .Distinct()
-                    .Take(12)
+                    .Take(30)
                     .ToList();
-                var preview = new string(text.Take(220).Select(c => char.IsControl(c) ? '.' : c).ToArray());
+                var preview = new string(text.Take(600).Select(c => char.IsControl(c) ? '.' : c).ToArray());
                 Logger.LogInfo($"[KS_STATE_TEXT_PROBE] hash={hash} keys={string.Join("|", keywordHits)} wire={wireSummary}");
                 Logger.LogInfo($"[KS_STATE_TEXT_PROBE] chunks={string.Join("|", zhChunks)}");
                 Logger.LogInfo($"[KS_STATE_TEXT_PROBE] preview={preview}");
@@ -515,8 +509,6 @@ namespace BarrageGrab
 
         private readonly HashSet<string> _ksReverseSampleDedup = new HashSet<string>(StringComparer.Ordinal);
         private readonly object _ksReverseSampleDedupLock = new object();
-        private readonly HashSet<string> _ksStateTextProbeDedup = new HashSet<string>(StringComparer.Ordinal);
-        private readonly object _ksStateTextProbeDedupLock = new object();
         private void DumpKsReverseSamples(byte[] raw, byte[] inflated, string processName, int gzipOffset)
         {
             try
