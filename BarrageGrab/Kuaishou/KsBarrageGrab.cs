@@ -169,8 +169,6 @@ namespace BarrageGrab.Kuaishou
 
             _ws = new ClientWebSocket();
             _ws.Options.SetRequestHeader("Origin", "https://live.kuaishou.com");
-            _ws.Options.SetRequestHeader("User-Agent",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36");
 
             Logger.LogInfo($"[KS] 正在连接 WebSocket: {wsUrl}");
             await _ws.ConnectAsync(new Uri(wsUrl), _cts.Token);
