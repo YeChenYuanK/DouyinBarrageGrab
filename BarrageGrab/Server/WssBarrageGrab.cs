@@ -1675,6 +1675,19 @@ namespace BarrageGrab
 
                 var text = Encoding.UTF8.GetString(payload);
                 var hits = ExtractKuaishouPreflightHints(text, uri);
+                if (IsKuaishouWlogNoise(host, uri))
+                {
+                    Logger.LogInfo($"[KS_HTTP_PREFLIGHT_NOISE] host={e.HostName} uri={uri} len={payload.Length} hits={hits}");
+                    return;
+                }
+
+                if (IsStrongKuaishouPreflightCandidate(host, uri))
+                {
+                    DumpKuaishouRawBytes("http_prefetch_strong_raw", e.HostName ?? e.ProcessName, payload);
+                    Logger.LogInfo($"[KS_PREFLIGHT_CANDIDATE_STRONG] host={e.HostName} uri={uri} len={payload.Length} hits={hits}");
+                    return;
+                }
+
                 Logger.LogInfo($"[KS_HTTP_PREFLIGHT] host={e.HostName} uri={uri} len={payload.Length} hits={hits}");
             }
             catch (Exception ex)
@@ -1691,6 +1704,29 @@ namespace BarrageGrab
             var hostHit = h.Contains("kuaishou") || h.Contains("wsukwai") || h.Contains("gifshow");
             if (!hostHit) return false;
             return u.Contains("/rest/") || u.Contains("/graphql") || u.Contains("live") || u.Contains("room") || u.Contains("stream") || u.Contains("webcast");
+        }
+
+        private bool IsKuaishouWlogNoise(string host, string uri)
+        {
+            var h = (host ?? string.Empty).ToLowerInvariant();
+            var u = (uri ?? string.Empty).ToLowerInvariant();
+            return h.Contains("wlog.gifshow.com") || u.Contains("/rest/kd/log/collect");
+        }
+
+        private bool IsStrongKuaishouPreflightCandidate(string host, string uri)
+        {
+            var h = (host ?? string.Empty).ToLowerInvariant();
+            var u = (uri ?? string.Empty).ToLowerInvariant();
+            if (IsKuaishouWlogNoise(h, u)) return false;
+            if (!(h.Contains("kuaishou") || h.Contains("wsukwai") || h.Contains("gifshow"))) return false;
+
+            return u.Contains("/graphql")
+                || u.Contains("/webcast")
+                || u.Contains("/live/")
+                || u.Contains("/room/")
+                || u.Contains("/stream/")
+                || u.Contains("/feed/")
+                || u.Contains("/pull");
         }
 
         private string ExtractKuaishouPreflightHints(string text, string uri)
