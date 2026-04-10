@@ -400,6 +400,17 @@ namespace BarrageGrab.Proxy
                     // ignore
                 }
 
+                var ext = Path.GetExtension(path ?? string.Empty)?.ToLowerInvariant() ?? string.Empty;
+                var isStaticAsset = ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".ico" || ext == ".css" || ext == ".woff" || ext == ".woff2" || ext == ".ttf" || ext == ".map";
+                if (isStaticAsset) return;
+
+                var m = (method ?? "UNKNOWN").ToUpperInvariant();
+                var looksLikeApiPath = path.Contains("/api/") || path.Contains("/rest/") || path.Contains("/live/") || path.Contains("/room/") || path.Contains("author") || path.Contains("stream") || path.Contains("status") || path.Contains("token");
+                if (m == "GET" && !looksLikeApiPath)
+                {
+                    return;
+                }
+
                 var key = $"{method}|{host}|{path}";
                 var now = DateTime.Now;
                 lock (ksHttpReqIndexLock)
@@ -411,7 +422,8 @@ namespace BarrageGrab.Proxy
                     ksHttpReqIndexLastAt[key] = now;
                 }
 
-                Logger.LogInfo($"[KS_HTTP_REQ_INDEX] method={method} host={host} path={path} uri={reqUri}");
+                var priority = (m == "POST" || m == "PUT" || m == "PATCH" || m == "OPTIONS") ? "HIGH" : "NORMAL";
+                Logger.LogInfo($"[KS_HTTP_REQ_INDEX] priority={priority} method={method} host={host} path={path} uri={reqUri}");
             }
             catch (Exception ex)
             {
