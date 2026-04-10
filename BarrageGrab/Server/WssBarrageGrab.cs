@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Threading.Tasks;
@@ -246,6 +247,7 @@ namespace BarrageGrab
                     if (inflated == null || inflated.Length == 0) continue;
 
                     Logger.LogInfo($"[快手] GZIP命中 at={i} inflatedLen={inflated.Length}");
+                    DumpKsReverseSamples(buff, inflated, processName, i);
                     LogKuaishouPacketSignature(inflated, $"ksgzip:{i}");
                     TryLogKuaishouSessionInfo(inflated);
                     if (TryProcessKuaishouJsonFragments(inflated))
@@ -288,6 +290,98 @@ namespace BarrageGrab
             }
 
             return false;
+        }
+
+        private readonly HashSet<string> _ksReverseSampleDedup = new HashSet<string>(StringComparer.Ordinal);
+        private readonly object _ksReverseSampleDedupLock = new object();
+        private void DumpKsReverseSamples(byte[] raw, byte[] inflated, string processName, int gzipOffset)
+        {
+            try
+            {
+                var hash = ComputeSha1Hex(inflated).Substring(0, 16);
+                lock (_ksReverseSampleDedupLock)
+                {
+                    if (_ksReverseSampleDedup.Contains(hash)) return;
+                    _ksReverseSampleDedup.Add(hash);
+                    while (_ksReverseSampleDedup.Count > 300)
+                    {
+                        // 简单控量：超过上限后清空去重集合，允许后续新样本继续入库
+                        _ksReverseSampleDedup.Clear();
+                        break;
+                    }
+                }
+
+                var ts = DateTime.Now.ToString("HHmmss");
+                var proc = string.IsNullOrWhiteSpace(processName) ? "unknown" : processName;
+                var nameBase = $"{ts}_{proc}_g{gzipOffset}_{hash}";
+                Logger.LogBarragePack("KS-REVERSE-RAW", $"{nameBase}_raw", raw, maxCount: 120);
+                Logger.LogBarragePack("KS-REVERSE-INFLATED", $"{nameBase}_inflated", inflated, maxCount: 180);
+                Logger.LogInfo($"[KS_REVERSE] sampleDump hash={hash} rawLen={raw.Length} inflatedLen={inflated.Length}");
+
+                var wire = BuildProtoWireSummary(inflated, maxFields: 24);
+                if (!string.IsNullOrWhiteSpace(wire))
+                {
+                    Logger.LogInfo($"[KS_REVERSE] wireSummary={wire}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_REVERSE] dumpFailed {ex.Message}");
+            }
+        }
+
+        private string ComputeSha1Hex(byte[] data)
+        {
+            using (var sha1 = SHA1.Create())
+            {
+                var hash = sha1.ComputeHash(data ?? Array.Empty<byte>());
+                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            }
+        }
+
+        private string BuildProtoWireSummary(byte[] data, int maxFields)
+        {
+            if (data == null || data.Length == 0) return "";
+            var parts = new List<string>();
+            int idx = 0;
+            int count = 0;
+            while (idx < data.Length && count < maxFields)
+            {
+                var keyPos = idx;
+                if (!TryReadVarint64(data, ref idx, out ulong key)) break;
+                int fieldNo = (int)(key >> 3);
+                int wireType = (int)(key & 0x07);
+                switch (wireType)
+                {
+                    case 0:
+                        if (!TryReadVarint64(data, ref idx, out ulong v0)) return string.Join(",", parts);
+                        parts.Add($"f{fieldNo}:v({v0})");
+                        break;
+                    case 1:
+                        if (idx + 8 > data.Length) return string.Join(",", parts);
+                        parts.Add($"f{fieldNo}:64");
+                        idx += 8;
+                        break;
+                    case 2:
+                        if (!TryReadVarint64(data, ref idx, out ulong lenU)) return string.Join(",", parts);
+                        if (lenU > int.MaxValue) return string.Join(",", parts);
+                        int len = (int)lenU;
+                        if (idx + len > data.Length) return string.Join(",", parts);
+                        parts.Add($"f{fieldNo}:len({len})");
+                        idx += len;
+                        break;
+                    case 5:
+                        if (idx + 4 > data.Length) return string.Join(",", parts);
+                        parts.Add($"f{fieldNo}:32");
+                        idx += 4;
+                        break;
+                    default:
+                        parts.Add($"f{fieldNo}:wt({wireType})@{keyPos}");
+                        return string.Join(",", parts);
+                }
+                count++;
+            }
+            return string.Join(",", parts);
         }
 
         private bool TryProcessKuaishouJsonFragments(byte[] inflated)
