@@ -585,24 +585,27 @@ namespace BarrageGrab
                     try { jobj = JObject.Parse(json); }
                     catch { continue; }
 
+                    var jsonFlat = jobj.ToString(Formatting.None);
+                    var isActivityNoise = IsKuaishouActivityNoisePayload(jsonFlat);
+
                     var title = jobj.SelectToken("$..title")?.Value<string>();
                     var anchor = jobj.SelectToken("$..nickname")?.Value<string>()
                                  ?? jobj.SelectToken("$..authorName")?.Value<string>()
                                  ?? jobj.SelectToken("$..anchorName")?.Value<string>();
-                    if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(anchor))
+                    if (!isActivityNoise && (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(anchor)))
                     {
                         Logger.LogInfo($"[KS_ROOM_JSON] anchor={anchor ?? "N/A"}, title={title ?? "N/A"}");
                         // 恢复窗口提示：用于开播阶段快速观察，注意这里是 JSON 片段候选信息
                         Logger.PrintColor($"[快手房间候选] 主播: {anchor ?? "N/A"} | 标题: {title ?? "N/A"}", ConsoleColor.Cyan);
                     }
 
-                    if (IsKuaishouStateCallbackJobj(jobj))
+                    if (!isActivityNoise && IsKuaishouStateCallbackJobj(jobj))
                     {
                         foundStateCallback = true;
                         var stateTitle = title ?? jobj.SelectToken("$..liveTitle")?.Value<string>() ?? "N/A";
                         var stateAnchor = anchor ?? jobj.SelectToken("$..userName")?.Value<string>() ?? "N/A";
-                        Logger.LogInfo($"[KS_STATE_CANDIDATE] anchor={stateAnchor}, title={stateTitle}");
-                        Logger.PrintColor($"[开播回调候选] 主播: {stateAnchor} | 标题: {stateTitle}", ConsoleColor.DarkCyan);
+                        Logger.LogInfo($"[KS_STATE] anchor={stateAnchor}, title={stateTitle}");
+                        Logger.PrintColor($"[快手状态] 主播: {stateAnchor} | 标题: {stateTitle}", ConsoleColor.DarkCyan);
                     }
 
                     foreach (var obj in jobj.DescendantsAndSelf().OfType<JObject>())
@@ -651,9 +654,20 @@ namespace BarrageGrab
             if (jobj == null) return false;
             var allText = jobj.ToString(Formatting.None);
             if (string.IsNullOrWhiteSpace(allText)) return false;
-            var keys = new[] { "title", "livePeakCup", "start", "liveStatus", "room", "anchor", "welcome", "online" };
+            if (IsKuaishouActivityNoisePayload(allText)) return false;
+            var keys = new[] { "title", "start", "liveStatus", "room", "anchor", "welcome", "online", "liveTitle" };
             var score = keys.Count(k => allText.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0);
             return score >= 3;
+        }
+
+        private bool IsKuaishouActivityNoisePayload(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            return text.IndexOf("livePeakCup", StringComparison.OrdinalIgnoreCase) >= 0
+                || text.IndexOf("MERCHANT_", StringComparison.OrdinalIgnoreCase) >= 0
+                || text.IndexOf("stickerImagePendant", StringComparison.OrdinalIgnoreCase) >= 0
+                || text.IndexOf("mentionModuleGuide", StringComparison.OrdinalIgnoreCase) >= 0
+                || text.IndexOf("巅峰赛红包", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private List<string> ExtractJsonObjectCandidates(string text, int maxCount)
