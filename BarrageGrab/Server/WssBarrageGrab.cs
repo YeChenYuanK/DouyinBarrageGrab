@@ -117,13 +117,16 @@ namespace BarrageGrab
         {
             Logger.LogInfo($"[WS入口] ★★★ Proxy_OnWebSocketData 被调用 Host={e.HostName} Process={e.ProcessName} Len={e.Payload?.Length ?? -1} NeedDecomp={e.NeedDecompress}");
             var processName = (e.ProcessName ?? string.Empty).Trim();
+            var hostName = (e.HostName ?? string.Empty).Trim().ToLowerInvariant();
             var allowByProcessFilter = appsetting.ProcessFilter != null && appsetting.ProcessFilter.Any(f =>
             {
                 var filter = (f ?? string.Empty).Trim();
                 if (string.IsNullOrEmpty(filter)) return false;
                 return processName.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
             });
-            if (!allowByProcessFilter)
+            var isKuaishouHost = hostName.Contains("kuaishou") || hostName.Contains("wsukwai") || hostName.Contains("gifshow") || hostName.Contains("ksapis");
+            // 快手官方客户端抓包场景允许按域名放行，避免进程名不一致导致误拦截
+            if (!allowByProcessFilter && !isKuaishouHost)
             {
                 Logger.LogInfo($"[WS] 进程被过滤: {e.ProcessName}，不在白名单内");
                 return;
@@ -138,7 +141,7 @@ namespace BarrageGrab
             Logger.LogInfo($"[WS] 收到数据 Host={e.HostName} Process={e.ProcessName} Len={buff.Length} NeedDecompress={e.NeedDecompress}");
 
             // 判断是否为快手弹幕请求
-            if (e.HostName != null && (e.HostName.Contains("kuaishou") || e.HostName.Contains("ksapis")))
+            if (isKuaishouHost)
             {
                 Logger.LogInfo($"[WS] 识别为快手域名，转交ProcessKuaishouWsData");
                 ProcessKuaishouWsData(e);

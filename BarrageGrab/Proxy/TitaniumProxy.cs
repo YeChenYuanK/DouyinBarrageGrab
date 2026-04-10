@@ -240,6 +240,8 @@ namespace BarrageGrab.Proxy
         /// </summary>
         private bool CheckKuaishouProcess(string processName)
         {
+            if (string.IsNullOrWhiteSpace(processName)) return false;
+            processName = processName.ToLowerInvariant();
             // 扩展快手进程名列表
             var ksProcessNames = new[] {
                 "快手直播伴侣",      // 中文名
@@ -256,7 +258,7 @@ namespace BarrageGrab.Proxy
             
             foreach (var name in ksProcessNames)
             {
-                if (processName.Contains(name) || AppSetting.Current.ProcessFilter.Any(f => f.Contains(name)))
+                if (processName.Contains(name.ToLowerInvariant()) || AppSetting.Current.ProcessFilter.Any(f => f.Contains(name)))
                     return true;
             }
             
@@ -294,17 +296,18 @@ namespace BarrageGrab.Proxy
 
             // 只对 WS 升级请求订阅 DataReceived（防止普通HTTP请求误订阅导致解析错误）
             // WS 升级请求特征：Upgrade: websocket 头，或 ConnectRequest.TunnelType == Websocket
-            bool isKwaiProcess = processName != null && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool isKwaiProcess = CheckKuaishouProcess(processName);
             bool isKuaishouDomain = IsKuaishouBarrageRequest(hostname, uri);
             bool isTunnelWs = e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket;
             var upgradeHeader = e.HttpClient.Request.Headers.GetFirstHeader("Upgrade")?.Value ?? "";
             bool isWsUpgrade = upgradeHeader.IndexOf("websocket", StringComparison.OrdinalIgnoreCase) >= 0;
 
-            if ((isKwaiProcess || isKuaishouDomain) && (isTunnelWs || isWsUpgrade))
+            // 快手抓包模式只跟随官方客户端进程，避免浏览器流量干扰鉴权链路
+            if (isKwaiProcess && (isTunnelWs || isWsUpgrade))
             {
                 e.DataReceived -= WebSocket_DataReceived;
                 e.DataReceived += WebSocket_DataReceived;
-                Logger.LogInfo($"[KS_REQ] 订阅DataReceived hostname:{hostname} Process:{processName} isTunnelWs={isTunnelWs} isWsUpgrade={isWsUpgrade}");
+                Logger.LogInfo($"[KS_REQ] 官方客户端握手捕获 hostname:{hostname} Process:{processName} isTunnelWs={isTunnelWs} isWsUpgrade={isWsUpgrade}");
             }
 
             return Task.CompletedTask;
@@ -453,7 +456,7 @@ namespace BarrageGrab.Proxy
 
             //ws 方式 - 快手（仅当 TunnelType 是 Websocket 时才订阅，避免对普通HTTP响应误订阅）
             bool isKuaishouBarrage = IsKuaishouBarrageRequest(hostname, uri);
-            if (isWs && isKuaishouBarrage)
+            if (isWs && isKuaishouBarrage && CheckKuaishouProcess(processName))
             {
                 e.DataReceived -= WebSocket_DataReceived;
                 e.DataReceived += WebSocket_DataReceived;
@@ -789,14 +792,13 @@ namespace BarrageGrab.Proxy
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
 
-            bool isKwaiProcess = processName != null && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
-            bool isKuaishouDomain = IsKuaishouBarrageRequest(hostname, e.HttpClient.Request.RequestUri.ToString());
+            bool isKwaiProcess = CheckKuaishouProcess(processName);
 
-            if (isKwaiProcess || isKuaishouDomain)
+            if (isKwaiProcess)
             {
                 e.DecryptedDataReceived -= TunnelDecryptedDataReceived;
                 e.DecryptedDataReceived += TunnelDecryptedDataReceived;
-                Logger.LogInfo($"[KS_TUNNEL] 订阅DecryptedDataReceived hostname:{hostname} Process:{processName}");
+                Logger.LogInfo($"[KS_TUNNEL] 官方客户端隧道捕获 hostname:{hostname} Process:{processName}");
             }
 
             return Task.CompletedTask;

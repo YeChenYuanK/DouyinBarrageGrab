@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -702,17 +702,25 @@ namespace BarrageGrab
                 Logger.LogInfo($"[KS_CONFIG] KuaishouEnabled={AppSetting.Current.KuaishouEnabled}, KuaishouRoomId={AppSetting.Current.KuaishouRoomId}");
                 if (AppSetting.Current.KuaishouEnabled && !string.IsNullOrWhiteSpace(AppSetting.Current.KuaishouRoomId))
                 {
-                    var roomId = AppSetting.Current.KuaishouRoomId;
-                    if (!string.IsNullOrWhiteSpace(AppSetting.Current.KuaishouCookie))
+                    // sysProxy=true 时，优先走“官方客户端鉴权 + 代理抓包”，不主动直连快手 WS
+                    if (AppSetting.Current.UsedProxy)
                     {
-                        KsApiHelper.SetCookie(AppSetting.Current.KuaishouCookie);
+                        Logger.LogInfo("[KS_MODE] 当前为代理抓包模式：仅抓取官方客户端流量，不启动直连KsBarrageGrab");
                     }
-                    _ = ksGrab.ConnectAsync(roomId).ContinueWith(t =>
+                    else
                     {
-                        if (t.IsFaulted)
-                            Logger.LogError(t.Exception?.InnerException ?? t.Exception, $"[KS] ConnectAsync 异常: {t.Exception?.InnerException?.Message ?? t.Exception?.Message}");
-                    });
-                    Logger.PrintColor($"[启动] 快手弹幕抓取已启动，房间ID: {roomId}", ConsoleColor.Green);
+                        var roomId = AppSetting.Current.KuaishouRoomId;
+                        if (!string.IsNullOrWhiteSpace(AppSetting.Current.KuaishouCookie))
+                        {
+                            KsApiHelper.SetCookie(AppSetting.Current.KuaishouCookie);
+                        }
+                        _ = ksGrab.ConnectAsync(roomId).ContinueWith(t =>
+                        {
+                            if (t.IsFaulted)
+                                Logger.LogError(t.Exception?.InnerException ?? t.Exception, $"[KS] ConnectAsync 异常: {t.Exception?.InnerException?.Message ?? t.Exception?.Message}");
+                        });
+                        Logger.PrintColor($"[启动] 快手弹幕抓取已启动，房间ID: {roomId}", ConsoleColor.Green);
+                    }
                 }
             }
             catch (Exception)
