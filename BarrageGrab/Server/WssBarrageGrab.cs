@@ -29,6 +29,7 @@ namespace BarrageGrab
         AppSetting appsetting = AppSetting.Current;
         private readonly object ksFlowLock = new object();
         private readonly Dictionary<string, KsFlowClusterStat> ksFlowClusters = new Dictionary<string, KsFlowClusterStat>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DateTime> ksRouteStateLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// 进入直播间
@@ -1794,6 +1795,7 @@ namespace BarrageGrab
                     {
                         Logger.LogInfo($"[KS_WS_ROUTE_SIGNAL] host={flowHost} score={score} signals={signalSummary}");
                     }
+                    TryLogKsLiveRouteState(flowHost, score, signalSummary, payloadLength, processName);
                 }
 
                 var clusterKey = $"{protocol}|{flowHost}|{flowPath}";
@@ -1925,6 +1927,35 @@ namespace BarrageGrab
             }
 
             return signals.Count == 0 ? string.Empty : string.Join("|", signals.Take(8));
+        }
+
+        private void TryLogKsLiveRouteState(string host, int score, string signalSummary, int payloadLength, string processName)
+        {
+            try
+            {
+                var now = DateTime.Now;
+                lock (ksFlowLock)
+                {
+                    if (ksRouteStateLastLogAt.TryGetValue(host, out var lastAt) && (now - lastAt).TotalSeconds < 3)
+                    {
+                        return;
+                    }
+                    ksRouteStateLastLogAt[host] = now;
+                }
+
+                var signals = (signalSummary ?? string.Empty).ToLowerInvariant();
+                var hasAudience = signals.Contains("人在看");
+                var hasRouteMarkers = signals.Contains("platformbiz") || signals.Contains("author_label") || signals.Contains("gzonepcmate");
+                var level = "PROBE";
+                if (score >= 70 || hasRouteMarkers) level = "CANDIDATE";
+                if (score >= 85 && hasAudience && hasRouteMarkers) level = "CONFIRMED";
+
+                Logger.LogInfo($"[KS_LIVE_ROUTE_STATE] level={level} host={host} score={score} payload={payloadLength} process={processName} signals={signalSummary}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_LIVE_ROUTE_STATE] failed: {ex.Message}");
+            }
         }
 
         private int ScoreKuaishouFlow(string protocol, string host, string path, string uri, string processName, int payloadLength, int hintHits)
