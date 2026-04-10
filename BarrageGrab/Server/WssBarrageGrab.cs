@@ -27,6 +27,8 @@ namespace BarrageGrab
         //ISystemProxy proxy = new FiddlerProxy();
         ISystemProxy proxy = new TitaniumProxy();
         AppSetting appsetting = AppSetting.Current;
+        private readonly object ksFlowLock = new object();
+        private readonly Dictionary<string, KsFlowClusterStat> ksFlowClusters = new Dictionary<string, KsFlowClusterStat>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// 进入直播间
@@ -122,6 +124,10 @@ namespace BarrageGrab
             if (buff != null && buff.Length > 0)
             {
                 DumpKuaishouRawBytes("ws_any_raw", $"{e.HostName}|{e.ProcessName}", buff);
+                if (IsUnknownFlowHost(e.HostName))
+                {
+                    DumpKuaishouRawBytes("ws_unknown_host_raw", $"{e.HostName}|{e.ProcessName}", buff);
+                }
             }
             var processName = (e.ProcessName ?? string.Empty).Trim();
             var hostName = (e.HostName ?? string.Empty).Trim().ToLowerInvariant();
@@ -155,6 +161,7 @@ namespace BarrageGrab
             // 判断是否为快手弹幕请求
             if (isKuaishouHost)
             {
+                RecordKuaishouFlow("ws", e.HostName, string.Empty, e.ProcessName, buff.Length, string.Empty);
                 Logger.LogInfo($"[WS] 识别为快手域名，转交ProcessKuaishouWsData");
                 ProcessKuaishouWsData(e);
                 return;
@@ -1635,8 +1642,13 @@ namespace BarrageGrab
             if (payload == null || payload.Length == 0) return;
 
             DumpKuaishouRawBytes("http_any_raw", e.HostName ?? e.ProcessName, payload);
+            if (IsUnknownFlowHost(e.HostName))
+            {
+                DumpKuaishouRawBytes("http_unknown_host_raw", e.HostName ?? e.ProcessName, payload);
+            }
             if (IsLikelyKuaishouHttpEvent(e))
             {
+                RecordKuaishouFlow("http", e.HostName, e.RequestUri, e.ProcessName, payload.Length, string.Empty);
                 DumpKuaishouRawBytes("http_raw", e.HostName ?? e.ProcessName, payload);
                 TryLogKuaishouHttpPreflight(e, payload);
                 return;
@@ -1752,6 +1764,110 @@ namespace BarrageGrab
                 return $"uri={uri}; no-key-hit";
             }
             return $"uri={uri}; {string.Join(" | ", hits)}";
+        }
+
+        private bool IsUnknownFlowHost(string host)
+        {
+            var h = (host ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(h)) return true;
+            if (h.StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase)) return true;
+            return Regex.IsMatch(h, @"^\d{1,3}(\.\d{1,3}){3}$");
+        }
+
+        private void RecordKuaishouFlow(string protocol, string host, string uri, string processName, int payloadLength, string contentType)
+        {
+            try
+            {
+                var flowHost = NormalizeFlowHost(host);
+                var flowPath = NormalizeFlowPath(uri);
+                var score = ScoreKuaishouFlow(flowHost, flowPath, uri);
+                Logger.LogInfo($"[KS_FLOW_LEDGER] proto={protocol} process={processName} host={flowHost} path={flowPath} len={payloadLength} score={score} ct={contentType}");
+                Logger.LogInfo($"[KS_FLOW_SCORE] score={score} level={(score >= 80 ? "strong" : (score >= 40 ? "medium" : "weak"))} proto={protocol} host={flowHost} path={flowPath} uri={uri}");
+
+                var clusterKey = $"{protocol}|{flowHost}|{flowPath}";
+                lock (ksFlowLock)
+                {
+                    if (!ksFlowClusters.TryGetValue(clusterKey, out var stat))
+                    {
+                        stat = new KsFlowClusterStat
+                        {
+                            Protocol = protocol,
+                            Host = flowHost,
+                            Path = flowPath,
+                            FirstSeen = DateTime.Now
+                        };
+                        ksFlowClusters[clusterKey] = stat;
+                    }
+                    stat.Count++;
+                    stat.LastSeen = DateTime.Now;
+                    stat.TotalBytes += Math.Max(0, payloadLength);
+                    if (score > stat.MaxScore) stat.MaxScore = score;
+
+                    if (stat.Count == 1 || stat.Count % 20 == 0)
+                    {
+                        Logger.LogInfo($"[KS_FLOW_CLUSTER] key={clusterKey} count={stat.Count} totalBytes={stat.TotalBytes} maxScore={stat.MaxScore} first={stat.FirstSeen:HH:mm:ss} last={stat.LastSeen:HH:mm:ss}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_FLOW_LEDGER] failed: {ex.Message}");
+            }
+        }
+
+        private string NormalizeFlowHost(string host)
+        {
+            var h = (host ?? string.Empty).Trim().ToLowerInvariant();
+            if (h.StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase))
+            {
+                h = h.Substring("ksraw:".Length);
+            }
+            return string.IsNullOrWhiteSpace(h) ? "unknown-host" : h;
+        }
+
+        private string NormalizeFlowPath(string uri)
+        {
+            if (string.IsNullOrWhiteSpace(uri)) return "/";
+            try
+            {
+                var parsed = new Uri(uri);
+                var p = parsed.AbsolutePath?.ToLowerInvariant();
+                return string.IsNullOrWhiteSpace(p) ? "/" : p;
+            }
+            catch
+            {
+                return "/";
+            }
+        }
+
+        private int ScoreKuaishouFlow(string host, string path, string uri)
+        {
+            var score = 0;
+            var h = (host ?? string.Empty).ToLowerInvariant();
+            var p = (path ?? string.Empty).ToLowerInvariant();
+            var u = (uri ?? string.Empty).ToLowerInvariant();
+
+            if (h.Contains("kuaishou") || h.Contains("gifshow") || h.Contains("wsukwai")) score += 20;
+            if (p.Contains("live") || p.Contains("room") || p.Contains("stream")) score += 25;
+            if (p.Contains("webcast") || p.Contains("graphql") || p.Contains("feed") || p.Contains("pull")) score += 35;
+            if (u.Contains("authorid") || u.Contains("livestreamid") || u.Contains("roomid")) score += 20;
+            if (h.Contains("wlog.gifshow.com") || p.Contains("/rest/kd/log/collect")) score -= 80;
+
+            if (score < 0) score = 0;
+            if (score > 100) score = 100;
+            return score;
+        }
+
+        private class KsFlowClusterStat
+        {
+            public string Protocol { get; set; }
+            public string Host { get; set; }
+            public string Path { get; set; }
+            public int Count { get; set; }
+            public long TotalBytes { get; set; }
+            public int MaxScore { get; set; }
+            public DateTime FirstSeen { get; set; }
+            public DateTime LastSeen { get; set; }
         }
 
         private void DumpKuaishouRawBytes(string channel, string hostOrTag, byte[] data)
