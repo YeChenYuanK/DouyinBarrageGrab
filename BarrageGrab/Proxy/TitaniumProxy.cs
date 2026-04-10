@@ -954,8 +954,28 @@ namespace BarrageGrab.Proxy
             if (args == null || e.Count <= 0) return;
             var host = args.HttpClient.Request.RequestUri.Host;
             var processId = args.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processId);
             var first = e.Buffer[e.Offset];
             Logger.LogInfo($"[KS_TUNNEL_RAW_RX] host:{host} process:{base.GetProcessName(processId)} recvCount:{e.Count} firstByte:0x{first:X2}");
+
+            // 对快手直播伴侣的“非标准WS帧”通道做透传，交给上层做协议探测解析
+            // 0x16/0x17 多为 TLS 握手/应用层密文，跳过避免噪音；其余字节流尝试上送
+            bool isKwaiProcess = !string.IsNullOrWhiteSpace(processName) && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool looksTlsRecord = first == 0x16 || first == 0x17 || first == 0x14;
+            if (isKwaiProcess && !looksTlsRecord && e.Count >= 20)
+            {
+                var payload = new byte[e.Count];
+                Buffer.BlockCopy(e.Buffer, e.Offset, payload, 0, e.Count);
+                Logger.LogInfo($"[KS_TUNNEL_RAW_FORWARD] host:{host} size:{payload.Length} firstByte:0x{first:X2}");
+                base.FireWsEvent(new WsMessageEventArgs()
+                {
+                    ProcessID = processId,
+                    HostName = "ksraw:" + host,
+                    Payload = payload,
+                    ProcessName = processName,
+                    NeedDecompress = false
+                });
+            }
         }
 
         // 处理隧道原始上行密文数据（客户端->服务端）

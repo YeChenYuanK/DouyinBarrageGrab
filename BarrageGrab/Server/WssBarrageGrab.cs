@@ -124,7 +124,7 @@ namespace BarrageGrab
                 if (string.IsNullOrEmpty(filter)) return false;
                 return processName.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
             });
-            var isKuaishouHost = hostName.Contains("kuaishou") || hostName.Contains("wsukwai") || hostName.Contains("gifshow") || hostName.Contains("ksapis");
+            var isKuaishouHost = hostName.Contains("kuaishou") || hostName.Contains("wsukwai") || hostName.Contains("gifshow") || hostName.Contains("ksapis") || hostName.StartsWith("ksraw:");
             // 快手官方客户端抓包场景允许按域名放行，避免进程名不一致导致误拦截
             if (!allowByProcessFilter && !isKuaishouHost)
             {
@@ -195,8 +195,8 @@ namespace BarrageGrab
 
             try
             {
-                // 尝试 Protobuf 解析（快手直播伴侣可能用 Protobuf）
-                ProcessKuaishouProtobuf(buff, e.ProcessName);
+                // 尝试 Protobuf 解析（支持偏移探测，兼容前置长度/类型头）
+                if (TryProcessKuaishouProtobufWithOffsets(buff, e.ProcessName)) return;
             }
             catch (Exception ex1)
             {
@@ -210,6 +210,54 @@ namespace BarrageGrab
                     Logger.LogWarn($"[快手] WebSocket 数据解析失败: Protobuf({ex1.Message}), JSON({ex2.Message})");
                 }
             }
+        }
+
+        private bool TryProcessKuaishouProtobufWithOffsets(byte[] buff, string processName)
+        {
+            var maxOffset = Math.Min(6, Math.Max(0, buff.Length - 1));
+            for (var offset = 0; offset <= maxOffset; offset++)
+            {
+                try
+                {
+                    var span = new ReadOnlyMemory<byte>(buff, offset, buff.Length - offset);
+                    var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(span);
+                    if (envelope?.Payload == null || envelope.Payload.Length == 0) continue;
+                    var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(envelope.Payload));
+                    if (ksPayload?.SendMessages == null || ksPayload.SendMessages.Count == 0) continue;
+
+                    Logger.LogInfo($"[快手] Protobuf偏移命中 offset={offset}，消息数={ksPayload.SendMessages.Count}");
+                    foreach (var sendMsg in ksPayload.SendMessages)
+                    {
+                        var msgType = (sendMsg.MsgType ?? "").ToUpper();
+                        var payload = sendMsg.Payload;
+                        if (payload == null) continue;
+                        switch (msgType)
+                        {
+                            case "CHAT":
+                                FireKuaishouChat(Serializer.Deserialize<Modles.ProtoEntity.KsChatMessage>(new ReadOnlyMemory<byte>(payload)));
+                                break;
+                            case "GIFT":
+                                FireKuaishouGift(Serializer.Deserialize<Modles.ProtoEntity.KsGiftMessage>(new ReadOnlyMemory<byte>(payload)));
+                                break;
+                            case "LIKE":
+                                FireKuaishouLike(Serializer.Deserialize<Modles.ProtoEntity.KsLikeMessage>(new ReadOnlyMemory<byte>(payload)));
+                                break;
+                            case "ENTER":
+                                FireKuaishouEnter(Serializer.Deserialize<Modles.ProtoEntity.KsEnterMessage>(new ReadOnlyMemory<byte>(payload)));
+                                break;
+                            case "FOLLOW":
+                                FireKuaishouFollow(Serializer.Deserialize<Modles.ProtoEntity.KsFollowMessage>(new ReadOnlyMemory<byte>(payload)));
+                                break;
+                        }
+                    }
+                    return true;
+                }
+                catch
+                {
+                    // 继续尝试下一个偏移
+                }
+            }
+            return false;
         }
 
         // 处理快手 Protobuf 数据
