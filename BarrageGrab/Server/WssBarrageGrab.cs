@@ -199,6 +199,7 @@ namespace BarrageGrab
             var buff = e.Payload;
             if (buff.Length == 0) return;
 
+            DumpKuaishouRawBytes("ws_raw", e.HostName, buff);
             Logger.LogInfo($"[快手] ProcessKuaishouWsData 收到数据 Len={buff.Length}");
             if (buff.Length >= 120 || (e.HostName ?? "").StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase))
             {
@@ -403,8 +404,10 @@ namespace BarrageGrab
                 {
                     var gzip = new byte[buff.Length - i];
                     Buffer.BlockCopy(buff, i, gzip, 0, gzip.Length);
+                    DumpKuaishouRawBytes($"ws_gzip_raw_at_{i}", processName, gzip);
                     var inflated = Decompress(gzip);
                     if (inflated == null || inflated.Length == 0) continue;
+                    DumpKuaishouRawBytes($"ws_gzip_inflated_at_{i}", processName, inflated);
 
                     Logger.LogInfo($"[快手] GZIP命中 at={i} inflatedLen={inflated.Length}");
                     DumpKsReverseSamples(buff, inflated, processName, i);
@@ -1625,15 +1628,65 @@ namespace BarrageGrab
         private void Proxy_OnFetchResponse(object sender, HttpResponseEventArgs e)
         {
             var payload = e.Payload;
-
             if (payload == null || payload.Length == 0) return;
 
-            var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(payload));
-
-            response.Messages.ForEach(f =>
+            if (IsLikelyKuaishouHttpEvent(e))
             {
-                DoMessage(f, e.ProcessName);
-            });
+                DumpKuaishouRawBytes("http_raw", e.HostName ?? e.ProcessName, payload);
+                return;
+            }
+
+            try
+            {
+                var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(payload));
+                response?.Messages?.ForEach(f => DoMessage(f, e.ProcessName));
+            }
+            catch
+            {
+                // 非抖音protobuf响应忽略
+            }
+        }
+
+        private bool IsLikelyKuaishouHttpEvent(HttpResponseEventArgs e)
+        {
+            var host = (e?.HostName ?? string.Empty).ToLowerInvariant();
+            var process = (e?.ProcessName ?? string.Empty).ToLowerInvariant();
+            var hostHit = host.Contains("kuaishou") || host.Contains("wsukwai") || host.Contains("gifshow");
+            var processHit = process.Contains("kwailive") || process.Contains("kuaishou") || process.Contains("gifshow") || process.Contains("kscloud");
+            return hostHit || processHit;
+        }
+
+        private void DumpKuaishouRawBytes(string channel, string hostOrTag, byte[] data)
+        {
+            if (data == null || data.Length == 0) return;
+            try
+            {
+                var root = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "ks_raw");
+                Directory.CreateDirectory(root);
+                var ts = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff");
+                var safeTag = SanitizeFilePart(hostOrTag);
+                var suffix = Guid.NewGuid().ToString("N").Substring(0, 8);
+                var fileBase = $"{ts}_{channel}_{safeTag}_{data.Length}_{suffix}";
+                var binPath = Path.Combine(root, fileBase + ".bin");
+                File.WriteAllBytes(binPath, data);
+
+                var text = Encoding.UTF8.GetString(data);
+                var txtPath = Path.Combine(root, fileBase + ".txt");
+                File.WriteAllText(txtPath, text, Encoding.UTF8);
+                Logger.LogInfo($"[KS_RAW_DUMP] channel={channel} tag={safeTag} len={data.Length} file={fileBase}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_RAW_DUMP] failed channel={channel}: {ex.Message}");
+            }
+        }
+
+        private string SanitizeFilePart(string input)
+        {
+            var s = string.IsNullOrWhiteSpace(input) ? "unknown" : input.Trim();
+            var invalid = Path.GetInvalidFileNameChars();
+            var cleaned = new string(s.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray());
+            return cleaned.Length > 64 ? cleaned.Substring(0, 64) : cleaned;
         }
 
         //用于缓存接收过的消息ID，判断是否重复接收

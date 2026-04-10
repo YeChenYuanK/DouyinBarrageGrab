@@ -473,6 +473,29 @@ namespace BarrageGrab.Proxy
                 Logger.LogInfo($"[快手] 订阅DataReceived hostname:{hostname} liveStreamId:{liveStreamId2} token:{tokenPreview2}");
             }
 
+            // 快手HTTP原始回包透传给WssBarrageGrab做零过滤落盘（文本类响应）
+            if (!isWs && CheckKuaishouProcess(processName))
+            {
+                var ct = (contentType ?? string.Empty).ToLowerInvariant();
+                bool isTextLike = ct.Contains("json") || ct.Contains("text") || ct.Contains("javascript") || ct.Contains("xml");
+                if (isTextLike)
+                {
+                    var payload = await e.GetResponseBody();
+                    if (payload != null && payload.Length > 0)
+                    {
+                        base.FireOnFetchResponse(new HttpResponseEventArgs()
+                        {
+                            HttpClient = e.HttpClient,
+                            ProcessID = processid,
+                            HostName = hostname,
+                            ProcessName = base.GetProcessName(processid),
+                            Payload = payload
+                        });
+                        Logger.LogInfo($"[KS_HTTP_RAW_FORWARD] host={hostname} ct={ct} len={payload.Length} uri={uri}");
+                    }
+                }
+            }
+
             //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)
             if (uri.Contains(BARRAGE_POOL_PATH) && contentType.Contains("application/protobuffer"))
             {
