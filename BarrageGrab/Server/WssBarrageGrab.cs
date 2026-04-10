@@ -192,10 +192,14 @@ namespace BarrageGrab
             if (buff.Length == 0) return;
 
             Logger.LogInfo($"[快手] ProcessKuaishouWsData 收到数据 Len={buff.Length}");
+            if (buff.Length >= 120 || (e.HostName ?? "").StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase))
+            {
+                LogKuaishouPacketSignature(buff, e.HostName);
+            }
 
             try
             {
-                // 尝试 Protobuf 解析（支持偏移探测，兼容前置长度/类型头）
+                // 尝试 Protobuf 解析（支持偏移探测、去头探测，兼容自定义二进制头）
                 if (TryProcessKuaishouProtobufWithOffsets(buff, e.ProcessName)) return;
             }
             catch (Exception ex1)
@@ -214,18 +218,17 @@ namespace BarrageGrab
 
         private bool TryProcessKuaishouProtobufWithOffsets(byte[] buff, string processName)
         {
-            var maxOffset = Math.Min(6, Math.Max(0, buff.Length - 1));
-            for (var offset = 0; offset <= maxOffset; offset++)
+            foreach (var candidate in BuildKuaishouDecodeCandidates(buff))
             {
                 try
                 {
-                    var span = new ReadOnlyMemory<byte>(buff, offset, buff.Length - offset);
+                    var span = new ReadOnlyMemory<byte>(candidate.Data, candidate.Offset, candidate.Data.Length - candidate.Offset);
                     var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(span);
                     if (envelope?.Payload == null || envelope.Payload.Length == 0) continue;
                     var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(envelope.Payload));
                     if (ksPayload?.SendMessages == null || ksPayload.SendMessages.Count == 0) continue;
 
-                    Logger.LogInfo($"[快手] Protobuf偏移命中 offset={offset}，消息数={ksPayload.SendMessages.Count}");
+                    Logger.LogInfo($"[快手] Protobuf命中 strategy={candidate.Strategy} offset={candidate.Offset}，消息数={ksPayload.SendMessages.Count}");
                     foreach (var sendMsg in ksPayload.SendMessages)
                     {
                         var msgType = (sendMsg.MsgType ?? "").ToUpper();
@@ -254,10 +257,94 @@ namespace BarrageGrab
                 }
                 catch
                 {
-                    // 继续尝试下一个偏移
+                    // 继续尝试下一个候选
                 }
             }
             return false;
+        }
+
+        private sealed class KsDecodeCandidate
+        {
+            public byte[] Data { get; set; }
+            public int Offset { get; set; }
+            public string Strategy { get; set; }
+        }
+
+        private IEnumerable<KsDecodeCandidate> BuildKuaishouDecodeCandidates(byte[] buff)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            void AddCandidate(List<KsDecodeCandidate> list, byte[] data, int offset, string strategy)
+            {
+                if (data == null || data.Length == 0) return;
+                if (offset < 0 || offset >= data.Length) return;
+                var key = $"{data.Length}:{offset}:{strategy}";
+                if (seen.Add(key))
+                {
+                    list.Add(new KsDecodeCandidate { Data = data, Offset = offset, Strategy = strategy });
+                }
+            }
+
+            var candidates = new List<KsDecodeCandidate>();
+
+            // 1) 原始包 + 常见偏移
+            var maxOffset = Math.Min(24, Math.Max(0, buff.Length - 1));
+            for (var offset = 0; offset <= maxOffset; offset++)
+            {
+                AddCandidate(candidates, buff, offset, "raw");
+            }
+
+            // 2) 自定义头探测：常见为 [type(1)][len(4)] + payload
+            if (buff.Length > 6)
+            {
+                int beLen = (buff[1] << 24) | (buff[2] << 16) | (buff[3] << 8) | buff[4];
+                if (beLen > 0 && beLen <= buff.Length - 5)
+                {
+                    var payload = new byte[beLen];
+                    Buffer.BlockCopy(buff, 5, payload, 0, beLen);
+                    AddCandidate(candidates, payload, 0, "type1_beLen4");
+                }
+
+                int leLen = buff[1] | (buff[2] << 8) | (buff[3] << 16) | (buff[4] << 24);
+                if (leLen > 0 && leLen <= buff.Length - 5)
+                {
+                    var payload = new byte[leLen];
+                    Buffer.BlockCopy(buff, 5, payload, 0, leLen);
+                    AddCandidate(candidates, payload, 0, "type1_leLen4");
+                }
+            }
+
+            // 3) 固定帧头裁剪尝试
+            foreach (var headerLen in new[] { 1, 2, 4, 8, 12, 16 })
+            {
+                if (buff.Length > headerLen + 8)
+                {
+                    var payload = new byte[buff.Length - headerLen];
+                    Buffer.BlockCopy(buff, headerLen, payload, 0, payload.Length);
+                    AddCandidate(candidates, payload, 0, $"strip_{headerLen}");
+                }
+            }
+
+            return candidates;
+        }
+
+        private void LogKuaishouPacketSignature(byte[] buff, string hostName)
+        {
+            try
+            {
+                var hexLen = Math.Min(64, buff.Length);
+                var hex = BitConverter.ToString(buff, 0, hexLen).Replace("-", " ");
+                Logger.LogInfo($"[快手][包特征] Host={hostName} Len={buff.Length} First16={hex}");
+
+                // 可打印字符抽样，辅助识别是否有明文JSON/关键词
+                var printable = new string(buff.Take(Math.Min(120, buff.Length))
+                    .Select(b => (b >= 32 && b <= 126) ? (char)b : '.')
+                    .ToArray());
+                Logger.LogInfo($"[快手][包特征] PrintableHead={printable}");
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         // 处理快手 Protobuf 数据
