@@ -467,6 +467,7 @@ namespace BarrageGrab
             }
 
             Logger.LogInfo($"[KS_ROOM] sessionId={sessionId}, anchor={anchor}, title={roomTitle}, onlineHint={onlineHint}");
+            Logger.PrintColor($"[快手房间] 主播: {anchor} | 标题: {roomTitle} | 在线提示: {onlineHint} | session: {sessionId}", ConsoleColor.Cyan);
         }
 
         private void TryLogKuaishouRoleHint(List<string> hints)
