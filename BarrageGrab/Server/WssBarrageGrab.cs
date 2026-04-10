@@ -415,6 +415,10 @@ namespace BarrageGrab
                     if (IsKuaishouStateCallbackJobj(jobj))
                     {
                         foundStateCallback = true;
+                        var stateTitle = title ?? jobj.SelectToken("$..liveTitle")?.Value<string>() ?? "N/A";
+                        var stateAnchor = anchor ?? jobj.SelectToken("$..userName")?.Value<string>() ?? "N/A";
+                        Logger.LogInfo($"[KS_STATE_CANDIDATE] anchor={stateAnchor}, title={stateTitle}");
+                        Logger.PrintColor($"[开播回调候选] 主播: {stateAnchor} | 标题: {stateTitle}", ConsoleColor.DarkCyan);
                     }
 
                     foreach (var obj in jobj.DescendantsAndSelf().OfType<JObject>())
