@@ -169,6 +169,9 @@ namespace BarrageGrab.Kuaishou
 
             _ws = new ClientWebSocket();
             _ws.Options.SetRequestHeader("Origin", "https://live.kuaishou.com");
+            // 强制走 Win 本机 Clash 代理，规避测试机 DNS 解析异常导致的 WS 域名连接失败
+            _ws.Options.Proxy = new WebProxy("http://127.0.0.1:7897");
+            Logger.LogInfo("[KS] WebSocket 代理已启用: http://127.0.0.1:7897");
 
             Logger.LogInfo($"[KS] 正在连接 WebSocket: {wsUrl}");
             await _ws.ConnectAsync(new Uri(wsUrl), _cts.Token);
