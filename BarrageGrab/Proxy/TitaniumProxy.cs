@@ -797,6 +797,10 @@ namespace BarrageGrab.Proxy
 
             if (isKwaiProcess)
             {
+                e.DataReceived -= TunnelRawDataReceived;
+                e.DataReceived += TunnelRawDataReceived;
+                e.DataSent -= TunnelRawDataSent;
+                e.DataSent += TunnelRawDataSent;
                 e.DecryptedDataReceived -= TunnelDecryptedDataReceived;
                 e.DecryptedDataReceived += TunnelDecryptedDataReceived;
                 Logger.LogInfo($"[KS_TUNNEL] 官方客户端隧道捕获 hostname:{hostname} Process:{processName}");
@@ -941,6 +945,28 @@ namespace BarrageGrab.Proxy
                 _ksTunnelBuffers.TryRemove(args, out _);
                 _ksTunnelHandshakeDone.TryRemove(args, out _);
             }
+        }
+
+        // 处理隧道原始密文数据（用于判断数据流真实走向）
+        private void TunnelRawDataReceived(object sender, DataEventArgs e)
+        {
+            var args = sender as TunnelConnectSessionEventArgs;
+            if (args == null || e.Count <= 0) return;
+            var host = args.HttpClient.Request.RequestUri.Host;
+            var processId = args.HttpClient.ProcessId.Value;
+            var first = e.Buffer[e.Offset];
+            Logger.LogInfo($"[KS_TUNNEL_RAW_RX] host:{host} process:{base.GetProcessName(processId)} recvCount:{e.Count} firstByte:0x{first:X2}");
+        }
+
+        // 处理隧道原始上行密文数据（客户端->服务端）
+        private void TunnelRawDataSent(object sender, DataEventArgs e)
+        {
+            var args = sender as TunnelConnectSessionEventArgs;
+            if (args == null || e.Count <= 0) return;
+            var host = args.HttpClient.Request.RequestUri.Host;
+            var processId = args.HttpClient.ProcessId.Value;
+            var first = e.Buffer[e.Offset];
+            Logger.LogInfo($"[KS_TUNNEL_RAW_TX] host:{host} process:{base.GetProcessName(processId)} sendCount:{e.Count} firstByte:0x{first:X2}");
         }
 
         //检测域名白名单
