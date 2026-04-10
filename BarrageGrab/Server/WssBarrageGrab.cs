@@ -685,7 +685,8 @@ namespace BarrageGrab
             var blacklist = new[]
             {
                 "livePeakCup", "MERCHANT_", "lottie", "stickerImage", "正在看", "直播间正在开启", "host-name", "result",
-                "快手平台账号", "未成年人", "严禁主播", "人气里程碑", "欢迎开播"
+                "快手平台账号", "未成年人", "严禁主播", "人气里程碑", "欢迎开播",
+                "抢红包", "红包", "城市巅峰赛"
             };
             if (blacklist.Any(k => text.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0)) return false;
 

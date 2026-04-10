@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -189,6 +189,10 @@ namespace BarrageGrab
 
             try
             {
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
                 //获取该文件在该目录下的数量
                 var fiels = Directory.GetFiles(dir, filename);
                 var count = fiels.Length;
