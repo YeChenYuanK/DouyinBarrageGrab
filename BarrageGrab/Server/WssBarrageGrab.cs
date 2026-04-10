@@ -239,6 +239,7 @@ namespace BarrageGrab
                     if (inflated == null || inflated.Length == 0) continue;
 
                     Logger.LogInfo($"[快手] GZIP命中 at={i} inflatedLen={inflated.Length}");
+                    LogKuaishouPacketSignature(inflated, $"ksgzip:{i}");
 
                     if (TryProcessKuaishouProtobufWithOffsets(inflated, processName))
                     {
@@ -313,6 +314,7 @@ namespace BarrageGrab
                     // 继续尝试下一个候选
                 }
             }
+            TryLogReadableSegments(buff);
             return false;
         }
 
@@ -339,8 +341,9 @@ namespace BarrageGrab
 
             var candidates = new List<KsDecodeCandidate>();
 
-            // 1) 原始包 + 常见偏移
-            var maxOffset = Math.Min(24, Math.Max(0, buff.Length - 1));
+            // 1) 原始包 + 常见偏移（大包适当扩大扫描窗口）
+            var offsetWindow = buff.Length >= 512 ? 160 : 64;
+            var maxOffset = Math.Min(offsetWindow, Math.Max(0, buff.Length - 1));
             for (var offset = 0; offset <= maxOffset; offset++)
             {
                 AddCandidate(candidates, buff, offset, "raw");
@@ -366,8 +369,19 @@ namespace BarrageGrab
                 }
             }
 
+            // 2.5) 头部 varint 长度探测（len + payload）
+            if (TryReadVarint32(buff, 0, out var varLen, out var varBytes))
+            {
+                if (varLen > 0 && varLen <= buff.Length - varBytes)
+                {
+                    var payload = new byte[varLen];
+                    Buffer.BlockCopy(buff, varBytes, payload, 0, varLen);
+                    AddCandidate(candidates, payload, 0, "varint_len");
+                }
+            }
+
             // 3) 固定帧头裁剪尝试
-            foreach (var headerLen in new[] { 1, 2, 4, 8, 12, 16 })
+            foreach (var headerLen in new[] { 1, 2, 4, 8, 12, 16, 20, 24, 28, 32 })
             {
                 if (buff.Length > headerLen + 8)
                 {
@@ -378,6 +392,43 @@ namespace BarrageGrab
             }
 
             return candidates;
+        }
+
+        private bool TryReadVarint32(byte[] data, int offset, out int value, out int bytesRead)
+        {
+            value = 0;
+            bytesRead = 0;
+            int shift = 0;
+            for (int i = 0; i < 5 && offset + i < data.Length; i++)
+            {
+                byte b = data[offset + i];
+                value |= (b & 0x7F) << shift;
+                bytesRead++;
+                if ((b & 0x80) == 0) return true;
+                shift += 7;
+            }
+            value = 0;
+            bytesRead = 0;
+            return false;
+        }
+
+        private void TryLogReadableSegments(byte[] buff)
+        {
+            try
+            {
+                if (buff == null || buff.Length < 16) return;
+                var text = Encoding.UTF8.GetString(buff);
+                var cleaned = new string(text.Where(c => !char.IsControl(c) || c == '\n' || c == '\r' || c == '\t').ToArray());
+                if (cleaned.Contains("正在看") || cleaned.Contains("评论") || cleaned.Contains("送出") || cleaned.Contains("进入直播间"))
+                {
+                    var preview = cleaned.Length > 120 ? cleaned.Substring(0, 120) : cleaned;
+                    Logger.LogInfo($"[快手][可读片段] {preview}");
+                }
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         private void LogKuaishouPacketSignature(byte[] buff, string hostName)
