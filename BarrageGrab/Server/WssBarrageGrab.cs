@@ -1711,8 +1711,21 @@ namespace BarrageGrab
                 var status = (int?)(e.HttpClient?.Response?.StatusCode) ?? -1;
                 var location = e.HttpClient?.Response?.Headers?.GetFirstHeader("Location")?.Value ?? string.Empty;
                 var decodedLocation = SafeUrlDecode(location);
+                var ext = Path.GetExtension(shortUri ?? string.Empty)?.ToLowerInvariant() ?? string.Empty;
+                var isStaticAsset = ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".ico";
+                var isTextLike = LooksLikeTextPayload(payload);
+                if (isStaticAsset && !isTextLike)
+                {
+                    Logger.LogInfo($"[KS_HTTP_ASSET_SKIP] host={e.HostName} process={e.ProcessName} uri={uri} ext={ext} len={payload.Length}");
+                    return;
+                }
                 Logger.LogInfo($"[KS_HTTP_REQ_CANDIDATE] method={method} host={e.HostName} process={e.ProcessName} uri={uri}");
                 Logger.LogInfo($"[KS_HTTP_RESP_CANDIDATE] status={status} host={e.HostName} process={e.ProcessName} uri={uri} location={decodedLocation} hits={hits}");
+                if (isTextLike)
+                {
+                    var preview = BuildKsHttpTextPreview(payload, 320);
+                    Logger.LogInfo($"[KS_HTTP_TEXT_CANDIDATE] host={e.HostName} process={e.ProcessName} uri={uri} preview={preview}");
+                }
                 if (!string.IsNullOrWhiteSpace(decodedLocation)
                     && decodedLocation.IndexOf("live.kuaishou.com/u/", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
@@ -1793,6 +1806,35 @@ namespace BarrageGrab
             catch (Exception ex)
             {
                 Logger.LogInfo($"[KS_HTTP_HOST_TOP] failed: {ex.Message}");
+            }
+        }
+
+        private bool LooksLikeTextPayload(byte[] payload)
+        {
+            if (payload == null || payload.Length == 0) return false;
+            var sampleLen = Math.Min(payload.Length, 256);
+            var printable = 0;
+            for (var i = 0; i < sampleLen; i++)
+            {
+                var b = payload[i];
+                if (b == 9 || b == 10 || b == 13 || (b >= 32 && b <= 126)) printable++;
+            }
+            return sampleLen > 0 && printable * 100 / sampleLen >= 70;
+        }
+
+        private string BuildKsHttpTextPreview(byte[] payload, int maxLen)
+        {
+            if (payload == null || payload.Length == 0) return string.Empty;
+            try
+            {
+                var text = Encoding.UTF8.GetString(payload);
+                if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+                var safe = new string(text.Take(maxLen).Select(c => char.IsControl(c) ? '.' : c).ToArray());
+                return safe;
+            }
+            catch
+            {
+                return string.Empty;
             }
         }
 
