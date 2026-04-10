@@ -256,7 +256,7 @@ namespace BarrageGrab
                     }
                     LogKuaishouPacketSignature(inflated, $"ksgzip:{i}");
                     TryLogKuaishouSessionInfo(inflated, allowFallbackEmit: !isBroadcastCandidate);
-                    if (TryProcessKuaishouJsonFragments(inflated))
+                    if (TryProcessKuaishouJsonFragments(inflated, allowChatEmit: !isBroadcastCandidate))
                     {
                         Logger.LogInfo($"[快手] GZIP解包后 JSON片段解析命中 at={i}");
                         return true;
@@ -407,7 +407,7 @@ namespace BarrageGrab
             return string.Join(",", parts);
         }
 
-        private bool TryProcessKuaishouJsonFragments(byte[] inflated)
+        private bool TryProcessKuaishouJsonFragments(byte[] inflated, bool allowChatEmit = true)
         {
             try
             {
@@ -451,6 +451,7 @@ namespace BarrageGrab
                                    ?? obj["text"]?.Value<string>()
                                    ?? obj["message"]?.Value<string>()
                                    ?? obj["msg"]?.Value<string>();
+                        if (!allowChatEmit) continue;
                         if (!IsLikelyKuaishouChatText(content)) continue;
                         if (!TryPushKuaishouFallbackText(content)) continue;
 
