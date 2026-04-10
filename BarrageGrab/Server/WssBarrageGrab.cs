@@ -248,8 +248,14 @@ namespace BarrageGrab
 
                     Logger.LogInfo($"[快手] GZIP命中 at={i} inflatedLen={inflated.Length}");
                     DumpKsReverseSamples(buff, inflated, processName, i);
+                    var wireSummary = BuildProtoWireSummary(inflated, maxFields: 24);
+                    var isBroadcastCandidate = IsLikelyKuaishouBroadcastWire(wireSummary);
+                    if (isBroadcastCandidate)
+                    {
+                        Logger.LogInfo($"[KS_REVERSE] classify=broadcast wire={wireSummary}");
+                    }
                     LogKuaishouPacketSignature(inflated, $"ksgzip:{i}");
-                    TryLogKuaishouSessionInfo(inflated);
+                    TryLogKuaishouSessionInfo(inflated, allowFallbackEmit: !isBroadcastCandidate);
                     if (TryProcessKuaishouJsonFragments(inflated))
                     {
                         Logger.LogInfo($"[快手] GZIP解包后 JSON片段解析命中 at={i}");
@@ -274,7 +280,7 @@ namespace BarrageGrab
                     }
 
                     // 最终兜底：做无 schema 的 protobuf 文本提取，先把评论文本打通
-                    if (TryProcessKuaishouGenericProtoText(inflated))
+                    if (!isBroadcastCandidate && TryProcessKuaishouGenericProtoText(inflated))
                     {
                         Logger.LogInfo($"[快手] GZIP解包后 通用文本提取命中 at={i}");
                         return true;
@@ -290,6 +296,23 @@ namespace BarrageGrab
             }
 
             return false;
+        }
+
+        private bool IsLikelyKuaishouBroadcastWire(string wireSummary)
+        {
+            if (string.IsNullOrWhiteSpace(wireSummary)) return false;
+            // 来自样本分群：活动/公告广播簇有稳定字段形态
+            bool clusterA = wireSummary.Contains("f1:len(11),f2:v(2),f3:v(")
+                         && wireSummary.Contains("f6:len(392)")
+                         && wireSummary.Contains("f12:len(9)");
+            bool clusterB = wireSummary.Contains("f1:len(41),f2:v(2),f3:v(3)")
+                         && wireSummary.Contains("f10:len(172)")
+                         && wireSummary.Contains("f11:v(7000)")
+                         && wireSummary.Contains("f18:len(106)");
+            bool clusterC = wireSummary.Contains("f9:len(533)")
+                         && wireSummary.Contains("f40:len(10)")
+                         && wireSummary.Contains("f47:len(1)");
+            return clusterA || clusterB || clusterC;
         }
 
         private readonly HashSet<string> _ksReverseSampleDedup = new HashSet<string>(StringComparer.Ordinal);
@@ -510,7 +533,7 @@ namespace BarrageGrab
         private readonly object _ksSessionDedupLock = new object();
         private readonly List<string> _ksRoomDedup = new List<string>();
         private readonly object _ksRoomDedupLock = new object();
-        private void TryLogKuaishouSessionInfo(byte[] inflated)
+        private void TryLogKuaishouSessionInfo(byte[] inflated, bool allowFallbackEmit = true)
         {
             try
             {
@@ -536,7 +559,10 @@ namespace BarrageGrab
                 Logger.LogInfo($"[KS_SESSION] sessionId={(guid.Success ? guid.Value : "N/A")} hints={string.Join(",", zh)}");
                 TryLogKuaishouRoleHint(zh);
                 TryLogKuaishouRoomInfo(guid.Success ? guid.Value : "N/A", zh);
-                TryEmitFallbackChatFromHints(zh);
+                if (allowFallbackEmit)
+                {
+                    TryEmitFallbackChatFromHints(zh);
+                }
             }
             catch
             {
