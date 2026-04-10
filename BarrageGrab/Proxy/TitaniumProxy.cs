@@ -994,6 +994,12 @@ namespace BarrageGrab.Proxy
             var processId = args.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processId);
             var first = e.Buffer[e.Offset];
+            bool isKwaiProcess = !string.IsNullOrWhiteSpace(processName) && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
+            if (isKwaiProcess && IsLikelyKsHeartbeatPacket(e.Buffer, e.Offset, e.Count))
+            {
+                // 心跳包不参与后续解析，避免日志噪音和误判
+                return;
+            }
             Logger.LogInfo($"[KS_TUNNEL_RAW_RX] host:{host} process:{base.GetProcessName(processId)} recvCount:{e.Count} firstByte:0x{first:X2}");
             if (IsKuaishouObserveProcess(processName))
             {
@@ -1002,7 +1008,6 @@ namespace BarrageGrab.Proxy
 
             // 对快手直播伴侣的“非标准WS帧”通道做透传，交给上层做协议探测解析
             // 0x16/0x17 多为 TLS 握手/应用层密文，跳过避免噪音；其余字节流尝试上送
-            bool isKwaiProcess = !string.IsNullOrWhiteSpace(processName) && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
             bool looksTlsRecord = first == 0x16 || first == 0x17 || first == 0x14;
             if (isKwaiProcess && !looksTlsRecord && e.Count >= 20)
             {
@@ -1028,13 +1033,32 @@ namespace BarrageGrab.Proxy
             TouchTunnelState(args);
             var host = args.HttpClient.Request.RequestUri.Host;
             var processId = args.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processId);
+            if (!string.IsNullOrWhiteSpace(processName)
+                && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0
+                && e.Count == 27 && e.Buffer[e.Offset] == 0x01)
+            {
+                // 上行 27 字节固定心跳包，忽略日志
+                return;
+            }
             var first = e.Buffer[e.Offset];
             Logger.LogInfo($"[KS_TUNNEL_RAW_TX] host:{host} process:{base.GetProcessName(processId)} sendCount:{e.Count} firstByte:0x{first:X2}");
-            var processName = base.GetProcessName(processId);
             if (IsKuaishouObserveProcess(processName))
             {
                 UpdateKsFlowProfile(host, processName, e.Count, isRx: false);
             }
+        }
+
+        private bool IsLikelyKsHeartbeatPacket(byte[] buffer, int offset, int count)
+        {
+            if (buffer == null || count < 20) return false;
+            // 当前观测到的快手下行心跳包特征：固定前导 + 小包长度（常见 43）
+            if (count > 90) return false;
+            if (buffer[offset] != 0x01) return false;
+            if (buffer[offset + 1] != 0x1A) return false;
+            if (buffer[offset + 2] != 0x2B) return false;
+            if (buffer[offset + 3] != 0x3C) return false;
+            return true;
         }
 
         private void UpdateKsFlowProfile(string host, string processName, int size, bool isRx)
