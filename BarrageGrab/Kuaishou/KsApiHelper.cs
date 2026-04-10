@@ -260,13 +260,41 @@ namespace BarrageGrab.Kuaishou
                     Logger.LogInfo($"[KS_DIAG][PC] stateTopKeys={topKeys}");
                     var lsIdMatch = Regex.Match(html, @"""liveStreamId""\s*:\s*""([^""]+)""");
                     Logger.LogInfo($"[KS_DIAG][PC] liveDataNull, regexLiveStreamIdFound={lsIdMatch.Success}, regexLiveStreamId={(lsIdMatch.Success ? lsIdMatch.Groups[1].Value : "")}");
-                    return null;
+                    // 兜底：即使没拿到 liveData，也尝试从全量 state / html 抽取关键字段
+                    info.LiveStreamId = state.SelectToken("$..liveStreamId")?.Value<string>() ?? "";
+                    info.AuthorId = state.SelectToken("$..authorId")?.Value<string>() ?? "";
+                    info.AuthorName = state.SelectToken("$..author.name")?.Value<string>() ?? "";
+                    if (string.IsNullOrWhiteSpace(info.LiveStreamId) && lsIdMatch.Success)
+                    {
+                        info.LiveStreamId = lsIdMatch.Groups[1].Value;
+                    }
+                    info.IsLive = !string.IsNullOrWhiteSpace(info.LiveStreamId);
+                    Logger.LogInfo($"[KS_DIAG][PC] fallbackExtract liveStreamId={info.LiveStreamId}, authorId={info.AuthorId}, authorName={info.AuthorName}");
+                    return info;
                 }
 
                 info.LiveStreamId = liveData["liveStreamId"]?.Value<string>() ?? "";
                 info.AuthorId = liveData["authorId"]?.Value<string>() ?? "";
                 info.AuthorName = liveData["author"]?["name"]?.Value<string>() ?? "";
                 info.Title = liveData["caption"]?.Value<string>() ?? "";
+                if (string.IsNullOrWhiteSpace(info.LiveStreamId))
+                {
+                    info.LiveStreamId = state.SelectToken("$..liveStreamId")?.Value<string>() ?? "";
+                }
+                if (string.IsNullOrWhiteSpace(info.AuthorId))
+                {
+                    info.AuthorId = state.SelectToken("$..authorId")?.Value<string>() ?? "";
+                }
+                if (string.IsNullOrWhiteSpace(info.AuthorName))
+                {
+                    info.AuthorName = state.SelectToken("$..author.name")?.Value<string>() ?? "";
+                }
+                if (string.IsNullOrWhiteSpace(info.LiveStreamId))
+                {
+                    var lsIdMatch = Regex.Match(html, @"""liveStreamId""\s*:\s*""([^""]+)""");
+                    if (lsIdMatch.Success) info.LiveStreamId = lsIdMatch.Groups[1].Value;
+                }
+                Logger.LogInfo($"[KS_DIAG][PC] liveDataType={liveData.Type}, liveDataPreview={(liveData.ToString(Formatting.None).Length > 500 ? liveData.ToString(Formatting.None).Substring(0, 500) : liveData.ToString(Formatting.None))}");
 
                 Logger.LogInfo($"[KS] PC端页面解析成功: liveStreamId={info.LiveStreamId}, authorId={info.AuthorId}, authorName={info.AuthorName}");
 
