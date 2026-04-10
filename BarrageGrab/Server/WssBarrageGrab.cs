@@ -679,7 +679,12 @@ namespace BarrageGrab
         private bool IsLikelyKuaishouChatText(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return false;
-            if (text.Length < 2 || text.Length > 50) return false;
+            // 允许 "1" / "2" / "3" 这类单字符数字评论
+            if (text.Length == 1)
+            {
+                return char.IsDigit(text[0]);
+            }
+            if (text.Length > 50) return false;
             if (text.Contains("http") || text.Contains("kwailive://") || text.Contains(".png") || text.Contains(".webp")) return false;
             if (Regex.IsMatch(text, @"^[0-9a-fA-F\-]{16,}$")) return false; // guid/hash
             var blacklist = new[]
