@@ -493,6 +493,7 @@ namespace BarrageGrab.Proxy
                         HttpClient = e.HttpClient,
                         ProcessID = processid,
                         HostName = hostname,
+                        RequestUri = uri,
                         ProcessName = base.GetProcessName(processid),
                         Payload = payload
                     });
@@ -540,6 +541,7 @@ namespace BarrageGrab.Proxy
                     HttpClient = e.HttpClient,
                     ProcessID = processid,
                     HostName = hostname,
+                    RequestUri = uri,
                     ProcessName = base.GetProcessName(processid),
                     Payload = payload
                 });

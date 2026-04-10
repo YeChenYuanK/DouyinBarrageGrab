@@ -1638,6 +1638,7 @@ namespace BarrageGrab
             if (IsLikelyKuaishouHttpEvent(e))
             {
                 DumpKuaishouRawBytes("http_raw", e.HostName ?? e.ProcessName, payload);
+                TryLogKuaishouHttpPreflight(e, payload);
                 return;
             }
 
@@ -1659,6 +1660,62 @@ namespace BarrageGrab
             var hostHit = host.Contains("kuaishou") || host.Contains("wsukwai") || host.Contains("gifshow");
             var processHit = process.Contains("kwailive") || process.Contains("kuaishou") || process.Contains("gifshow") || process.Contains("kscloud");
             return hostHit || processHit;
+        }
+
+        private void TryLogKuaishouHttpPreflight(HttpResponseEventArgs e, byte[] payload)
+        {
+            if (e == null || payload == null || payload.Length == 0) return;
+            try
+            {
+                var uri = e.RequestUri ?? string.Empty;
+                var host = (e.HostName ?? string.Empty).ToLowerInvariant();
+                if (!IsLikelyKuaishouPreflightUri(host, uri)) return;
+
+                DumpKuaishouRawBytes("http_prefetch_raw", e.HostName ?? e.ProcessName, payload);
+
+                var text = Encoding.UTF8.GetString(payload);
+                var hits = ExtractKuaishouPreflightHints(text, uri);
+                Logger.LogInfo($"[KS_HTTP_PREFLIGHT] host={e.HostName} uri={uri} len={payload.Length} hits={hits}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_HTTP_PREFLIGHT] failed: {ex.Message}");
+            }
+        }
+
+        private bool IsLikelyKuaishouPreflightUri(string host, string uri)
+        {
+            if (string.IsNullOrWhiteSpace(host) && string.IsNullOrWhiteSpace(uri)) return false;
+            var h = (host ?? string.Empty).ToLowerInvariant();
+            var u = (uri ?? string.Empty).ToLowerInvariant();
+            var hostHit = h.Contains("kuaishou") || h.Contains("wsukwai") || h.Contains("gifshow");
+            if (!hostHit) return false;
+            return u.Contains("/rest/") || u.Contains("/graphql") || u.Contains("live") || u.Contains("room") || u.Contains("stream") || u.Contains("webcast");
+        }
+
+        private string ExtractKuaishouPreflightHints(string text, string uri)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return $"uri={uri}";
+            var patterns = new[]
+            {
+                @"authorId[=:\""\\s]{0,6}[A-Za-z0-9_\-]{4,32}",
+                @"liveStreamId[=:\""\\s]{0,6}[A-Za-z0-9_\-]{4,64}",
+                @"roomId[=:\""\\s]{0,6}[A-Za-z0-9_\-]{3,32}",
+                @"nickname[=:\""\\s]{0,6}[^\\""\\r\\n]{2,48}",
+                @"title[=:\""\\s]{0,6}[^\\""\\r\\n]{2,80}",
+                @"\bstatus[=:\""\\s]{0,6}[A-Za-z0-9_\-]{1,16}",
+                @"\blive[=:\""\\s]{0,6}(true|false|0|1)"
+            };
+            var hits = patterns
+                .SelectMany(p => Regex.Matches(text, p, RegexOptions.IgnoreCase).Cast<Match>().Select(m => m.Value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(16)
+                .ToList();
+            if (hits.Count == 0)
+            {
+                return $"uri={uri}; no-key-hit";
+            }
+            return $"uri={uri}; {string.Join(" | ", hits)}";
         }
 
         private void DumpKuaishouRawBytes(string channel, string hostOrTag, byte[] data)

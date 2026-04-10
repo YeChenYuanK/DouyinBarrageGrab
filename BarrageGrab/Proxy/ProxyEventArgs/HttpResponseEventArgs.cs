@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -31,6 +31,11 @@ namespace BarrageGrab.Proxy.ProxyEventArgs
         /// 域名
         /// </summary>
         public string HostName { get; set; }
+
+        /// <summary>
+        /// 请求URI
+        /// </summary>
+        public string RequestUri { get; set; }
 
         /// <summary>
         /// 有效载荷
