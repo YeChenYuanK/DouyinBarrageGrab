@@ -197,23 +197,76 @@ namespace BarrageGrab
                 LogKuaishouPacketSignature(buff, e.HostName);
             }
 
+            bool protobufParsed = false;
+            string protobufErr = null;
             try
             {
                 // 尝试 Protobuf 解析（支持偏移探测、去头探测，兼容自定义二进制头）
-                if (TryProcessKuaishouProtobufWithOffsets(buff, e.ProcessName)) return;
+                protobufParsed = TryProcessKuaishouProtobufWithOffsets(buff, e.ProcessName);
+                if (protobufParsed) return;
             }
-            catch (Exception ex1)
+            catch (Exception ex)
             {
-                // Protobuf 解析失败，尝试 JSON 解析
+                protobufErr = ex.Message;
+            }
+
+            // 二层协议：外层二进制头 + 内层 GZIP（日志已确认存在 1F 8B 08）
+            if (TryProcessKuaishouEmbeddedGzip(buff, e.ProcessName)) return;
+
+            // 最后兜底 JSON
+            try
+            {
+                ProcessKuaishouJson(buff, e.ProcessName);
+            }
+            catch (Exception ex2)
+            {
+                Logger.LogWarn($"[快手] WebSocket 数据解析失败: Protobuf({protobufErr ?? "no-hit"}), JSON({ex2.Message})");
+            }
+        }
+
+        private bool TryProcessKuaishouEmbeddedGzip(byte[] buff, string processName)
+        {
+            var hit = 0;
+            for (int i = 0; i <= buff.Length - 3; i++)
+            {
+                if (buff[i] != 0x1F || buff[i + 1] != 0x8B || buff[i + 2] != 0x08) continue;
+                hit++;
                 try
                 {
-                    ProcessKuaishouJson(buff, e.ProcessName);
+                    var gzip = new byte[buff.Length - i];
+                    Buffer.BlockCopy(buff, i, gzip, 0, gzip.Length);
+                    var inflated = Decompress(gzip);
+                    if (inflated == null || inflated.Length == 0) continue;
+
+                    Logger.LogInfo($"[快手] GZIP命中 at={i} inflatedLen={inflated.Length}");
+
+                    if (TryProcessKuaishouProtobufWithOffsets(inflated, processName))
+                    {
+                        Logger.LogInfo($"[快手] GZIP解包后 Protobuf 解析成功 at={i}");
+                        return true;
+                    }
+
+                    try
+                    {
+                        ProcessKuaishouJson(inflated, processName);
+                        Logger.LogInfo($"[快手] GZIP解包后 JSON 解析成功 at={i}");
+                        return true;
+                    }
+                    catch
+                    {
+                        // ignore, continue scan
+                    }
                 }
-                catch (Exception ex2)
+                catch (Exception ex)
                 {
-                    Logger.LogWarn($"[快手] WebSocket 数据解析失败: Protobuf({ex1.Message}), JSON({ex2.Message})");
+                    Logger.LogInfo($"[快手] GZIP解包失败 at={i}: {ex.Message}");
                 }
+
+                // 一个包通常只会有 1-2 段 gzip，避免过度扫描
+                if (hit >= 3) break;
             }
+
+            return false;
         }
 
         private bool TryProcessKuaishouProtobufWithOffsets(byte[] buff, string processName)
