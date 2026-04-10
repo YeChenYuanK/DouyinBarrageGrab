@@ -161,7 +161,7 @@ namespace BarrageGrab
             // 判断是否为快手弹幕请求
             if (isKuaishouHost)
             {
-                RecordKuaishouFlow("ws", e.HostName, string.Empty, e.ProcessName, buff.Length, string.Empty);
+                RecordKuaishouFlow("ws", e.HostName, string.Empty, e.ProcessName, buff.Length, string.Empty, TryDecodeFlowHintText(buff));
                 Logger.LogInfo($"[WS] 识别为快手域名，转交ProcessKuaishouWsData");
                 ProcessKuaishouWsData(e);
                 return;
@@ -1648,7 +1648,7 @@ namespace BarrageGrab
             }
             if (IsLikelyKuaishouHttpEvent(e))
             {
-                RecordKuaishouFlow("http", e.HostName, e.RequestUri, e.ProcessName, payload.Length, string.Empty);
+                RecordKuaishouFlow("http", e.HostName, e.RequestUri, e.ProcessName, payload.Length, string.Empty, TryDecodeFlowHintText(payload));
                 DumpKuaishouRawBytes("http_raw", e.HostName ?? e.ProcessName, payload);
                 TryLogKuaishouHttpPreflight(e, payload);
                 return;
@@ -1774,15 +1774,16 @@ namespace BarrageGrab
             return Regex.IsMatch(h, @"^\d{1,3}(\.\d{1,3}){3}$");
         }
 
-        private void RecordKuaishouFlow(string protocol, string host, string uri, string processName, int payloadLength, string contentType)
+        private void RecordKuaishouFlow(string protocol, string host, string uri, string processName, int payloadLength, string contentType, string hintText)
         {
             try
             {
                 var flowHost = NormalizeFlowHost(host);
                 var flowPath = NormalizeFlowPath(uri);
-                var score = ScoreKuaishouFlow(flowHost, flowPath, uri);
+                var hintHits = CountFlowHintHits(hintText);
+                var score = ScoreKuaishouFlow(protocol, flowHost, flowPath, uri, processName, payloadLength, hintHits);
                 Logger.LogInfo($"[KS_FLOW_LEDGER] proto={protocol} process={processName} host={flowHost} path={flowPath} len={payloadLength} score={score} ct={contentType}");
-                Logger.LogInfo($"[KS_FLOW_SCORE] score={score} level={(score >= 80 ? "strong" : (score >= 40 ? "medium" : "weak"))} proto={protocol} host={flowHost} path={flowPath} uri={uri}");
+                Logger.LogInfo($"[KS_FLOW_SCORE] score={score} level={(score >= 80 ? "strong" : (score >= 40 ? "medium" : "weak"))} proto={protocol} host={flowHost} path={flowPath} hintHits={hintHits} uri={uri}");
 
                 var clusterKey = $"{protocol}|{flowHost}|{flowPath}";
                 lock (ksFlowLock)
@@ -1840,17 +1841,62 @@ namespace BarrageGrab
             }
         }
 
-        private int ScoreKuaishouFlow(string host, string path, string uri)
+        private string TryDecodeFlowHintText(byte[] payload)
+        {
+            if (payload == null || payload.Length == 0) return string.Empty;
+            try
+            {
+                var text = Encoding.UTF8.GetString(payload);
+                if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+                return text.Length > 6000 ? text.Substring(0, 6000) : text;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private int CountFlowHintHits(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return 0;
+            try
+            {
+                var patterns = new[]
+                {
+                    "authorId",
+                    "liveStreamId",
+                    "roomId",
+                    "nickname",
+                    "\"title\"",
+                    "target_live_stream_id",
+                    "/live/"
+                };
+                return patterns.Count(p => text.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private int ScoreKuaishouFlow(string protocol, string host, string path, string uri, string processName, int payloadLength, int hintHits)
         {
             var score = 0;
+            var proto = (protocol ?? string.Empty).ToLowerInvariant();
             var h = (host ?? string.Empty).ToLowerInvariant();
             var p = (path ?? string.Empty).ToLowerInvariant();
             var u = (uri ?? string.Empty).ToLowerInvariant();
+            var process = (processName ?? string.Empty).ToLowerInvariant();
+            var isIpv4Host = Regex.IsMatch(h, @"^\d{1,3}(\.\d{1,3}){3}$");
 
             if (h.Contains("kuaishou") || h.Contains("gifshow") || h.Contains("wsukwai")) score += 20;
             if (p.Contains("live") || p.Contains("room") || p.Contains("stream")) score += 25;
             if (p.Contains("webcast") || p.Contains("graphql") || p.Contains("feed") || p.Contains("pull")) score += 35;
             if (u.Contains("authorid") || u.Contains("livestreamid") || u.Contains("roomid")) score += 20;
+            if (process.Contains("kwailive")) score += 10;
+            if (proto == "ws" && isIpv4Host) score += 30;
+            if (proto == "ws" && payloadLength >= 300 && payloadLength <= 4096) score += 10;
+            if (hintHits > 0) score += Math.Min(40, hintHits * 12);
             if (h.Contains("wlog.gifshow.com") || p.Contains("/rest/kd/log/collect")) score -= 80;
 
             if (score < 0) score = 0;
