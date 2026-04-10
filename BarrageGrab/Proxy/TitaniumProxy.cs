@@ -54,6 +54,8 @@ namespace BarrageGrab.Proxy
 
         // 快手弹幕 WebSocket 地址正则（用于识别和拦截快手弹幕流）
         private readonly Regex ksBarrageReg = new Regex(@"(live-ws.*\.kuaishou\.com|livejs-ws\.kuaishou\.cn|.*ws.*kuaishou.*|.*kuaishou.*ws.*|.*wsukwai\.com.*|/websocket|/group\d+)");
+        private readonly object ksHttpReqIndexLock = new object();
+        private readonly Dictionary<string, DateTime> ksHttpReqIndexLastAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 
         // 快手直播弹幕域名列表（用于识别快手弹幕请求）
         private readonly string[] ksBarrageHosts = new[] {
@@ -295,6 +297,7 @@ namespace BarrageGrab.Proxy
             string uri = e.HttpClient.Request.RequestUri.ToString();
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
+            TryLogKuaishouHttpRequestIndex(hostname, uri, processName, e.HttpClient.Request.Method?.ToString() ?? "UNKNOWN");
 
             // 只对 WS 升级请求订阅 DataReceived（防止普通HTTP请求误订阅导致解析错误）
             // WS 升级请求特征：Upgrade: websocket 头，或 ConnectRequest.TunnelType == Websocket
@@ -354,6 +357,8 @@ namespace BarrageGrab.Proxy
                     {
                         Logger.LogInfo($"[KS_DEBUG] Process={processName} Status={statusCode} ContentType={ct} URL={uri}");
                     }
+
+                    TryLogKuaishouHttpRedirect(processName, hostname, uri, statusCode, e.HttpClient.Response.Headers.GetFirstHeader("Location")?.Value);
                 }
             }
             catch (Exception ex)
@@ -373,6 +378,80 @@ namespace BarrageGrab.Proxy
 
             //处理脚本拦截修改
             await HookScriptAsync(e);
+        }
+
+        private void TryLogKuaishouHttpRequestIndex(string hostname, string uri, string processName, string method)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(processName) || processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) < 0) return;
+                var host = (hostname ?? string.Empty).Trim().ToLowerInvariant();
+                if (string.IsNullOrWhiteSpace(host) || host.Contains("wlog.gifshow.com")) return;
+
+                var reqUri = uri ?? string.Empty;
+                var path = "/";
+                try
+                {
+                    var parsed = new Uri(reqUri);
+                    path = string.IsNullOrWhiteSpace(parsed.AbsolutePath) ? "/" : parsed.AbsolutePath.ToLowerInvariant();
+                }
+                catch
+                {
+                    // ignore
+                }
+
+                var key = $"{method}|{host}|{path}";
+                var now = DateTime.Now;
+                lock (ksHttpReqIndexLock)
+                {
+                    if (ksHttpReqIndexLastAt.TryGetValue(key, out var lastAt) && (now - lastAt).TotalSeconds < 2)
+                    {
+                        return;
+                    }
+                    ksHttpReqIndexLastAt[key] = now;
+                }
+
+                Logger.LogInfo($"[KS_HTTP_REQ_INDEX] method={method} host={host} path={path} uri={reqUri}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_HTTP_REQ_INDEX] failed: {ex.Message}");
+            }
+        }
+
+        private void TryLogKuaishouHttpRedirect(string processName, string hostname, string uri, int statusCode, string location)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(processName) || processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) < 0) return;
+                if (!(statusCode == 301 || statusCode == 302 || statusCode == 307 || statusCode == 308)) return;
+                var host = (hostname ?? string.Empty).Trim().ToLowerInvariant();
+                if (host.Contains("wlog.gifshow.com")) return;
+
+                var decoded = DecodeUrlOnce(location ?? string.Empty);
+                Logger.LogInfo($"[KS_HTTP_REDIRECT] status={statusCode} host={host} uri={uri} location={decoded}");
+                if (!string.IsNullOrWhiteSpace(decoded) && decoded.IndexOf("live.kuaishou.com/u/", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    Logger.LogInfo($"[KS_URL_U_HIT] channel=http_redirect host={host} process={processName} url={decoded}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_HTTP_REDIRECT] failed: {ex.Message}");
+            }
+        }
+
+        private string DecodeUrlOnce(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input ?? string.Empty;
+            try
+            {
+                return Uri.UnescapeDataString(input.Replace("+", "%20"));
+            }
+            catch
+            {
+                return input;
+            }
         }
 
         // Hook 直播伴侣开播信息并更新
