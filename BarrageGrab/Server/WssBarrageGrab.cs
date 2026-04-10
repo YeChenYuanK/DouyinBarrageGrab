@@ -218,6 +218,12 @@ namespace BarrageGrab
                 protobufErr = ex.Message;
             }
 
+            // 快手网页端常见 293/304B 资料包：包含等级字段与评论正文（如 1/2/3/主播你好）
+            if (TryProcessKuaishouProfileChatPacket(buff))
+            {
+                return;
+            }
+
             // 二层协议：外层二进制头 + 内层 GZIP（日志已确认存在 1F 8B 08）
             if (TryProcessKuaishouEmbeddedGzip(buff, e.ProcessName)) return;
 
@@ -230,6 +236,66 @@ namespace BarrageGrab
             {
                 Logger.LogWarn($"[快手] WebSocket 数据解析失败: Protobuf({protobufErr ?? "no-hit"}), JSON({ex2.Message})");
             }
+        }
+
+        private bool TryProcessKuaishouProfileChatPacket(byte[] buff)
+        {
+            if (buff == null || buff.Length < 60) return false;
+
+            var tokens = ExtractProtoStringTokens(buff, maxTokens: 96);
+            if (tokens.Count == 0) return false;
+
+            // 该簇在样本中稳定包含资料字段：level/rank/audience
+            var hasProfileMeta = tokens.Any(t =>
+                t.IndexOf("level_label", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                t.IndexOf("rank_top", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                t.IndexOf("audienceRank", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (!hasProfileMeta) return false;
+
+            // 多用户名批量包（名册/榜单）噪音高，先跳过避免误报
+            var cjkLikeCount = tokens.Count(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF) >= 2);
+            if (cjkLikeCount > 8) return false;
+
+            var candidates = new List<(string text, bool fromBase64)>();
+            foreach (var token in tokens)
+            {
+                var t = (token ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(t)) continue;
+                candidates.Add((t, false));
+
+                // 部分评论正文在该簇中以 base64 文本存储，例如 "DOS4u+aSreS9oOWlvQ==" => "主播你好"
+                if (TryDecodeBase64Utf8(t, out var decoded) && !string.IsNullOrWhiteSpace(decoded))
+                {
+                    candidates.Add((decoded.Trim(), true));
+                }
+            }
+
+            var best = candidates
+                .Select(c => new { c.text, c.fromBase64, score = ScoreKuaishouProfileChatCandidate(c.text, c.fromBase64) })
+                .Where(x => x.score > 0)
+                .OrderByDescending(x => x.score)
+                .ThenBy(x => x.text.Length)
+                .FirstOrDefault();
+            if (best == null) return false;
+            if (!TryPushKuaishouFallbackText(best.text)) return false;
+
+            var nickname = tokens
+                .Select(s => (s ?? string.Empty).Trim())
+                .FirstOrDefault(s => IsLikelyKuaishouNickname(s) && !string.Equals(s, best.text, StringComparison.Ordinal));
+            if (string.IsNullOrWhiteSpace(nickname)) nickname = "快手用户";
+
+            Logger.LogInfo($"[快手][Fallback][PROFILE] 命中评论 nickname={nickname}, content={best.text}, fromBase64={best.fromBase64}, len={buff.Length}");
+            FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
+            {
+                Content = best.text,
+                User = new Modles.ProtoEntity.KsUser
+                {
+                    Nickname = nickname,
+                    UserId = "",
+                    HeadUrl = ""
+                }
+            });
+            return true;
         }
 
         private bool TryProcessKuaishouEmbeddedGzip(byte[] buff, string processName)
@@ -705,6 +771,132 @@ namespace BarrageGrab
                 while (_ksFallbackTextDedup.Count > 120) _ksFallbackTextDedup.RemoveAt(0);
                 return true;
             }
+        }
+
+        private int ScoreKuaishouProfileChatCandidate(string text, bool fromBase64)
+        {
+            if (!IsLikelyKuaishouChatText(text)) return 0;
+            var score = 10;
+
+            if (fromBase64) score += 80;
+            if (text.Length == 1 && char.IsDigit(text[0])) score += 120;
+            if (text.IndexOf("主播", StringComparison.OrdinalIgnoreCase) >= 0) score += 60;
+            if (text.IndexOf("你好", StringComparison.OrdinalIgnoreCase) >= 0) score += 30;
+
+            // 纯昵称词倾向降分，避免把“王翠花”误当评论
+            if (IsLikelyKuaishouNickname(text)) score -= 50;
+
+            return score;
+        }
+
+        private bool IsLikelyKuaishouNickname(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            text = text.Trim();
+            if (text.Length < 2 || text.Length > 10) return false;
+            if (text.Any(char.IsDigit)) return false;
+            if (text.IndexOf("主播", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            if (text.IndexOf("你好", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            if (text.IndexOf("欢迎", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            var cjkCount = text.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF);
+            return cjkCount >= 2;
+        }
+
+        private bool TryDecodeBase64Utf8(string text, out string decoded)
+        {
+            decoded = null;
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            text = text.Trim();
+            if (text.Length < 8 || text.Length > 256) return false;
+            if (!Regex.IsMatch(text, @"^[A-Za-z0-9+/=]+$")) return false;
+            if (text.Length % 4 != 0) return false;
+
+            try
+            {
+                var bytes = Convert.FromBase64String(text);
+                if (bytes == null || bytes.Length == 0 || bytes.Length > 256) return false;
+                var s = Encoding.UTF8.GetString(bytes).Trim();
+                if (string.IsNullOrWhiteSpace(s)) return false;
+                decoded = s;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private List<string> ExtractProtoStringTokens(byte[] data, int maxTokens)
+        {
+            var output = new List<string>();
+            CollectProtoStringTokens(data, 0, output, 0, maxTokens);
+            return output
+                .Select(s => (s ?? string.Empty).Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct()
+                .Take(maxTokens)
+                .ToList();
+        }
+
+        private void CollectProtoStringTokens(byte[] data, int offset, List<string> output, int depth, int maxTokens)
+        {
+            if (data == null || output == null || depth > 4 || output.Count >= maxTokens) return;
+            int i = offset;
+            int end = data.Length;
+            while (i < end && output.Count < maxTokens)
+            {
+                if (!TryReadVarint64(data, ref i, out ulong key)) break;
+                int wireType = (int)(key & 0x07);
+                switch (wireType)
+                {
+                    case 0:
+                        if (!TryReadVarint64(data, ref i, out _)) return;
+                        break;
+                    case 1:
+                        i += 8;
+                        if (i > end) return;
+                        break;
+                    case 2:
+                        if (!TryReadVarint64(data, ref i, out ulong lenU)) return;
+                        if (lenU > int.MaxValue) return;
+                        int len = (int)lenU;
+                        if (len < 0 || i + len > end) return;
+
+                        if (len >= 1 && len <= 256)
+                        {
+                            var seg = new byte[len];
+                            Buffer.BlockCopy(data, i, seg, 0, len);
+                            var text = Encoding.UTF8.GetString(seg);
+                            if (IsLikelyTokenText(text))
+                            {
+                                output.Add(text);
+                            }
+
+                            // 继续递归解析嵌套 message
+                            CollectProtoStringTokens(seg, 0, output, depth + 1, maxTokens);
+                        }
+                        i += len;
+                        break;
+                    case 5:
+                        i += 4;
+                        if (i > end) return;
+                        break;
+                    default:
+                        return;
+                }
+            }
+        }
+
+        private bool IsLikelyTokenText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            text = text.Trim();
+            if (text.Length == 0 || text.Length > 256) return false;
+            // 过滤不可打印内容
+            var printableCount = text.Count(ch => !char.IsControl(ch));
+            if (printableCount == 0) return false;
+            if ((double)printableCount / text.Length < 0.8) return false;
+            return true;
         }
 
         private bool IsLikelyKuaishouChatText(string text)
