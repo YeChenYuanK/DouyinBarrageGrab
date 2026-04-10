@@ -32,6 +32,7 @@ namespace BarrageGrab
         private readonly Dictionary<string, DateTime> ksRouteStateLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DateTime> ksHttpFocusLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DateTime> ksDecodedUrlLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DateTime> ksPushHitLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, KsHttpHostStat> ksHttpHostStats = new Dictionary<string, KsHttpHostStat>(StringComparer.OrdinalIgnoreCase);
         private DateTime ksHttpHostLastEmitAt = DateTime.MinValue;
 
@@ -2217,11 +2218,71 @@ namespace BarrageGrab
                 }
 
                 TryLogDecodedKuaishouUrls(channel, fileBase, text);
+                TryLogKuaishouPushConfigSignals(channel, fileBase, text);
             }
             catch
             {
                 // ignore
             }
+        }
+
+        private void TryLogKuaishouPushConfigSignals(string channel, string fileBase, string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+            try
+            {
+                var lower = text.ToLowerInvariant();
+                var hasPushHints = lower.Contains("rtmp://")
+                    || lower.Contains("streamkey")
+                    || lower.Contains("stream_key")
+                    || lower.Contains("pushurl")
+                    || lower.Contains("push_url")
+                    || lower.Contains("live-voip.com")
+                    || lower.Contains("voip.live-voip.com")
+                    || lower.Contains("/gifshow/");
+                if (!hasPushHints) return;
+
+                var authorId = Regex.Match(text, @"authorId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,32})", RegexOptions.IgnoreCase).Groups[1].Value;
+                var liveStreamId = Regex.Match(text, @"liveStreamId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})", RegexOptions.IgnoreCase).Groups[1].Value;
+                var rtmp = Regex.Match(text, @"rtmp://[^\s\""']{12,800}", RegexOptions.IgnoreCase).Value;
+                var streamKey = Regex.Match(text, @"(?:streamKey|stream_key|pushKey|push_key)[=:\""\\s]{0,6}([A-Za-z0-9_\-]{6,256})", RegexOptions.IgnoreCase).Groups[1].Value;
+
+                var hitKey = $"{channel}|{rtmp}|{streamKey}";
+                if (!ShouldLogKsPushHit(hitKey, 6)) return;
+
+                var preview = text.Length > 420 ? text.Substring(0, 420) + "..." : text;
+                preview = preview.Replace("\r", " ").Replace("\n", " ");
+                Logger.LogInfo($"[KS_PUSH_CONFIG_CANDIDATE] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} hasRtmp={!string.IsNullOrWhiteSpace(rtmp)} hasKey={!string.IsNullOrWhiteSpace(streamKey)} preview={preview}");
+
+                if (!string.IsNullOrWhiteSpace(rtmp))
+                {
+                    Logger.LogInfo($"[KS_PUSH_URL_HIT] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} rtmp={rtmp}");
+                }
+                if (!string.IsNullOrWhiteSpace(streamKey))
+                {
+                    Logger.LogInfo($"[KS_STREAM_KEY_HIT] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} streamKey={streamKey}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_PUSH_CONFIG_CANDIDATE] failed: {ex.Message}");
+            }
+        }
+
+        private bool ShouldLogKsPushHit(string key, int minSeconds)
+        {
+            var now = DateTime.Now;
+            var k = (key ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(k)) return false;
+            lock (ksFlowLock)
+            {
+                if (ksPushHitLastLogAt.TryGetValue(k, out var lastAt) && (now - lastAt).TotalSeconds < minSeconds)
+                {
+                    return false;
+                }
+                ksPushHitLastLogAt[k] = now;
+            }
+            return true;
         }
 
         private void TryLogDecodedKuaishouUrls(string channel, string fileBase, string text)
