@@ -204,21 +204,46 @@ namespace BarrageGrab.Kuaishou
 
                 var info = new KsRoomInfo { RoomId = userId };
 
-                var stateMatch = Regex.Match(html,
-                    @"window\.__INITIAL_STATE__\s*=\s*(\{.*?\})(?:\s*;?\s*</script>|window\.)",
-                    RegexOptions.Singleline);
-
+                // 匹配 window.__INITIAL_STATE__={...} 的内容
+                // 使用平衡括号匹配来正确处理嵌套的大括号
+                var stateMatch = Regex.Match(html, @"window\.__INITIAL_STATE__\s*=\s*(\{)", RegexOptions.Singleline);
                 if (!stateMatch.Success)
                 {
                     Logger.LogWarn("[KS] PC 页面未找到 __INITIAL_STATE__");
                     return null;
                 }
 
-                var state = JObject.Parse(stateMatch.Groups[1].Value);
-                var liveData = state.SelectToken("..liveStream") ?? state.SelectToken("..liveDetail");
+                // 手动解析 JSON，找到匹配的结束括号
+                var startIdx = stateMatch.Index + stateMatch.Length - 1; // 第一个 {
+                var jsonStr = html.Substring(startIdx);
+                var endIdx = FindMatchingBrace(jsonStr, 0);
+                if (endIdx < 0)
+                {
+                    Logger.LogWarn("[KS] PC 页面 __INITIAL_STATE__ JSON 解析失败");
+                    return null;
+                }
+                var jsonContent = jsonStr.Substring(0, endIdx + 1);
+                JObject state;
+                try
+                {
+                    state = JObject.Parse(jsonContent);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarn("[KS] PC 页面 __INITIAL_STATE__ JSON 解析失败: " + ex.Message);
+                    return null;
+                }
+
+                // 尝试多种路径获取直播数据
+                var liveData = state.SelectToken("$..liveDetailList[0]") 
+                              ?? state.SelectToken("$..liveStream")
+                              ?? state.SelectToken("$..liveDetail")
+                              ?? state.SelectToken("$.liveStream")
+                              ?? state.SelectToken("$.liveDetail");
+                
                 if (liveData == null)
                 {
-                    Logger.LogWarn("[KS] PC 页面 state 中未找到 liveStream/liveDetail");
+                    Logger.LogWarn("[KS] PC 页面 state 中未找到直播数据");
                     return null;
                 }
 
@@ -459,6 +484,53 @@ namespace BarrageGrab.Kuaishou
         private static string GeneratePageId()
         {
             return Guid.NewGuid().ToString("N").Substring(0, 16);
+        }
+
+        /// <summary>
+        /// 找到字符串中从指定位置开始的匹配右括号
+        /// </summary>
+        private static int FindMatchingBrace(string s, int start)
+        {
+            var depth = 0;
+            var inString = false;
+            var escaped = false;
+            
+            for (var i = start; i < s.Length; i++)
+            {
+                var c = s[i];
+                
+                if (escaped)
+                {
+                    escaped = false;
+                    continue;
+                }
+                
+                if (c == '\\')
+                {
+                    escaped = true;
+                    continue;
+                }
+                
+                if (c == '"')
+                {
+                    inString = !inString;
+                    continue;
+                }
+                
+                if (inString) continue;
+                
+                if (c == '{')
+                {
+                    depth++;
+                }
+                else if (c == '}')
+                {
+                    depth--;
+                    if (depth == 0) return i;
+                }
+            }
+            
+            return -1; // 未找到匹配的右括号
         }
 
         public void Dispose() { }
