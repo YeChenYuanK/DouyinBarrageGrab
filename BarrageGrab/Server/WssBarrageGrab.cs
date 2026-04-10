@@ -429,12 +429,35 @@ namespace BarrageGrab
                 }
 
                 Logger.LogInfo($"[KS_SESSION] sessionId={(guid.Success ? guid.Value : "N/A")} hints={string.Join(",", zh)}");
+                TryLogKuaishouRoleHint(zh);
                 TryEmitFallbackChatFromHints(zh);
             }
             catch
             {
                 // ignore
             }
+        }
+
+        private void TryLogKuaishouRoleHint(List<string> hints)
+        {
+            if (hints == null || hints.Count < 2) return;
+            var tokens = hints.Select(h => (h ?? string.Empty).Trim()).Where(h => !string.IsNullOrWhiteSpace(h)).ToList();
+            if (!tokens.Any()) return;
+
+            // 常见结构：主播名,评论词,观众名,人在看
+            var withoutStatus = tokens.Where(t => t != "人在看").ToList();
+            if (withoutStatus.Count >= 3)
+            {
+                var anchor = withoutStatus[0];
+                var comment = withoutStatus[1];
+                var audience = withoutStatus[2];
+                Logger.LogInfo($"[KS_ROLE] anchor={anchor}, audience={audience}, commentCandidate={comment}");
+                return;
+            }
+
+            // 兜底：记录可疑昵称与可疑评论片段
+            var commentLike = withoutStatus.FirstOrDefault(IsLikelyKuaishouChatText) ?? "";
+            Logger.LogInfo($"[KS_ROLE] tokens={string.Join("|", tokens)}, commentLike={commentLike}");
         }
 
         private readonly List<string> _ksHintEmitDedup = new List<string>();
