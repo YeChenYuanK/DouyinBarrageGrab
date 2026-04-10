@@ -30,6 +30,7 @@ namespace BarrageGrab
         private readonly object ksFlowLock = new object();
         private readonly Dictionary<string, KsFlowClusterStat> ksFlowClusters = new Dictionary<string, KsFlowClusterStat>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DateTime> ksRouteStateLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DateTime> ksHttpFocusLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// 进入直播间
@@ -1682,31 +1683,59 @@ namespace BarrageGrab
             {
                 var uri = e.RequestUri ?? string.Empty;
                 var host = (e.HostName ?? string.Empty).ToLowerInvariant();
+                var process = (e.ProcessName ?? string.Empty).ToLowerInvariant();
                 if (!IsLikelyKuaishouPreflightUri(host, uri)) return;
 
                 DumpKuaishouRawBytes("http_prefetch_raw", e.HostName ?? e.ProcessName, payload);
 
                 var text = Encoding.UTF8.GetString(payload);
                 var hits = ExtractKuaishouPreflightHints(text, uri);
+                var shortUri = NormalizeFlowPath(uri);
+                var focusKey = $"{host}|{shortUri}";
+                if (!ShouldLogKsHttpFocus(focusKey, 2))
+                {
+                    return;
+                }
+
                 if (IsKuaishouWlogNoise(host, uri))
                 {
-                    Logger.LogInfo($"[KS_HTTP_PREFLIGHT_NOISE] host={e.HostName} uri={uri} len={payload.Length} hits={hits}");
+                    Logger.LogInfo($"[KS_HTTP_PREFLIGHT_ROUTE] level=NOISE host={e.HostName} process={e.ProcessName} uri={uri} len={payload.Length} hits={hits}");
                     return;
+                }
+
+                if (process.Contains("kwailive"))
+                {
+                    DumpKuaishouRawBytes("http_prefetch_non_wlog_raw", e.HostName ?? e.ProcessName, payload);
+                    Logger.LogInfo($"[KS_HTTP_PREFLIGHT_ROUTE] level=NON_WLOG host={e.HostName} process={e.ProcessName} uri={uri} len={payload.Length} hits={hits}");
                 }
 
                 if (IsStrongKuaishouPreflightCandidate(host, uri))
                 {
                     DumpKuaishouRawBytes("http_prefetch_strong_raw", e.HostName ?? e.ProcessName, payload);
-                    Logger.LogInfo($"[KS_PREFLIGHT_CANDIDATE_STRONG] host={e.HostName} uri={uri} len={payload.Length} hits={hits}");
+                    Logger.LogInfo($"[KS_HTTP_PREFLIGHT_ROUTE] level=STRONG host={e.HostName} process={e.ProcessName} uri={uri} len={payload.Length} hits={hits}");
                     return;
                 }
 
-                Logger.LogInfo($"[KS_HTTP_PREFLIGHT] host={e.HostName} uri={uri} len={payload.Length} hits={hits}");
+                Logger.LogInfo($"[KS_HTTP_PREFLIGHT_ROUTE] level=CANDIDATE host={e.HostName} process={e.ProcessName} uri={uri} len={payload.Length} hits={hits}");
             }
             catch (Exception ex)
             {
                 Logger.LogInfo($"[KS_HTTP_PREFLIGHT] failed: {ex.Message}");
             }
+        }
+
+        private bool ShouldLogKsHttpFocus(string key, int minSeconds)
+        {
+            var now = DateTime.Now;
+            lock (ksFlowLock)
+            {
+                if (ksHttpFocusLastLogAt.TryGetValue(key, out var lastAt) && (now - lastAt).TotalSeconds < minSeconds)
+                {
+                    return false;
+                }
+                ksHttpFocusLastLogAt[key] = now;
+            }
+            return true;
         }
 
         private bool IsLikelyKuaishouPreflightUri(string host, string uri)
