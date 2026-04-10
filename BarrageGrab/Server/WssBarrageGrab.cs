@@ -592,6 +592,16 @@ namespace BarrageGrab
                     var anchor = jobj.SelectToken("$..nickname")?.Value<string>()
                                  ?? jobj.SelectToken("$..authorName")?.Value<string>()
                                  ?? jobj.SelectToken("$..anchorName")?.Value<string>();
+                    var liveStatus = jobj.SelectToken("$..liveStatus")?.ToString()
+                                  ?? jobj.SelectToken("$..status")?.ToString();
+                    var start = jobj.SelectToken("$..start")?.ToString()
+                             ?? jobj.SelectToken("$..startTime")?.ToString();
+                    var online = jobj.SelectToken("$..online")?.ToString()
+                              ?? jobj.SelectToken("$..onlineCount")?.ToString();
+                    var probeKeys = new[] { "title", "start", "liveStatus", "room", "anchor", "welcome", "online", "liveTitle", "开播", "下播", "结束" };
+                    var hitKeys = probeKeys.Where(k => jsonFlat.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                    var probePreview = jsonFlat.Length > 220 ? jsonFlat.Substring(0, 220) + "..." : jsonFlat;
+                    Logger.LogInfo($"[KS_STATE_PROBE] noise={isActivityNoise} title={title ?? "N/A"} anchor={anchor ?? "N/A"} liveStatus={liveStatus ?? "N/A"} start={start ?? "N/A"} online={online ?? "N/A"} keys={string.Join("|", hitKeys)} preview={probePreview}");
                     if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(anchor))
                     {
                         // 原始候选日志：用于人工核对 title/nickname 是否真实出现，不参与状态判定
@@ -605,13 +615,23 @@ namespace BarrageGrab
                         Logger.PrintColor($"[快手房间候选] 主播: {anchor ?? "N/A"} | 标题: {title ?? "N/A"}", ConsoleColor.Cyan);
                     }
 
-                    if (!isActivityNoise && IsKuaishouStateCallbackJobj(jobj))
+                    var hasExplicitStateField = jsonFlat.IndexOf("\"liveStatus\":", StringComparison.OrdinalIgnoreCase) >= 0
+                        || (!string.IsNullOrWhiteSpace(liveStatus) && !string.Equals(liveStatus, "N/A", StringComparison.OrdinalIgnoreCase));
+                    if (!isActivityNoise && hasExplicitStateField)
                     {
                         foundStateCallback = true;
                         var stateTitle = title ?? jobj.SelectToken("$..liveTitle")?.Value<string>() ?? "N/A";
                         var stateAnchor = anchor ?? jobj.SelectToken("$..userName")?.Value<string>() ?? "N/A";
-                        Logger.LogInfo($"[KS_STATE] anchor={stateAnchor}, title={stateTitle}");
-                        Logger.PrintColor($"[快手状态] 主播: {stateAnchor} | 标题: {stateTitle}", ConsoleColor.DarkCyan);
+                        Logger.LogInfo($"[KS_STATE_CONFIRMED] anchor={stateAnchor}, title={stateTitle}, liveStatus={liveStatus ?? "N/A"}, start={start ?? "N/A"}, online={online ?? "N/A"}");
+                        Logger.PrintColor($"[快手状态确认] 主播: {stateAnchor} | 标题: {stateTitle} | liveStatus={liveStatus ?? "N/A"}", ConsoleColor.Green);
+                    }
+                    else if (!isActivityNoise && IsKuaishouStateCallbackJobj(jobj))
+                    {
+                        foundStateCallback = true;
+                        var stateTitle = title ?? jobj.SelectToken("$..liveTitle")?.Value<string>() ?? "N/A";
+                        var stateAnchor = anchor ?? jobj.SelectToken("$..userName")?.Value<string>() ?? "N/A";
+                        Logger.LogInfo($"[KS_STATE_CANDIDATE] anchor={stateAnchor}, title={stateTitle}, liveStatus={liveStatus ?? "N/A"}, start={start ?? "N/A"}, online={online ?? "N/A"}, keys={string.Join("|", hitKeys)}");
+                        Logger.PrintColor($"[快手状态候选] 主播: {stateAnchor} | 标题: {stateTitle}", ConsoleColor.DarkCyan);
                     }
 
                     foreach (var obj in jobj.DescendantsAndSelf().OfType<JObject>())
