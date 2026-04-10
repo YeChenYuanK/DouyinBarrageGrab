@@ -301,11 +301,46 @@ namespace BarrageGrab
                 while (_ksSessionDedup.Count > 80) _ksSessionDedup.RemoveAt(0);
 
                 Logger.LogInfo($"[KS_SESSION] sessionId={(guid.Success ? guid.Value : "N/A")} hints={string.Join(",", zh)}");
+                TryEmitFallbackChatFromHints(zh);
             }
             catch
             {
                 // ignore
             }
+        }
+
+        private readonly List<string> _ksHintEmitDedup = new List<string>();
+        private void TryEmitFallbackChatFromHints(List<string> hints)
+        {
+            if (hints == null || hints.Count == 0) return;
+            foreach (var raw in hints)
+            {
+                var hint = (raw ?? string.Empty).Trim();
+                if (!IsLikelyKuaishouChatText(hint)) continue;
+                if (!TryPushHintEmitDedup(hint)) continue;
+
+                Logger.LogInfo($"[快手][Fallback] 从会话hints触发评论: {hint}");
+                var msg = new Modles.ProtoEntity.KsChatMessage
+                {
+                    Content = hint,
+                    User = new Modles.ProtoEntity.KsUser
+                    {
+                        Nickname = "快手用户",
+                        UserId = "",
+                        HeadUrl = ""
+                    }
+                };
+                FireKuaishouChat(msg);
+                return;
+            }
+        }
+
+        private bool TryPushHintEmitDedup(string text)
+        {
+            if (_ksHintEmitDedup.Contains(text)) return false;
+            _ksHintEmitDedup.Add(text);
+            while (_ksHintEmitDedup.Count > 120) _ksHintEmitDedup.RemoveAt(0);
+            return true;
         }
 
         private readonly List<string> _ksFallbackTextDedup = new List<string>();
@@ -359,7 +394,8 @@ namespace BarrageGrab
             if (Regex.IsMatch(text, @"^[0-9a-fA-F\-]{16,}$")) return false; // guid/hash
             var blacklist = new[]
             {
-                "livePeakCup", "MERCHANT_", "lottie", "stickerImage", "正在看", "直播间正在开启", "host-name", "result"
+                "livePeakCup", "MERCHANT_", "lottie", "stickerImage", "正在看", "直播间正在开启", "host-name", "result",
+                "快手平台账号", "未成年人", "严禁主播", "人气里程碑", "欢迎开播"
             };
             if (blacklist.Any(k => text.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0)) return false;
 
