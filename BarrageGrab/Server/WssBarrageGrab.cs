@@ -241,6 +241,7 @@ namespace BarrageGrab
 
                     Logger.LogInfo($"[快手] GZIP命中 at={i} inflatedLen={inflated.Length}");
                     LogKuaishouPacketSignature(inflated, $"ksgzip:{i}");
+                    TryLogKuaishouSessionInfo(inflated);
 
                     if (TryProcessKuaishouProtobufWithOffsets(inflated, processName))
                     {
@@ -276,6 +277,35 @@ namespace BarrageGrab
             }
 
             return false;
+        }
+
+        private readonly List<string> _ksSessionDedup = new List<string>();
+        private void TryLogKuaishouSessionInfo(byte[] inflated)
+        {
+            try
+            {
+                var text = Encoding.UTF8.GetString(inflated);
+                var guid = Regex.Match(text, @"[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}");
+                var zh = Regex.Matches(text, @"[\u4e00-\u9fa5]{2,20}")
+                    .Cast<Match>()
+                    .Select(m => m.Value)
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Distinct()
+                    .Take(5)
+                    .ToList();
+
+                if (!guid.Success && zh.Count == 0) return;
+                var key = $"{(guid.Success ? guid.Value : "noguid")}::{string.Join("|", zh)}";
+                if (_ksSessionDedup.Contains(key)) return;
+                _ksSessionDedup.Add(key);
+                while (_ksSessionDedup.Count > 80) _ksSessionDedup.RemoveAt(0);
+
+                Logger.LogInfo($"[KS_SESSION] sessionId={(guid.Success ? guid.Value : "N/A")} hints={string.Join(",", zh)}");
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         private readonly List<string> _ksFallbackTextDedup = new List<string>();
