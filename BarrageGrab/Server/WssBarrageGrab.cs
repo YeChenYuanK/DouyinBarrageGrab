@@ -283,6 +283,11 @@ namespace BarrageGrab
             var cjkLikeCount = tokens.Count(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF) >= 2);
             if (cjkLikeCount > 8) return false;
 
+            if (TryProcessKuaishouProfileGiftPacket(tokens, strategy, payload.Length))
+            {
+                return true;
+            }
+
             var candidates = new List<(string text, bool fromBase64)>();
             foreach (var token in tokens)
             {
@@ -321,6 +326,70 @@ namespace BarrageGrab
                 }
             });
             return true;
+        }
+
+        private bool TryProcessKuaishouProfileGiftPacket(List<string> tokens, string strategy, int payloadLen)
+        {
+            if (tokens == null || tokens.Count == 0) return false;
+
+            var expanded = new List<string>();
+            foreach (var raw in tokens)
+            {
+                var t = (raw ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(t)) continue;
+                expanded.Add(t);
+                if (TryDecodeBase64Utf8(t, out var decoded) && !string.IsNullOrWhiteSpace(decoded))
+                {
+                    expanded.Add(decoded.Trim());
+                }
+            }
+
+            bool hasGiftVerb = expanded.Any(IsLikelyGiftTriggerToken);
+            if (!hasGiftVerb) return false;
+
+            long giftCount = 1;
+            var countToken = expanded.FirstOrDefault(IsLikelyGiftCountToken);
+            if (!string.IsNullOrWhiteSpace(countToken))
+            {
+                giftCount = ParseGiftCount(countToken);
+                if (giftCount <= 0) giftCount = 1;
+            }
+
+            var nickname = ResolveKuaishouNickname(expanded, "");
+            if (string.IsNullOrWhiteSpace(nickname)) nickname = "快手用户";
+
+            string giftName = expanded.FirstOrDefault(t =>
+                t.IndexOf("礼物", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                t.IndexOf("赠送", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (string.IsNullOrWhiteSpace(giftName)) giftName = "礼物";
+
+            var dedupKey = $"{nickname}|{giftName}|{giftCount}|{strategy}";
+            if (!TryPushKuaishouFallbackGift(dedupKey)) return false;
+
+            Logger.LogInfo($"[快手][Fallback][PROFILE_GIFT] strategy={strategy}, nickname={nickname}, gift={giftName}, count={giftCount}, len={payloadLen}");
+            FireKuaishouGift(new Modles.ProtoEntity.KsGiftMessage
+            {
+                User = new Modles.ProtoEntity.KsUser
+                {
+                    Nickname = nickname,
+                    UserId = "",
+                    HeadUrl = ""
+                },
+                GiftName = giftName,
+                Count = giftCount
+            });
+            return true;
+        }
+
+        private bool TryPushKuaishouFallbackGift(string dedupKey)
+        {
+            lock (_ksFallbackGiftDedupLock)
+            {
+                if (_ksFallbackGiftDedup.Contains(dedupKey)) return false;
+                _ksFallbackGiftDedup.Add(dedupKey);
+                while (_ksFallbackGiftDedup.Count > 120) _ksFallbackGiftDedup.RemoveAt(0);
+                return true;
+            }
         }
 
         private bool TryProcessKuaishouEmbeddedGzip(byte[] buff, string processName)
@@ -754,6 +823,8 @@ namespace BarrageGrab
 
         private readonly List<string> _ksFallbackTextDedup = new List<string>();
         private readonly object _ksFallbackTextDedupLock = new object();
+        private readonly List<string> _ksFallbackGiftDedup = new List<string>();
+        private readonly object _ksFallbackGiftDedupLock = new object();
         private string _ksLastStableNickname = "";
 
         private bool TryProcessKuaishouGenericProtoText(byte[] data)
@@ -975,6 +1046,36 @@ namespace BarrageGrab
             if (string.IsNullOrWhiteSpace(text)) return false;
             // 典型 GUID 片段: 8-4-4-4-12 或其子串
             return Regex.IsMatch(text, @"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}");
+        }
+
+        private bool IsLikelyGiftTriggerToken(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            text = text.Trim();
+            if (text == "送") return true;
+            if (text.IndexOf("送礼", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            if (text.IndexOf("赠送", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            if (text.IndexOf("礼物", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            return false;
+        }
+
+        private bool IsLikelyGiftCountToken(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            text = text.Trim();
+            return Regex.IsMatch(text, @"^\d+(\.\d+)?万?$");
+        }
+
+        private long ParseGiftCount(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return 0;
+            text = text.Trim();
+            bool wan = text.EndsWith("万", StringComparison.Ordinal);
+            if (wan) text = text.Substring(0, text.Length - 1);
+            if (!double.TryParse(text, out var n)) return 0;
+            if (n <= 0) return 0;
+            if (wan) n *= 10000.0;
+            return (long)Math.Round(n);
         }
 
         private void CollectProtoReadableStrings(byte[] data, int offset, List<string> output, int depth)
