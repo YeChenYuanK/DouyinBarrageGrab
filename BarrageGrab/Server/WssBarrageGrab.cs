@@ -1781,6 +1781,7 @@ namespace BarrageGrab
                 var flowHost = NormalizeFlowHost(host);
                 var flowPath = NormalizeFlowPath(uri);
                 var hintHits = CountFlowHintHits(hintText);
+                var signalSummary = ExtractWsRouteSignalSummary(hintText);
                 var score = ScoreKuaishouFlow(protocol, flowHost, flowPath, uri, processName, payloadLength, hintHits);
                 Logger.LogInfo($"[KS_FLOW_LEDGER] proto={protocol} process={processName} host={flowHost} path={flowPath} len={payloadLength} score={score} ct={contentType}");
                 Logger.LogInfo($"[KS_FLOW_SCORE] score={score} level={(score >= 80 ? "strong" : (score >= 40 ? "medium" : "weak"))} proto={protocol} host={flowHost} path={flowPath} hintHits={hintHits} uri={uri}");
@@ -1789,6 +1790,10 @@ namespace BarrageGrab
                     && score >= 50)
                 {
                     Logger.LogInfo($"[KS_WS_ROUTE_CANDIDATE] host={flowHost} score={score} hintHits={hintHits} len={payloadLength} process={processName}");
+                    if (!string.IsNullOrWhiteSpace(signalSummary))
+                    {
+                        Logger.LogInfo($"[KS_WS_ROUTE_SIGNAL] host={flowHost} score={score} signals={signalSummary}");
+                    }
                 }
 
                 var clusterKey = $"{protocol}|{flowHost}|{flowPath}";
@@ -1885,7 +1890,11 @@ namespace BarrageGrab
                     "nickname",
                     "\"title\"",
                     "target_live_stream_id",
-                    "/live/"
+                    "/live/",
+                    "platformBiz",
+                    "gzonePcMate",
+                    "author_label",
+                    "人在看"
                 };
                 return patterns.Count(p => text.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0);
             }
@@ -1893,6 +1902,29 @@ namespace BarrageGrab
             {
                 return 0;
             }
+        }
+
+        private string ExtractWsRouteSignalSummary(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+            var signals = new List<string>();
+
+            if (text.IndexOf("platformBiz", StringComparison.OrdinalIgnoreCase) >= 0) signals.Add("platformBiz");
+            if (text.IndexOf("gzonePcMate", StringComparison.OrdinalIgnoreCase) >= 0) signals.Add("gzonePcMate");
+            if (text.IndexOf("author_label", StringComparison.OrdinalIgnoreCase) >= 0) signals.Add("author_label");
+            if (text.IndexOf("人在看", StringComparison.OrdinalIgnoreCase) >= 0) signals.Add("人在看");
+
+            var nameMatches = Regex.Matches(text, @"[\u4e00-\u9fa5]{2,8}");
+            foreach (Match m in nameMatches)
+            {
+                var v = m.Value;
+                if (v.Contains("人在看")) continue;
+                if (signals.Contains(v)) continue;
+                signals.Add(v);
+                if (signals.Count >= 8) break;
+            }
+
+            return signals.Count == 0 ? string.Empty : string.Join("|", signals.Take(8));
         }
 
         private int ScoreKuaishouFlow(string protocol, string host, string path, string uri, string processName, int payloadLength, int hintHits)
