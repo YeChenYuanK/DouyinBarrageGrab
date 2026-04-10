@@ -125,19 +125,13 @@ echo.
 echo [步骤5] 正在整理输出文件...
 if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 
-:: 保存 logs 子目录
-if exist "%OUTPUT_DIR%\logs" (
-    move "%OUTPUT_DIR%\logs" "%OUTPUT_DIR%\logs_bak" >nul 2>&1
+:: 清空 Output 目录（保留 logs 子目录）
+echo [信息] 清空 Output 目录（保留 logs）...
+for %%f in ("%OUTPUT_DIR%\*") do (
+    if /I not "%%~nxf"=="logs" del /f /q "%%f" >nul 2>&1
 )
-
-:: 清空 Output 目录（删除所有文件和子目录）
-echo [信息] 清空 Output 目录...
-for %%f in ("%OUTPUT_DIR%\*") do del /f /q "%%f" >nul 2>&1
-for /d %%d in ("%OUTPUT_DIR%\*") do rmdir /s /q "%%d" >nul 2>&1
-
-:: 恢复 logs 子目录
-if exist "%OUTPUT_DIR%\logs_bak" (
-    move "%OUTPUT_DIR%\logs_bak" "%OUTPUT_DIR%\logs" >nul 2>&1
+for /d %%d in ("%OUTPUT_DIR%\*") do (
+    if /I not "%%~nxd"=="logs" rmdir /s /q "%%d" >nul 2>&1
 )
 if not exist "%OUTPUT_DIR%\logs" mkdir "%OUTPUT_DIR%\logs"
 
