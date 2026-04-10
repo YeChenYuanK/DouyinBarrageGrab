@@ -2233,30 +2233,82 @@ namespace BarrageGrab
             {
                 var lower = text.ToLowerInvariant();
                 var hasPushHints = lower.Contains("rtmp://")
+                    || lower.Contains("srt://")
+                    || lower.Contains("webrtc://")
                     || lower.Contains("streamkey")
                     || lower.Contains("stream_key")
                     || lower.Contains("pushurl")
                     || lower.Contains("push_url")
+                    || lower.Contains("publishurl")
+                    || lower.Contains("publish_url")
                     || lower.Contains("live-voip.com")
                     || lower.Contains("voip.live-voip.com")
-                    || lower.Contains("/gifshow/");
+                    || lower.Contains("/gifshow/")
+                    || lower.Contains("ingest")
+                    || lower.Contains("endpoint")
+                    || lower.Contains("backup");
                 if (!hasPushHints) return;
 
                 var authorId = Regex.Match(text, @"authorId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,32})", RegexOptions.IgnoreCase).Groups[1].Value;
                 var liveStreamId = Regex.Match(text, @"liveStreamId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})", RegexOptions.IgnoreCase).Groups[1].Value;
+                var roomId = Regex.Match(text, @"roomId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})", RegexOptions.IgnoreCase).Groups[1].Value;
+                var sessionId = Regex.Match(text, @"sessionId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})", RegexOptions.IgnoreCase).Groups[1].Value;
                 var rtmp = Regex.Match(text, @"rtmp://[^\s\""']{12,800}", RegexOptions.IgnoreCase).Value;
+                var ingest = Regex.Match(text, @"(?:srt|webrtc)://[^\s\""']{12,800}", RegexOptions.IgnoreCase).Value;
                 var streamKey = Regex.Match(text, @"(?:streamKey|stream_key|pushKey|push_key)[=:\""\\s]{0,6}([A-Za-z0-9_\-]{6,256})", RegexOptions.IgnoreCase).Groups[1].Value;
+                var publishUrl = Regex.Match(text, @"(?:publishUrl|publish_url|pushUrl|push_url)[=:\""\\s]{0,6}(https?://[^\s\""']{8,800}|rtmp://[^\s\""']{8,800})", RegexOptions.IgnoreCase).Groups[1].Value;
 
-                var hitKey = $"{channel}|{rtmp}|{streamKey}";
+                var authHintCount = 0;
+                if (lower.Contains("token")) authHintCount++;
+                if (lower.Contains("sign")) authHintCount++;
+                if (lower.Contains("signature")) authHintCount++;
+                if (lower.Contains("nonce")) authHintCount++;
+                if (lower.Contains("expire")) authHintCount++;
+                if (lower.Contains("timestamp")) authHintCount++;
+                if (!string.IsNullOrWhiteSpace(streamKey)) authHintCount += 2;
+
+                var sessionHintCount = 0;
+                if (!string.IsNullOrWhiteSpace(authorId)) sessionHintCount++;
+                if (!string.IsNullOrWhiteSpace(liveStreamId)) sessionHintCount++;
+                if (!string.IsNullOrWhiteSpace(roomId)) sessionHintCount++;
+                if (!string.IsNullOrWhiteSpace(sessionId)) sessionHintCount++;
+
+                var configHintCount = 0;
+                if (lower.Contains("publishurl") || lower.Contains("publish_url")) configHintCount++;
+                if (lower.Contains("pushurl") || lower.Contains("push_url")) configHintCount++;
+                if (lower.Contains("server")) configHintCount++;
+                if (lower.Contains("endpoint")) configHintCount++;
+                if (lower.Contains("backup")) configHintCount++;
+
+                var hasAddress = !string.IsNullOrWhiteSpace(rtmp) || !string.IsNullOrWhiteSpace(ingest) || !string.IsNullOrWhiteSpace(publishUrl);
+                var hasAuth = authHintCount >= 2;
+                var hasSession = sessionHintCount >= 1;
+                var hasConfig = configHintCount >= 1;
+
+                var hitKey = $"{channel}|{rtmp}|{ingest}|{publishUrl}|{streamKey}|{authorId}|{liveStreamId}|{roomId}";
                 if (!ShouldLogKsPushHit(hitKey, 6)) return;
 
                 var preview = text.Length > 420 ? text.Substring(0, 420) + "..." : text;
                 preview = preview.Replace("\r", " ").Replace("\n", " ");
-                Logger.LogInfo($"[KS_PUSH_CONFIG_CANDIDATE] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} hasRtmp={!string.IsNullOrWhiteSpace(rtmp)} hasKey={!string.IsNullOrWhiteSpace(streamKey)} preview={preview}");
+                Logger.LogInfo($"[KS_PUSH_CONFIG_CANDIDATE] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} roomId={roomId} hasAddress={hasAddress} hasAuth={hasAuth} hasSession={hasSession} hasConfig={hasConfig} preview={preview}");
+
+                var isStrong = (hasAddress && hasAuth && hasSession) || (hasConfig && hasAuth && hasSession);
+                if (isStrong)
+                {
+                    Logger.LogInfo($"[KS_PUSH_CONFIG_CANDIDATE_STRONG] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} roomId={roomId} authHints={authHintCount} sessionHints={sessionHintCount} configHints={configHintCount}");
+                }
 
                 if (!string.IsNullOrWhiteSpace(rtmp))
                 {
                     Logger.LogInfo($"[KS_PUSH_URL_HIT] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} rtmp={rtmp}");
+                }
+                if (!string.IsNullOrWhiteSpace(ingest))
+                {
+                    Logger.LogInfo($"[KS_PUSH_URL_HIT] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} ingest={ingest}");
+                }
+                if (!string.IsNullOrWhiteSpace(publishUrl))
+                {
+                    Logger.LogInfo($"[KS_PUSH_URL_HIT] channel={channel} file={fileBase} authorId={authorId} liveStreamId={liveStreamId} publishUrl={publishUrl}");
                 }
                 if (!string.IsNullOrWhiteSpace(streamKey))
                 {
