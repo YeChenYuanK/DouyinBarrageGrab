@@ -842,6 +842,8 @@ namespace BarrageGrab.Proxy
         private readonly ConcurrentDictionary<string, KsFlowProfile> _ksFlowProfiles = new ConcurrentDictionary<string, KsFlowProfile>();
         private DateTime _ksFlowLastEmitUtc = DateTime.MinValue;
         private readonly object _ksFlowEmitLock = new object();
+        private volatile bool _ksBusinessSeenRecently = false;
+        private DateTime _ksBusinessSeenAtUtc = DateTime.MinValue;
 
         private bool IsKuaishouObserveProcess(string processName)
         {
@@ -1000,7 +1002,18 @@ namespace BarrageGrab.Proxy
                 // 心跳包不参与后续解析，避免日志噪音和误判
                 return;
             }
-            Logger.LogInfo($"[KS_TUNNEL_RAW_RX] host:{host} process:{base.GetProcessName(processId)} recvCount:{e.Count} firstByte:0x{first:X2}");
+            bool isWlogHost = !string.IsNullOrWhiteSpace(host) && host.IndexOf("wlog.gifshow.com", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool looksBusiness = e.Count >= 200 && first != 0x16 && first != 0x14;
+            if (looksBusiness)
+            {
+                _ksBusinessSeenRecently = true;
+                _ksBusinessSeenAtUtc = DateTime.UtcNow;
+            }
+            bool shouldVerbose = _ksBusinessSeenRecently && (DateTime.UtcNow - _ksBusinessSeenAtUtc).TotalMinutes <= 3;
+            if (!isWlogHost && (shouldVerbose || looksBusiness))
+            {
+                Logger.LogInfo($"[KS_TUNNEL_RAW_RX] host:{host} process:{base.GetProcessName(processId)} recvCount:{e.Count} firstByte:0x{first:X2}");
+            }
             if (IsKuaishouObserveProcess(processName))
             {
                 UpdateKsFlowProfile(host, processName, e.Count, isRx: true);
@@ -1042,7 +1055,12 @@ namespace BarrageGrab.Proxy
                 return;
             }
             var first = e.Buffer[e.Offset];
-            Logger.LogInfo($"[KS_TUNNEL_RAW_TX] host:{host} process:{base.GetProcessName(processId)} sendCount:{e.Count} firstByte:0x{first:X2}");
+            bool isWlogHost = !string.IsNullOrWhiteSpace(host) && host.IndexOf("wlog.gifshow.com", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool shouldVerbose = _ksBusinessSeenRecently && (DateTime.UtcNow - _ksBusinessSeenAtUtc).TotalMinutes <= 3;
+            if (!isWlogHost && shouldVerbose)
+            {
+                Logger.LogInfo($"[KS_TUNNEL_RAW_TX] host:{host} process:{base.GetProcessName(processId)} sendCount:{e.Count} firstByte:0x{first:X2}");
+            }
             if (IsKuaishouObserveProcess(processName))
             {
                 UpdateKsFlowProfile(host, processName, e.Count, isRx: false);
@@ -1113,6 +1131,8 @@ namespace BarrageGrab.Proxy
                 .Take(8)
                 .ToList();
             if (!hot.Any()) return;
+            if (!_ksBusinessSeenRecently || (now - _ksBusinessSeenAtUtc).TotalMinutes > 3) return;
+            if (!hot.Any(kv => kv.Value.RxLargePackets > 0 && !kv.Key.Contains("@wlog.gifshow.com"))) return;
 
             Logger.LogInfo("[KS_FLOW] ===== 快手流量画像 Top =====");
             foreach (var kv in hot)
