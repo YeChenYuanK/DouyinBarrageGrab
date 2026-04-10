@@ -128,6 +128,7 @@ namespace BarrageGrab.Kuaishou
                 var url = string.Format(KS_MOBILE_LIVE_URL, userId);
                 var html = await GetHtmlAsync(url, MOBILE_UA);
                 if (string.IsNullOrWhiteSpace(html)) return null;
+                Logger.LogInfo($"[KS_DIAG][MOBILE] url={url}, htmlLen={html.Length}, hasLiveStream={html.Contains("liveStream")}, hasInitialState={html.Contains("__INITIAL_STATE__")}, hasApollo={html.Contains("__APOLLO_STATE__")}");
 
                 var info = new KsRoomInfo { RoomId = userId };
 
@@ -166,6 +167,8 @@ namespace BarrageGrab.Kuaishou
                     Logger.LogWarn("[KS] 移动端页面未找到 liveStream 数据块");
                     if (html.Contains("liveStream"))
                         Logger.LogInfo("[KS] 页面包含 liveStream 关键字，但正则匹配失败");
+                    var lsIdMatch = Regex.Match(html, @"""liveStreamId""\s*:\s*""([^""]+)""");
+                    Logger.LogInfo($"[KS_DIAG][MOBILE] regexLiveStreamIdFound={lsIdMatch.Success}, regexLiveStreamId={(lsIdMatch.Success ? lsIdMatch.Groups[1].Value : "")}");
                     Logger.LogInfo("[KS] 移动端页面内容(前2000字符): " + (html.Length > 2000 ? html.Substring(0, 2000) : html));
                     return null;
                 }
@@ -207,6 +210,7 @@ namespace BarrageGrab.Kuaishou
                 var url = string.Format(KS_PC_LIVE_URL, userId);
                 var html = await GetHtmlAsync(url, PC_UA);
                 if (string.IsNullOrWhiteSpace(html)) return null;
+                Logger.LogInfo($"[KS_DIAG][PC] url={url}, htmlLen={html.Length}, hasLiveStream={html.Contains("liveStream")}, hasInitialState={html.Contains("__INITIAL_STATE__")}, hasApollo={html.Contains("__APOLLO_STATE__")}");
 
                 var info = new KsRoomInfo { RoomId = userId };
 
@@ -216,6 +220,8 @@ namespace BarrageGrab.Kuaishou
                 if (!stateMatch.Success)
                 {
                     Logger.LogWarn("[KS] PC 页面未找到 __INITIAL_STATE__");
+                    var lsIdMatch = Regex.Match(html, @"""liveStreamId""\s*:\s*""([^""]+)""");
+                    Logger.LogInfo($"[KS_DIAG][PC] noInitialState, regexLiveStreamIdFound={lsIdMatch.Success}, regexLiveStreamId={(lsIdMatch.Success ? lsIdMatch.Groups[1].Value : "")}");
                     return null;
                 }
 
@@ -250,6 +256,10 @@ namespace BarrageGrab.Kuaishou
                 if (liveData == null)
                 {
                     Logger.LogWarn("[KS] PC 页面 state 中未找到直播数据");
+                    var topKeys = string.Join(",", state.Properties().Take(20).Select(p => p.Name));
+                    Logger.LogInfo($"[KS_DIAG][PC] stateTopKeys={topKeys}");
+                    var lsIdMatch = Regex.Match(html, @"""liveStreamId""\s*:\s*""([^""]+)""");
+                    Logger.LogInfo($"[KS_DIAG][PC] liveDataNull, regexLiveStreamIdFound={lsIdMatch.Success}, regexLiveStreamId={(lsIdMatch.Success ? lsIdMatch.Groups[1].Value : "")}");
                     return null;
                 }
 
