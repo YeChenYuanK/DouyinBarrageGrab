@@ -405,6 +405,8 @@ namespace BarrageGrab
 
         private readonly List<string> _ksSessionDedup = new List<string>();
         private readonly object _ksSessionDedupLock = new object();
+        private readonly List<string> _ksRoomDedup = new List<string>();
+        private readonly object _ksRoomDedupLock = new object();
         private void TryLogKuaishouSessionInfo(byte[] inflated)
         {
             try
@@ -430,12 +432,41 @@ namespace BarrageGrab
 
                 Logger.LogInfo($"[KS_SESSION] sessionId={(guid.Success ? guid.Value : "N/A")} hints={string.Join(",", zh)}");
                 TryLogKuaishouRoleHint(zh);
+                TryLogKuaishouRoomInfo(guid.Success ? guid.Value : "N/A", zh);
                 TryEmitFallbackChatFromHints(zh);
             }
             catch
             {
                 // ignore
             }
+        }
+
+        private void TryLogKuaishouRoomInfo(string sessionId, List<string> hints)
+        {
+            if (hints == null || hints.Count == 0) return;
+            var tokens = hints.Select(h => (h ?? string.Empty).Trim()).Where(h => !string.IsNullOrWhiteSpace(h)).ToList();
+            if (!tokens.Any()) return;
+
+            // 常见结构：主播名,评论词,观众名,人在看
+            var anchor = tokens.FirstOrDefault() ?? "";
+            var roomTitle = tokens.FirstOrDefault(t => t.Contains("直播间") || t.Contains("红包") || t.Contains("抽手机")) ?? "";
+            var onlineHint = tokens.FirstOrDefault(t => t.Contains("人在看")) ?? "";
+
+            // 若未命中 roomTitle，用第二段作为标题候选（避免空日志）
+            if (string.IsNullOrWhiteSpace(roomTitle) && tokens.Count >= 2)
+            {
+                roomTitle = tokens[1];
+            }
+
+            var key = $"{sessionId}|{anchor}|{roomTitle}|{onlineHint}";
+            lock (_ksRoomDedupLock)
+            {
+                if (_ksRoomDedup.Contains(key)) return;
+                _ksRoomDedup.Add(key);
+                while (_ksRoomDedup.Count > 120) _ksRoomDedup.RemoveAt(0);
+            }
+
+            Logger.LogInfo($"[KS_ROOM] sessionId={sessionId}, anchor={anchor}, title={roomTitle}, onlineHint={onlineHint}");
         }
 
         private void TryLogKuaishouRoleHint(List<string> hints)
