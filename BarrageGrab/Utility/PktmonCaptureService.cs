@@ -230,7 +230,7 @@ namespace BarrageGrab.Utility
             var liveControl = EvaluateLiveControl(raw);
             var proxyEval = EvaluateProxyCallbacksInWindow(captureStartedAt.AddSeconds(-2), captureStoppedAt.AddSeconds(2));
             var blindClusters = BuildBlindClusters(snis);
-            EmitBlindArtifacts(etlPath, captureStartedAt, captureStoppedAt, snis, blindClusters);
+            var blindOk = EmitBlindArtifacts(etlPath, captureStartedAt, captureStoppedAt, snis, blindClusters, out var blindMsg);
             File.WriteAllLines(summaryPath, topSnis, Encoding.UTF8);
 
             lock (syncRoot)
@@ -270,6 +270,14 @@ namespace BarrageGrab.Utility
             {
                 var topBlind = string.Join("|", blindClusters.Take(5).Select(c => $"{c.Cluster}:{c.Hits}/{c.Score}"));
                 Logger.LogInfo($"[KS_BLIND_TOP] {topBlind}");
+            }
+            if (blindOk)
+            {
+                Logger.LogInfo($"[KS_BLIND_EMIT_OK] {blindMsg}");
+            }
+            else
+            {
+                Logger.LogInfo($"[KS_BLIND_EMIT_FAIL] {blindMsg}");
             }
 
             return new CaptureResult
@@ -408,13 +416,15 @@ namespace BarrageGrab.Utility
             return h;
         }
 
-        private void EmitBlindArtifacts(
+        private bool EmitBlindArtifacts(
             string etlPath,
             DateTime startAt,
             DateTime endAt,
             List<string> snis,
-            List<BlindClusterStat> clusters)
+            List<BlindClusterStat> clusters,
+            out string message)
         {
+            message = string.Empty;
             try
             {
                 var logsDir = Path.Combine(AppContext.BaseDirectory, "logs");
@@ -422,11 +432,43 @@ namespace BarrageGrab.Utility
                 var traceId = Path.GetFileNameWithoutExtension(etlPath) ?? "unknown";
 
                 var jsonlPath = Path.Combine(logsDir, "blind_control_signal.jsonl");
+                var jsonlTmpPath = Path.Combine(logsDir, "blind_control_signal.fallback.jsonl");
                 var topClusterJson = string.Join(",", clusters.Take(8)
                     .Select(c => $"{{\"cluster\":\"{JsonEscape(c.Cluster)}\",\"hits\":{c.Hits},\"uniqueHosts\":{c.UniqueHostCount},\"score\":{c.Score}}}"));
                 var line =
                     $"{{\"schemaVersion\":\"1.0\",\"ts\":\"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\",\"traceId\":\"{JsonEscape(traceId)}\",\"windowStart\":\"{startAt:yyyy-MM-dd HH:mm:ss.fff}\",\"windowEnd\":\"{endAt:yyyy-MM-dd HH:mm:ss.fff}\",\"totalSni\":{snis.Count},\"uniqueSni\":{snis.Distinct(StringComparer.OrdinalIgnoreCase).Count()},\"topClusters\":[{topClusterJson}]}}";
-                File.AppendAllText(jsonlPath, line + Environment.NewLine, Encoding.UTF8);
+
+                var lineWithBreak = line + Environment.NewLine;
+                Exception appendEx = null;
+                var appendOk = false;
+                for (var i = 0; i < 2; i++)
+                {
+                    try
+                    {
+                        File.AppendAllText(jsonlPath, lineWithBreak, Encoding.UTF8);
+                        appendOk = true;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        appendEx = ex;
+                        System.Threading.Thread.Sleep(120);
+                    }
+                }
+                if (!appendOk)
+                {
+                    try
+                    {
+                        File.AppendAllText(jsonlTmpPath, lineWithBreak, Encoding.UTF8);
+                        message = $"traceId={traceId} primary={jsonlPath} fallback={jsonlTmpPath} err={appendEx?.Message}";
+                        return false;
+                    }
+                    catch (Exception fallbackEx)
+                    {
+                        message = $"traceId={traceId} primary={jsonlPath} fallback={jsonlTmpPath} err={appendEx?.Message}; fallbackErr={fallbackEx.Message}";
+                        return false;
+                    }
+                }
 
                 var txtPath = Path.Combine(logsDir, "blind_candidates_latest.txt");
                 var sb = new StringBuilder();
@@ -439,10 +481,13 @@ namespace BarrageGrab.Utility
                     sb.AppendLine($"- {c.Cluster} hits={c.Hits} uniqueHosts={c.UniqueHostCount} score={c.Score}");
                 }
                 File.WriteAllText(txtPath, sb.ToString(), Encoding.UTF8);
+                message = $"traceId={traceId} jsonl={jsonlPath} txt={txtPath}";
+                return true;
             }
             catch (Exception ex)
             {
-                Logger.LogInfo($"[KS_BLIND_TOP] emit-failed: {ex.Message}");
+                message = $"emit-failed: {ex.Message}";
+                return false;
             }
         }
 
