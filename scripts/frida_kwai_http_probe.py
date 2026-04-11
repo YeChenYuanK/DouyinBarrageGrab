@@ -58,16 +58,26 @@ function emit(kind, data) {
   send({ ts: now(), kind: kind, data: data });
 }
 
+function findExp(mod, name) {
+  try {
+    if (Module.getExportByName) return Module.getExportByName(mod, name);
+  } catch (_) {}
+  try {
+    if (Module.findExportByName) return Module.findExportByName(mod, name);
+  } catch (_) {}
+  return null;
+}
+
 const connMap = {};
 const reqMap = {};
 
 function hookWinHttp() {
   const dll = "winhttp.dll";
-  const pConnect = Module.findExportByName(dll, "WinHttpConnect");
-  const pOpenReq = Module.findExportByName(dll, "WinHttpOpenRequest");
-  const pSendReq = Module.findExportByName(dll, "WinHttpSendRequest");
-  const pWrite = Module.findExportByName(dll, "WinHttpWriteData");
-  const pRead = Module.findExportByName(dll, "WinHttpReadData");
+  const pConnect = findExp(dll, "WinHttpConnect");
+  const pOpenReq = findExp(dll, "WinHttpOpenRequest");
+  const pSendReq = findExp(dll, "WinHttpSendRequest");
+  const pWrite = findExp(dll, "WinHttpWriteData");
+  const pRead = findExp(dll, "WinHttpReadData");
 
   if (pConnect) {
     Interceptor.attach(pConnect, {
@@ -158,9 +168,9 @@ function hookWinHttp() {
 
 function hookWinInet() {
   const dll = "wininet.dll";
-  const pOpenReqW = Module.findExportByName(dll, "HttpOpenRequestW");
-  const pSendReqW = Module.findExportByName(dll, "HttpSendRequestW");
-  const pReadFile = Module.findExportByName(dll, "InternetReadFile");
+  const pOpenReqW = findExp(dll, "HttpOpenRequestW");
+  const pSendReqW = findExp(dll, "HttpSendRequestW");
+  const pReadFile = findExp(dll, "InternetReadFile");
 
   if (pOpenReqW) {
     Interceptor.attach(pOpenReqW, {
