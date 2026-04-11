@@ -308,7 +308,10 @@ namespace BarrageGrab.Utility
             foreach (var s in snis)
             {
                 var h = s.ToLowerInvariant();
-                if (h.Contains("apijs") && h.Contains("gifshow.com")) eval.GifshowApiHits++;
+                if ((h.Contains("apijs") && h.Contains("gifshow.com")) || h == "api3.gifshow.com")
+                {
+                    eval.GifshowApiHits++;
+                }
                 if (h.Contains("apijs") && h.Contains("ksapisrv.com")) eval.KsapisrvApiHits++;
                 if (h.Contains("wsukwai.com")) eval.WsukwaiHits++;
                 if (h == "mate.gifshow.com") eval.MateHits++;
