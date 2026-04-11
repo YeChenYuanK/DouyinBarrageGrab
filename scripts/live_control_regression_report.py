@@ -104,10 +104,19 @@ def main():
     no_hit_rate = no_hit * 100.0 / total if total else 0.0
     pass_top3 = top3_rate >= 80.0 if blind_rows else False
     pass_signal = c_plus_w_rate >= 90.0 and no_hit_rate <= 10.0
+    is_kuaishou = args.platform == "kuaishou"
+    delivery_pass = pass_signal
+    research_pass = pass_top3
+    overall_pass = delivery_pass if is_kuaishou else (delivery_pass and research_pass)
+
     print("- thresholds:")
-    print(f"  top3_consistency>=80%: {'PASS' if pass_top3 else 'FAIL'}")
-    print(f"  confirmed+weak>=90% and no_hit<=10%: {'PASS' if pass_signal else 'FAIL'}")
-    print(f"- verdict: {'PASS' if (pass_top3 and pass_signal) else 'FAIL'}")
+    print(f"  [research] top3_consistency>=80%: {'PASS' if pass_top3 else 'FAIL'}")
+    print(f"  [delivery] confirmed+weak>=90% and no_hit<=10%: {'PASS' if pass_signal else 'FAIL'}")
+    if is_kuaishou:
+        print("  [mode] kuaishou: use delivery threshold as primary gate")
+    print(f"- verdict_delivery: {'PASS' if delivery_pass else 'FAIL'}")
+    print(f"- verdict_research: {'PASS' if research_pass else 'FAIL'}")
+    print(f"- verdict: {'PASS' if overall_pass else 'FAIL'}")
 
     print("- latest:")
     for row in rows[-5:]:

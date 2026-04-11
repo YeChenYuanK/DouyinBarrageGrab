@@ -396,7 +396,17 @@ namespace BarrageGrab.Utility
                 eval.Level = "CONFIRMED";
                 return eval;
             }
-            if (eval.GifshowApiHits > 0 || eval.KsapisrvApiHits > 0 || eval.WsukwaiHits > 0)
+
+            // Tolerate single-cluster bursts when auxiliary control hosts are present.
+            var strongSingleCluster = eval.GifshowApiHits >= 20 || eval.KsapisrvApiHits >= 20;
+            var hasAuxControl = eval.MateHits > 0 || eval.WsukwaiHits > 0;
+            if (strongSingleCluster && hasAuxControl)
+            {
+                eval.Level = "CONFIRMED";
+                return eval;
+            }
+
+            if (eval.GifshowApiHits > 0 || eval.KsapisrvApiHits > 0 || eval.WsukwaiHits > 0 || eval.MateHits > 0)
             {
                 eval.Level = "WEAK";
                 return eval;
