@@ -10,7 +10,7 @@ def load_lines(path: Path):
     if not path.exists():
         return rows
     for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        line = line.strip()
+        line = line.strip().lstrip("\ufeff")
         if not line:
             continue
         try:
