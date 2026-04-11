@@ -583,27 +583,29 @@ namespace BarrageGrab
             try
             {
                 if (data == null || data.Length == 0) return string.Empty;
+                var candidates = new HashSet<string>(StringComparer.Ordinal);
 
-                // 把可见 ASCII 连续段拼成文本，再做 token 形态匹配。
-                var ascii = Encoding.ASCII.GetString(data);
-                if (string.IsNullOrWhiteSpace(ascii)) return string.Empty;
-
-                var matches = Regex.Matches(ascii, @"[A-Za-z0-9_\-\.%+/=]{128,512}");
-                if (matches == null || matches.Count == 0) return string.Empty;
+                CollectKsTokenCandidatesFromProto(data, depth: 0, maxDepth: 3, candidates: candidates, maxCandidates: 128);
+                foreach (var c in BuildKuaishouDecodeCandidates(data).Take(32))
+                {
+                    try
+                    {
+                        if (c.Data == null || c.Offset < 0 || c.Offset >= c.Data.Length) continue;
+                        var seg = new byte[c.Data.Length - c.Offset];
+                        Buffer.BlockCopy(c.Data, c.Offset, seg, 0, seg.Length);
+                        CollectKsTokenCandidatesFromProto(seg, depth: 0, maxDepth: 3, candidates: candidates, maxCandidates: 128);
+                    }
+                    catch
+                    {
+                        // ignore candidate decode failure
+                    }
+                }
 
                 string best = string.Empty;
                 int bestScore = int.MinValue;
-                foreach (Match m in matches)
+                foreach (var v in candidates)
                 {
-                    var v = m.Value;
-                    if (string.IsNullOrWhiteSpace(v)) continue;
-                    var score = 0;
-                    if (v.Length >= 200) score += 3;
-                    else if (v.Length >= 160) score += 2;
-                    if (v.Contains("=")) score += 2;
-                    if (v.Contains("/") || v.Contains("+")) score += 2;
-                    if (v.Contains("_") || v.Contains("-") || v.Contains(".")) score += 1;
-
+                    var score = ScoreKsTokenCandidate(v);
                     if (score > bestScore || (score == bestScore && v.Length > (best?.Length ?? 0)))
                     {
                         best = v;
@@ -611,14 +613,135 @@ namespace BarrageGrab
                     }
                 }
 
-                // 经验阈值：避免把普通业务文本误判为 token。
-                if (string.IsNullOrWhiteSpace(best) || bestScore < 6) return string.Empty;
+                // 阈值避免误判：至少需要“长串 + base64样式”特征。
+                if (string.IsNullOrWhiteSpace(best) || bestScore < 8) return string.Empty;
+                Logger.LogInfo($"[KS_RUNTIME_BIN_CANDIDATE] tokenLen={best.Length} score={bestScore}");
                 return best;
             }
             catch
             {
                 return string.Empty;
             }
+        }
+
+        private void CollectKsTokenCandidatesFromProto(byte[] data, int depth, int maxDepth, HashSet<string> candidates, int maxCandidates)
+        {
+            if (data == null || data.Length == 0 || candidates == null) return;
+            if (depth > maxDepth || candidates.Count >= maxCandidates) return;
+
+            int i = 0;
+            int end = data.Length;
+            while (i < end && candidates.Count < maxCandidates)
+            {
+                if (!TryReadVarint64(data, ref i, out ulong key)) break;
+                int wireType = (int)(key & 0x07);
+
+                switch (wireType)
+                {
+                    case 0:
+                        if (!TryReadVarint64(data, ref i, out _)) return;
+                        break;
+                    case 1:
+                        i += 8;
+                        if (i > end) return;
+                        break;
+                    case 2:
+                        if (!TryReadVarint64(data, ref i, out ulong lenU)) return;
+                        if (lenU > int.MaxValue) return;
+                        int len = (int)lenU;
+                        if (len < 0 || i + len > end) return;
+                        if (len >= 16 && len <= 1024)
+                        {
+                            var seg = new byte[len];
+                            Buffer.BlockCopy(data, i, seg, 0, len);
+                            TryExtractTokenCandidatesFromString(Encoding.ASCII.GetString(seg), candidates, maxCandidates);
+                            TryExtractTokenCandidatesFromString(Encoding.UTF8.GetString(seg), candidates, maxCandidates);
+                            CollectKsTokenCandidatesFromProto(seg, depth + 1, maxDepth, candidates, maxCandidates);
+                        }
+                        i += len;
+                        break;
+                    case 5:
+                        i += 4;
+                        if (i > end) return;
+                        break;
+                    default:
+                        return;
+                }
+            }
+        }
+
+        private void TryExtractTokenCandidatesFromString(string text, HashSet<string> candidates, int maxCandidates)
+        {
+            if (string.IsNullOrWhiteSpace(text) || candidates == null || candidates.Count >= maxCandidates) return;
+            var ms = Regex.Matches(text, @"[A-Za-z0-9_\-\.%+/=]{64,512}");
+            foreach (Match m in ms)
+            {
+                var v = (m.Value ?? string.Empty).Trim();
+                if (!IsLikelyKsToken(v)) continue;
+                candidates.Add(v);
+                if (candidates.Count >= maxCandidates) return;
+            }
+        }
+
+        private int ScoreKsTokenCandidate(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token)) return int.MinValue;
+            int s = 0;
+            if (token.Length >= 200) s += 5;
+            else if (token.Length >= 160) s += 4;
+            else if (token.Length >= 96) s += 3;
+            else if (token.Length >= 64) s += 2;
+            if (token.Contains("=")) s += 2;
+            if (token.Contains("/") || token.Contains("+")) s += 2;
+            if (token.Contains("_") || token.Contains("-") || token.Contains(".")) s += 1;
+            return s;
+        }
+
+        private bool IsLikelyKsLiveStreamId(string liveStreamId)
+        {
+            if (string.IsNullOrWhiteSpace(liveStreamId)) return false;
+            return Regex.IsMatch(liveStreamId.Trim(), @"^[A-Za-z0-9_\-]{8,128}$");
+        }
+
+        private bool IsLikelyKsToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token)) return false;
+            token = token.Trim();
+            if (token.Length < 64 || token.Length > 1024) return false;
+            return Regex.IsMatch(token, @"^[A-Za-z0-9_\-\.%+/=]+$");
+        }
+
+        private bool IsValidKsAuthRequest(Modles.ProtoEntity.KsAuthRequest auth, out string reason)
+        {
+            reason = string.Empty;
+            if (auth == null)
+            {
+                reason = "auth=null";
+                return false;
+            }
+
+            var liveStreamId = (auth.LiveStreamId ?? string.Empty).Trim();
+            var token = (auth.Token ?? string.Empty).Trim();
+            if (!IsLikelyKsLiveStreamId(liveStreamId))
+            {
+                reason = "bad_liveStreamId";
+                return false;
+            }
+            if (!IsLikelyKsToken(token))
+            {
+                reason = "bad_token";
+                return false;
+            }
+
+            var kpn = (auth.Kpn ?? string.Empty).Trim();
+            var kpf = (auth.Kpf ?? string.Empty).Trim();
+            if ((!string.IsNullOrWhiteSpace(kpn) && !kpn.Equals("LIVE_STREAM", StringComparison.OrdinalIgnoreCase))
+                || (!string.IsNullOrWhiteSpace(kpf) && !kpf.Equals("WEB", StringComparison.OrdinalIgnoreCase)))
+            {
+                reason = "bad_kpn_kpf";
+                return false;
+            }
+            return true;
         }
 
         private bool TryCaptureKsRuntimeParamFromProtoBytes(byte[] data, string sourceTag, string processName)
@@ -629,11 +752,15 @@ namespace BarrageGrab
                 try
                 {
                     var directAuth = Serializer.Deserialize<Modles.ProtoEntity.KsAuthRequest>(new ReadOnlyMemory<byte>(data));
-                    if (!string.IsNullOrWhiteSpace(directAuth?.LiveStreamId))
+                    if (IsValidKsAuthRequest(directAuth, out var rejectReason))
                     {
                         AppRuntime.KsRuntimeParams?.Upsert(directAuth.LiveStreamId, directAuth.Token, "", sourceTag + ".proto.directAuth");
                         Logger.LogInfo($"[KS_RUNTIME_CAPTURE_PROTO] source={sourceTag}.proto.directAuth process={processName} liveStreamId={directAuth.LiveStreamId} tokenLen={(directAuth.Token?.Length ?? 0)}");
                         return true;
+                    }
+                    if (directAuth != null)
+                    {
+                        Logger.LogInfo($"[KS_RUNTIME_CAPTURE_PROTO_REJECT] source={sourceTag}.proto.directAuth reason={rejectReason} liveStreamId={directAuth.LiveStreamId} tokenLen={(directAuth.Token?.Length ?? 0)}");
                     }
                 }
                 catch
@@ -655,11 +782,15 @@ namespace BarrageGrab
                         if (payloadType == "200" || payloadType.Equals("AUTH", StringComparison.OrdinalIgnoreCase))
                         {
                             var auth = Serializer.Deserialize<Modles.ProtoEntity.KsAuthRequest>(new ReadOnlyMemory<byte>(envelope.Payload));
-                            if (!string.IsNullOrWhiteSpace(auth?.LiveStreamId))
+                            if (IsValidKsAuthRequest(auth, out var rejectReason))
                             {
                                 AppRuntime.KsRuntimeParams?.Upsert(auth.LiveStreamId, auth.Token, "", sourceTag + ".proto.envelopeAuth");
                                 Logger.LogInfo($"[KS_RUNTIME_CAPTURE_PROTO] source={sourceTag}.proto.envelopeAuth process={processName} liveStreamId={auth.LiveStreamId} tokenLen={(auth.Token?.Length ?? 0)}");
                                 return true;
+                            }
+                            if (auth != null)
+                            {
+                                Logger.LogInfo($"[KS_RUNTIME_CAPTURE_PROTO_REJECT] source={sourceTag}.proto.envelopeAuth reason={rejectReason} liveStreamId={auth.LiveStreamId} tokenLen={(auth.Token?.Length ?? 0)} payloadType={payloadType}");
                             }
                         }
                     }
