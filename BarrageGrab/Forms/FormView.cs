@@ -256,7 +256,8 @@ namespace BarrageGrab
                 btn_pktmonStopAnalyze.Enabled = true;
                 label2.Text = "🚀 抓包中";
                 Logger.LogInfo($"[KS_PKT_CAPTURE_UI] start etl={result.EtlPath}");
-                MessageBox.Show($"抓包已开始。\n{result.EtlPath}\n\n请去快手伴侣执行：开播 5-8 秒 -> 下播 -> 等 2-3 秒，然后回本工具点“停止并分析SNI”。", "已开始抓包");
+                Logger.PrintColor($"[抓包已开始] {result.EtlPath}", ConsoleColor.Green);
+                Logger.PrintColor("请去快手伴侣执行：开播 5-8 秒 -> 下播 -> 等 2-3 秒，然后回本工具点“停止并分析SNI”。", ConsoleColor.Yellow);
             }
             catch (Exception ex)
             {
