@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import gzip
 import json
 import re
 import signal
@@ -131,6 +132,19 @@ def _heartbeat_send_payloads(entry: dict) -> list[bytes]:
     return out
 
 
+def _decode_ws_payload_b64(raw: str) -> Optional[bytes]:
+    """Decodes websocket base64 payload safely."""
+    if not raw or not isinstance(raw, str):
+        return None
+    try:
+        return base64.b64decode(raw, validate=True)
+    except Exception:
+        try:
+            return base64.b64decode(raw + "===")
+        except Exception:
+            return None
+
+
 def _build_bootstrap_from_entry(entry: dict, source_tag: str) -> Optional[WsBootstrap]:
     """Builds one bootstrap object from one HAR entry."""
     ws_url = _extract_ws_url(entry)
@@ -203,6 +217,288 @@ def _preview_hex(data: bytes, max_len: int = 24) -> str:
         return ""
     head = data[:max_len]
     return " ".join(f"{b:02X}" for b in head)
+
+
+def _read_varint(data: bytes, idx: int) -> tuple[Optional[int], int]:
+    """Reads protobuf varint."""
+    shift = 0
+    value = 0
+    n = len(data)
+    while idx < n and shift <= 63:
+        b = data[idx]
+        idx += 1
+        value |= (b & 0x7F) << shift
+        if (b & 0x80) == 0:
+            return value, idx
+        shift += 7
+    return None, idx
+
+
+def _extract_len_delimited_chunks(data: bytes, max_chunks: int = 256) -> list[bytes]:
+    """Extracts protobuf length-delimited chunks from bytes."""
+    out: list[bytes] = []
+    idx = 0
+    n = len(data)
+    while idx < n and len(out) < max_chunks:
+        key, idx2 = _read_varint(data, idx)
+        if key is None:
+            break
+        idx = idx2
+        wt = key & 0x07
+        if wt == 0:
+            _, idx = _read_varint(data, idx)
+            continue
+        if wt == 1:
+            idx += 8
+            continue
+        if wt == 2:
+            ln, idx = _read_varint(data, idx)
+            if ln is None:
+                break
+            if idx + ln > n:
+                break
+            chunk = data[idx : idx + ln]
+            idx += ln
+            out.append(chunk)
+            continue
+        if wt == 5:
+            idx += 4
+            continue
+        break
+    return out
+
+
+def _maybe_gzip_decompress(data: bytes) -> Optional[bytes]:
+    """Decompresses gzip data if it has gzip header."""
+    if not data or len(data) < 3:
+        return None
+    if not (data[0] == 0x1F and data[1] == 0x8B and data[2] == 0x08):
+        return None
+    try:
+        return gzip.decompress(data)
+    except Exception:
+        return None
+
+
+def _extract_zh_text_hints(data: bytes, min_len: int = 2) -> list[str]:
+    """Extracts Chinese-rich text snippets from bytes."""
+    if not data:
+        return []
+    text = data.decode("utf-8", errors="ignore")
+    if not text:
+        return []
+    candidates = re.findall(rf"[\u4e00-\u9fffA-Za-z0-9，。！？、；：“”‘’（）【】《》…\s]{{{max(2, min_len)},80}}", text)
+    out: list[str] = []
+    seen = set()
+    for c in candidates:
+        v = c.strip()
+        if not v:
+            continue
+        zh_count = sum(1 for ch in v if "\u4e00" <= ch <= "\u9fff")
+        if zh_count < 2:
+            continue
+        if "http" in v.lower():
+            continue
+        if len(v) > 60:
+            v = v[:60]
+        if v in seen:
+            continue
+        seen.add(v)
+        out.append(v)
+        if len(out) >= 8:
+            break
+    return out
+
+
+def _is_noise_text(text: str) -> bool:
+    """Checks whether text looks like system/activity text instead of chat."""
+    if not text:
+        return True
+    noise_parts = (
+        "本主播已开启",
+        "玩法由",
+        "公司提供",
+        "相关权利义务",
+        "如您参与玩法",
+        "公开信息和行为",
+        "同步至该程序",
+        "直播间",
+        "粉丝团",
+        "守护等级",
+        "贵族",
+        "秒后关闭",
+        "正在点赞主播",
+        "去点赞",
+    )
+    if any(p in text for p in noise_parts):
+        return True
+    return False
+
+
+def _looks_like_nickname(text: str) -> bool:
+    """Checks whether text looks like nickname."""
+    if not text:
+        return False
+    v = text.strip()
+    if not (1 <= len(v) <= 18):
+        return False
+    if _is_noise_text(v):
+        return False
+    if any(x in v for x in ("http", "www.", ".com")):
+        return False
+    if any(x in v for x in ("主播", "直播", "玩法", "公司", "程序", "关闭", "点赞")):
+        return False
+    zh_count = sum(1 for ch in v if "\u4e00" <= ch <= "\u9fff")
+    ascii_count = sum(1 for ch in v if ch.isascii() and ch.isalnum())
+    if zh_count == 0 and ascii_count == 0:
+        return False
+    if len(v) >= 10 and zh_count <= 1:
+        return False
+    return True
+
+
+def _looks_like_chat_content(text: str) -> bool:
+    """Checks whether text looks like chat content."""
+    if not text:
+        return False
+    v = text.strip()
+    if not (2 <= len(v) <= 50):
+        return False
+    if _is_noise_text(v):
+        return False
+    if any(x in v for x in ("http", "www.", ".com")):
+        return False
+    zh_count = sum(1 for ch in v if "\u4e00" <= ch <= "\u9fff")
+    if zh_count < 2:
+        return False
+    return True
+
+
+def _extract_chat_pairs_from_hints(hints: list[str]) -> list[tuple[str, str]]:
+    """Extracts chat-like nickname/content pairs from text hints."""
+    out: list[tuple[str, str]] = []
+    seen = set()
+    normalized = [h.strip().replace("\n", " ") for h in hints if h and h.strip()]
+
+    for h in normalized:
+        if "：" in h or ":" in h:
+            sep = "：" if "：" in h else ":"
+            nick, content = h.split(sep, 1)
+            nick = nick.strip()
+            content = content.strip()
+            if _looks_like_nickname(content) and len(content) <= 6:
+                continue
+            if _looks_like_nickname(nick) and _looks_like_chat_content(content):
+                k = f"{nick}|{content}"
+                if k not in seen:
+                    seen.add(k)
+                    out.append((nick, content))
+
+    for i, h in enumerate(normalized):
+        if not _looks_like_nickname(h):
+            continue
+        for j in range(i + 1, min(i + 4, len(normalized))):
+            nxt = normalized[j]
+            if nxt == h:
+                continue
+            if not _looks_like_chat_content(nxt):
+                continue
+            if _looks_like_nickname(nxt) and len(nxt) <= 6:
+                continue
+            k = f"{h}|{nxt}"
+            if k in seen:
+                continue
+            seen.add(k)
+            out.append((h, nxt))
+            break
+
+    return out
+
+
+def run_offline_chat_scan(har_path: Path, max_messages: int, max_hits: int) -> int:
+    """Scans HAR ws receive frames and prints chat-like Chinese text."""
+    text = har_path.read_text(encoding="utf-8", errors="ignore")
+    try:
+        obj = json.loads(text)
+    except Exception:
+        try:
+            obj = json.loads(text.lstrip("\ufeff"))
+        except Exception:
+            obj, _ = json.JSONDecoder().raw_decode(text.lstrip("\ufeff"))
+
+    total_recv = 0
+    hit_count = 0
+    print("=== Offline Chat Scan ===")
+    print(f"har={har_path}")
+
+    for entry in _iter_entries(obj):
+        msgs = entry.get("_webSocketMessages", []) if isinstance(entry, dict) else []
+        for i, m in enumerate(msgs):
+            if not isinstance(m, dict):
+                continue
+            if m.get("type") != "receive" or m.get("opcode") != 2:
+                continue
+            raw = _decode_ws_payload_b64(m.get("data", ""))
+            if raw is None:
+                continue
+
+            total_recv += 1
+            if max_messages > 0 and total_recv > max_messages:
+                break
+
+            probe_list: list[bytes] = [raw]
+            probe_list.extend(_extract_len_delimited_chunks(raw, max_chunks=64))
+
+            all_hints: list[str] = []
+            for probe in probe_list[:80]:
+                if not probe:
+                    continue
+                all_hints.extend(_extract_zh_text_hints(probe, min_len=2))
+                g = _maybe_gzip_decompress(probe)
+                if g:
+                    all_hints.extend(_extract_zh_text_hints(g, min_len=2))
+                    for c in _extract_len_delimited_chunks(g, max_chunks=64):
+                        all_hints.extend(_extract_zh_text_hints(c, min_len=2))
+
+            dedup = []
+            seen = set()
+            for h in all_hints:
+                if h in seen:
+                    continue
+                seen.add(h)
+                dedup.append(h)
+            if not dedup:
+                continue
+
+            hit_count += 1
+            msg_ts = m.get("time")
+            if isinstance(msg_ts, (int, float)):
+                ts_text = f"{float(msg_ts):.3f}"
+            else:
+                ts_text = "na"
+            chat_pairs = _extract_chat_pairs_from_hints(dedup)
+            print(
+                f"[offline-hit#{hit_count}] recv_msg={total_recv} "
+                f"frame_idx={i} len={len(raw)} head={_preview_hex(raw)}"
+            )
+            if chat_pairs:
+                for idx, (nick, content) in enumerate(chat_pairs[:3], start=1):
+                    print(
+                        f"  chat#{idx} ts={ts_text} "
+                        f"nickname={nick} content={content}"
+                    )
+            else:
+                for h in dedup[:6]:
+                    print(f"  zh={h}")
+            if max_hits > 0 and hit_count >= max_hits:
+                print("hit limit reached")
+                print(f"done: recv_frames={total_recv}, hits={hit_count}")
+                return 0
+        if max_messages > 0 and total_recv > max_messages:
+            break
+
+    print(f"done: recv_frames={total_recv}, hits={hit_count}")
+    return 0
 
 
 def _extract_text_hints(data: bytes, min_text_len: int) -> list[str]:
@@ -479,12 +775,36 @@ def main(argv: list[str]) -> int:
         default=3,
         help="Parallel workers for --probe-all",
     )
+    parser.add_argument(
+        "--offline-chat-scan",
+        action="store_true",
+        help="Parse ws receive frames from HAR and extract Chinese chat-like text",
+    )
+    parser.add_argument(
+        "--offline-max-messages",
+        type=int,
+        default=500,
+        help="Max receive messages to scan in --offline-chat-scan",
+    )
+    parser.add_argument(
+        "--offline-max-hits",
+        type=int,
+        default=80,
+        help="Max hit rows to print in --offline-chat-scan",
+    )
     args = parser.parse_args(argv)
 
     har_path = Path(args.har).expanduser().resolve()
     if not har_path.exists():
         print(f"file not found: {har_path}", file=sys.stderr)
         return 2
+
+    if args.offline_chat_scan:
+        return run_offline_chat_scan(
+            har_path=har_path,
+            max_messages=args.offline_max_messages,
+            max_hits=args.offline_max_hits,
+        )
 
     if args.probe_all:
         try:
