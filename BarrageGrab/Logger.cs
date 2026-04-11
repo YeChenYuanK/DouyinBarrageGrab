@@ -15,8 +15,8 @@ namespace BarrageGrab
         private static NLog.Config.ISetupBuilder builder;
 
         private static NLog.Logger logger;
-        private static readonly string[] ksNoisyTags =
-        [
+        private static readonly string[] ksNoisyTags = new[]
+        {
             "[KS_RAW_DUMP]",
             "[KS_RAW_ALL]",
             "[KS_RAW_ALL_TOKENS]",
@@ -30,7 +30,7 @@ namespace BarrageGrab
             "[KS_URL_DECODED]",
             "[KS_REVERSE]",
             "[KS_DEBUG]"
-        ];
+        };
 
         static Logger()
         {
@@ -93,9 +93,9 @@ namespace BarrageGrab
                 return false;
             }
 
-            if (!message.Contains("KS_", StringComparison.OrdinalIgnoreCase) &&
-                !message.Contains("[快手]", StringComparison.OrdinalIgnoreCase) &&
-                !message.Contains("wlog.gifshow.com", StringComparison.OrdinalIgnoreCase))
+            if (message.IndexOf("KS_", StringComparison.OrdinalIgnoreCase) < 0 &&
+                message.IndexOf("[快手]", StringComparison.OrdinalIgnoreCase) < 0 &&
+                message.IndexOf("wlog.gifshow.com", StringComparison.OrdinalIgnoreCase) < 0)
             {
                 return false;
             }
