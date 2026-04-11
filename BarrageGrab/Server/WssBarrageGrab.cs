@@ -223,11 +223,14 @@ namespace BarrageGrab
                 return;
             }
 
-            DumpKuaishouRawBytes("ws_raw", e.HostName, buff);
-            Logger.LogInfo($"[快手] ProcessKuaishouWsData 收到数据 Len={buff.Length}");
-            if (buff.Length >= 120 || (e.HostName ?? "").StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase) || (e.HostName ?? "").StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase))
+            if (AppSetting.Current.KuaishouVerboseLog)
             {
-                LogKuaishouPacketSignature(buff, e.HostName);
+                DumpKuaishouRawBytes("ws_raw", e.HostName, buff);
+                Logger.LogInfo($"[快手] ProcessKuaishouWsData 收到数据 Len={buff.Length}");
+                if (buff.Length >= 120 || (e.HostName ?? "").StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase) || (e.HostName ?? "").StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase))
+                {
+                    LogKuaishouPacketSignature(buff, e.HostName);
+                }
             }
 
             // 专门针对上行原始帧（send）做认证参数抽取，优先解决 token 抓不到的问题。
@@ -687,40 +690,58 @@ namespace BarrageGrab
                 {
                     var gzip = new byte[buff.Length - i];
                     Buffer.BlockCopy(buff, i, gzip, 0, gzip.Length);
-                    DumpKuaishouRawBytes($"ws_gzip_raw_at_{i}", processName, gzip);
                     var inflated = Decompress(gzip);
                     if (inflated == null || inflated.Length == 0) continue;
-                    DumpKuaishouRawBytes($"ws_gzip_inflated_at_{i}", processName, inflated);
+                    if (AppSetting.Current.KuaishouVerboseLog)
+                    {
+                        DumpKuaishouRawBytes($"ws_gzip_raw_at_{i}", processName, gzip);
+                        DumpKuaishouRawBytes($"ws_gzip_inflated_at_{i}", processName, inflated);
+                        Logger.LogInfo($"[快手] GZIP命中 at={i} inflatedLen={inflated.Length}");
+                    }
 
-                    Logger.LogInfo($"[快手] GZIP命中 at={i} inflatedLen={inflated.Length}");
-                    DumpKsReverseSamples(buff, inflated, processName, i);
                     var wireSummary = BuildProtoWireSummary(inflated, maxFields: 24);
                     var isBroadcastCandidate = IsLikelyKuaishouBroadcastWire(wireSummary);
-                    if (isBroadcastCandidate)
+                    if (AppSetting.Current.KuaishouVerboseLog)
                     {
-                        Logger.LogInfo($"[KS_REVERSE] classify=broadcast wire={wireSummary}");
+                        DumpKsReverseSamples(buff, inflated, processName, i);
+                        if (isBroadcastCandidate)
+                        {
+                            Logger.LogInfo($"[KS_REVERSE] classify=broadcast wire={wireSummary}");
+                        }
+                        LogKuaishouStateTextProbe(inflated, wireSummary);
+                        TryCaptureKsRuntimeParamFromInflated(inflated, $"ws.gzip.at.{i}", processName);
+                        LogKuaishouPacketSignature(inflated, $"ksgzip:{i}");
                     }
-                    LogKuaishouStateTextProbe(inflated, wireSummary);
-                    TryCaptureKsRuntimeParamFromInflated(inflated, $"ws.gzip.at.{i}", processName);
-                    LogKuaishouPacketSignature(inflated, $"ksgzip:{i}");
                     // hints 更适合做观测，不再直接触发评论，避免“江北/王翠花”类误报
-                    TryLogKuaishouSessionInfo(inflated, allowFallbackEmit: false);
+                    if (AppSetting.Current.KuaishouVerboseLog)
+                    {
+                        TryLogKuaishouSessionInfo(inflated, allowFallbackEmit: false);
+                    }
                     if (TryProcessKuaishouJsonFragments(inflated, allowChatEmit: !isBroadcastCandidate))
                     {
-                        Logger.LogInfo($"[快手] GZIP解包后 JSON片段解析命中 at={i}");
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.LogInfo($"[快手] GZIP解包后 JSON片段解析命中 at={i}");
+                        }
                         return true;
                     }
 
                     if (TryProcessKuaishouProtobufWithOffsets(inflated, processName))
                     {
-                        Logger.LogInfo($"[快手] GZIP解包后 Protobuf 解析成功 at={i}");
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.LogInfo($"[快手] GZIP解包后 Protobuf 解析成功 at={i}");
+                        }
                         return true;
                     }
 
                     try
                     {
                         ProcessKuaishouJson(inflated, processName);
-                        Logger.LogInfo($"[快手] GZIP解包后 JSON 解析成功 at={i}");
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.LogInfo($"[快手] GZIP解包后 JSON 解析成功 at={i}");
+                        }
                         return true;
                     }
                     catch
@@ -731,13 +752,19 @@ namespace BarrageGrab
                     // 最终兜底：做无 schema 的 protobuf 文本提取，先把评论文本打通
                     if (!isBroadcastCandidate && TryProcessKuaishouGenericProtoText(inflated))
                     {
-                        Logger.LogInfo($"[快手] GZIP解包后 通用文本提取命中 at={i}");
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.LogInfo($"[快手] GZIP解包后 通用文本提取命中 at={i}");
+                        }
                         return true;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogInfo($"[快手] GZIP解包失败 at={i}: {ex.Message}");
+                    if (AppSetting.Current.KuaishouVerboseLog)
+                    {
+                        Logger.LogInfo($"[快手] GZIP解包失败 at={i}: {ex.Message}");
+                    }
                 }
 
                 // 一个包通常只会有 1-2 段 gzip，避免过度扫描
@@ -1859,7 +1886,10 @@ namespace BarrageGrab
                     var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(envelope.Payload));
                     if (ksPayload?.SendMessages == null || ksPayload.SendMessages.Count == 0) continue;
 
-                    Logger.LogInfo($"[快手] Protobuf命中 strategy={candidate.Strategy} offset={candidate.Offset}，消息数={ksPayload.SendMessages.Count}");
+                    if (AppSetting.Current.KuaishouVerboseLog)
+                    {
+                        Logger.LogInfo($"[快手] Protobuf命中 strategy={candidate.Strategy} offset={candidate.Offset}，消息数={ksPayload.SendMessages.Count}");
+                    }
                     foreach (var sendMsg in ksPayload.SendMessages)
                     {
                         var msgType = (sendMsg.MsgType ?? "").ToUpper();
@@ -1993,6 +2023,7 @@ namespace BarrageGrab
         {
             try
             {
+                if (!AppSetting.Current.KuaishouVerboseLog) return;
                 if (buff == null || buff.Length < 16) return;
                 var text = Encoding.UTF8.GetString(buff);
                 var cleaned = new string(text.Where(c => !char.IsControl(c) || c == '\n' || c == '\r' || c == '\t').ToArray());
@@ -2012,6 +2043,7 @@ namespace BarrageGrab
         {
             try
             {
+                if (!AppSetting.Current.KuaishouVerboseLog) return;
                 var hexLen = Math.Min(64, buff.Length);
                 var hex = BitConverter.ToString(buff, 0, hexLen).Replace("-", " ");
                 Logger.LogInfo($"[快手][包特征] Host={hostName} Len={buff.Length} First16={hex}");
@@ -2034,18 +2066,27 @@ namespace BarrageGrab
             var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(new ReadOnlyMemory<byte>(buff));
             if (envelope?.Payload == null)
             {
-                Logger.LogInfo($"[快手] KsSocketMessage 解析失败或Payload为空");
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    Logger.LogInfo($"[快手] KsSocketMessage 解析失败或Payload为空");
+                }
                 return;
             }
 
             var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(envelope.Payload));
             if (ksPayload?.SendMessages == null)
             {
-                Logger.LogInfo($"[快手] KsPayload.SendMessages 为空");
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    Logger.LogInfo($"[快手] KsPayload.SendMessages 为空");
+                }
                 return;
             }
 
-            Logger.LogInfo($"[快手] Protobuf解析成功，消息数={ksPayload.SendMessages.Count}");
+            if (AppSetting.Current.KuaishouVerboseLog)
+            {
+                Logger.LogInfo($"[快手] Protobuf解析成功，消息数={ksPayload.SendMessages.Count}");
+            }
 
             foreach (var sendMsg in ksPayload.SendMessages)
             {
@@ -2917,6 +2958,7 @@ namespace BarrageGrab
         private void DumpKuaishouRawBytes(string channel, string hostOrTag, byte[] data)
         {
             if (data == null || data.Length == 0) return;
+            if (!AppSetting.Current.KuaishouVerboseLog) return;
             try
             {
                 var root = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "ks_raw");
@@ -2948,6 +2990,7 @@ namespace BarrageGrab
         private void LogKuaishouRawIndex(string channel, string fileBase, string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return;
+            if (!AppSetting.Current.KuaishouVerboseLog) return;
             try
             {
                 var patterns = new[]
@@ -2976,6 +3019,7 @@ namespace BarrageGrab
         private void LogKuaishouRawAllText(string channel, string fileBase, string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return;
+            if (!AppSetting.Current.KuaishouVerboseLog) return;
             try
             {
                 var preview = new string(text.Take(2000).Select(c => char.IsControl(c) ? '.' : c).ToArray());

@@ -1194,7 +1194,10 @@ namespace BarrageGrab.Proxy
             bool shouldVerbose = _ksBusinessSeenRecently && (DateTime.UtcNow - _ksBusinessSeenAtUtc).TotalMinutes <= 3;
             if (!isWlogHost && (shouldVerbose || looksBusiness))
             {
-                Logger.LogInfo($"[KS_TUNNEL_RAW_RX] host:{host} process:{base.GetProcessName(processId)} recvCount:{e.Count} firstByte:0x{first:X2}");
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    Logger.LogInfo($"[KS_TUNNEL_RAW_RX] host:{host} process:{base.GetProcessName(processId)} recvCount:{e.Count} firstByte:0x{first:X2}");
+                }
             }
             if (IsKuaishouObserveProcess(processName))
             {
@@ -1208,7 +1211,10 @@ namespace BarrageGrab.Proxy
             {
                 var payload = new byte[e.Count];
                 Buffer.BlockCopy(e.Buffer, e.Offset, payload, 0, e.Count);
-                Logger.LogInfo($"[KS_TUNNEL_RAW_FORWARD] host:{host} size:{payload.Length} firstByte:0x{first:X2}");
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    Logger.LogInfo($"[KS_TUNNEL_RAW_FORWARD] host:{host} size:{payload.Length} firstByte:0x{first:X2}");
+                }
                 base.FireWsEvent(new WsMessageEventArgs()
                 {
                     ProcessID = processId,
@@ -1242,7 +1248,10 @@ namespace BarrageGrab.Proxy
             bool shouldVerbose = _ksBusinessSeenRecently && (DateTime.UtcNow - _ksBusinessSeenAtUtc).TotalMinutes <= 3;
             if (!isWlogHost && shouldVerbose)
             {
-                Logger.LogInfo($"[KS_TUNNEL_RAW_TX] host:{host} process:{base.GetProcessName(processId)} sendCount:{e.Count} firstByte:0x{first:X2}");
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    Logger.LogInfo($"[KS_TUNNEL_RAW_TX] host:{host} process:{base.GetProcessName(processId)} sendCount:{e.Count} firstByte:0x{first:X2}");
+                }
             }
             if (IsKuaishouObserveProcess(processName))
             {
@@ -1255,7 +1264,10 @@ namespace BarrageGrab.Proxy
             {
                 var payload = new byte[e.Count];
                 Buffer.BlockCopy(e.Buffer, e.Offset, payload, 0, e.Count);
-                Logger.LogInfo($"[KS_TUNNEL_RAW_FORWARD_TX] host:{host} size:{payload.Length} firstByte:0x{first:X2}");
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    Logger.LogInfo($"[KS_TUNNEL_RAW_FORWARD_TX] host:{host} size:{payload.Length} firstByte:0x{first:X2}");
+                }
                 base.FireWsEvent(new WsMessageEventArgs()
                 {
                     ProcessID = processId,
@@ -1333,6 +1345,8 @@ namespace BarrageGrab.Proxy
             if (!hot.Any()) return;
             if (!_ksBusinessSeenRecently || (now - _ksBusinessSeenAtUtc).TotalMinutes > 3) return;
             if (!hot.Any(kv => kv.Value.RxLargePackets > 0 && !kv.Key.Contains("@wlog.gifshow.com"))) return;
+
+            if (!AppSetting.Current.KuaishouVerboseLog) return;
 
             Logger.LogInfo("[KS_FLOW] ===== 快手流量画像 Top =====");
             foreach (var kv in hot)
