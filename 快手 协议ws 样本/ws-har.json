@@ -1,0 +1,1137 @@
+{
+  "log": {
+    "version": "1.2",
+    "creator": {
+      "name": "WebInspector",
+      "version": "537.36"
+    },
+    "pages": [
+      {
+        "startedDateTime": "2026-04-10T16:17:52.090Z",
+        "id": "page_4",
+        "title": "https://live.kuaishou.com/u/3xu3gyk63q37ji4",
+        "pageTimings": {
+          "onContentLoad": 1109.3469999614172,
+          "onLoad": 1791.215999983251
+        }
+      }
+    ],
+    "entries": [
+      {
+        "_initiator": {
+          "type": "script",
+          "stack": {
+            "callFrames": [
+              {
+                "functionName": "",
+                "scriptId": "1801",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/app.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 30991
+              },
+              {
+                "functionName": "h",
+                "scriptId": "1801",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/app.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 30949
+              },
+              {
+                "functionName": "",
+                "scriptId": "1801",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/app.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 31638
+              },
+              {
+                "functionName": "p",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 55159
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 56501
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 55588
+              },
+              {
+                "functionName": "i",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 132862
+              },
+              {
+                "functionName": "s",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133065
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133124
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133005
+              },
+              {
+                "functionName": "",
+                "scriptId": "1801",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/app.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 32142
+              },
+              {
+                "functionName": "",
+                "scriptId": "1801",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/app.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 32177
+              },
+              {
+                "functionName": "p",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 55159
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 56501
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 55588
+              },
+              {
+                "functionName": "i",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 132862
+              },
+              {
+                "functionName": "s",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133065
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133124
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133005
+              },
+              {
+                "functionName": "m",
+                "scriptId": "1801",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/app.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 32226
+              },
+              {
+                "functionName": "E",
+                "scriptId": "1801",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/app.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 31228
+              },
+              {
+                "functionName": "",
+                "scriptId": "1801",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/app.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 32382
+              },
+              {
+                "functionName": "p",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 55159
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 56501
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 55588
+              },
+              {
+                "functionName": "i",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 132862
+              },
+              {
+                "functionName": "s",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133065
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133124
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133005
+              },
+              {
+                "functionName": "b",
+                "scriptId": "1801",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/app.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 32737
+              },
+              {
+                "functionName": "open",
+                "scriptId": "1801",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/app.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 33141
+              },
+              {
+                "functionName": "",
+                "scriptId": "1816",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 59412
+              },
+              {
+                "functionName": "p",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 55159
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 56501
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 55588
+              },
+              {
+                "functionName": "i",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 132862
+              },
+              {
+                "functionName": "s",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133065
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133124
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133005
+              },
+              {
+                "functionName": "I",
+                "scriptId": "1816",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 59574
+              },
+              {
+                "functionName": "connect",
+                "scriptId": "1816",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 59716
+              },
+              {
+                "functionName": "",
+                "scriptId": "1816",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                "lineNumber": 0,
+                "columnNumber": 62352
+              },
+              {
+                "functionName": "p",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 55159
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 56501
+              },
+              {
+                "functionName": "",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 55588
+              },
+              {
+                "functionName": "i",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 132862
+              },
+              {
+                "functionName": "s",
+                "scriptId": "1804",
+                "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                "lineNumber": 1,
+                "columnNumber": 133065
+              }
+            ],
+            "parent": {
+              "description": "Promise.then",
+              "callFrames": [
+                {
+                  "functionName": "i",
+                  "scriptId": "1804",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                  "lineNumber": 1,
+                  "columnNumber": 132933
+                },
+                {
+                  "functionName": "s",
+                  "scriptId": "1804",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                  "lineNumber": 1,
+                  "columnNumber": 133065
+                },
+                {
+                  "functionName": "",
+                  "scriptId": "1804",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                  "lineNumber": 1,
+                  "columnNumber": 133124
+                },
+                {
+                  "functionName": "",
+                  "scriptId": "1804",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                  "lineNumber": 1,
+                  "columnNumber": 133005
+                },
+                {
+                  "functionName": "S",
+                  "scriptId": "1816",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                  "lineNumber": 0,
+                  "columnNumber": 62657
+                },
+                {
+                  "functionName": "A",
+                  "scriptId": "1816",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                  "lineNumber": 0,
+                  "columnNumber": 61540
+                },
+                {
+                  "functionName": "",
+                  "scriptId": "1816",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                  "lineNumber": 0,
+                  "columnNumber": 61446
+                },
+                {
+                  "functionName": "p",
+                  "scriptId": "1804",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                  "lineNumber": 1,
+                  "columnNumber": 55159
+                },
+                {
+                  "functionName": "",
+                  "scriptId": "1804",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                  "lineNumber": 1,
+                  "columnNumber": 56501
+                },
+                {
+                  "functionName": "",
+                  "scriptId": "1804",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                  "lineNumber": 1,
+                  "columnNumber": 55588
+                },
+                {
+                  "functionName": "i",
+                  "scriptId": "1804",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                  "lineNumber": 1,
+                  "columnNumber": 132862
+                },
+                {
+                  "functionName": "s",
+                  "scriptId": "1804",
+                  "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                  "lineNumber": 1,
+                  "columnNumber": 133065
+                }
+              ],
+              "parent": {
+                "description": "Promise.then",
+                "callFrames": [
+                  {
+                    "functionName": "i",
+                    "scriptId": "1804",
+                    "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                    "lineNumber": 1,
+                    "columnNumber": 132933
+                  },
+                  {
+                    "functionName": "s",
+                    "scriptId": "1804",
+                    "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                    "lineNumber": 1,
+                    "columnNumber": 133065
+                  }
+                ],
+                "parent": {
+                  "description": "Promise.then",
+                  "callFrames": [
+                    {
+                      "functionName": "i",
+                      "scriptId": "1804",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                      "lineNumber": 1,
+                      "columnNumber": 132933
+                    },
+                    {
+                      "functionName": "s",
+                      "scriptId": "1804",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                      "lineNumber": 1,
+                      "columnNumber": 133065
+                    },
+                    {
+                      "functionName": "",
+                      "scriptId": "1804",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                      "lineNumber": 1,
+                      "columnNumber": 133124
+                    },
+                    {
+                      "functionName": "",
+                      "scriptId": "1804",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                      "lineNumber": 1,
+                      "columnNumber": 133005
+                    },
+                    {
+                      "functionName": "x",
+                      "scriptId": "1816",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                      "lineNumber": 0,
+                      "columnNumber": 60814
+                    },
+                    {
+                      "functionName": "",
+                      "scriptId": "1816",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                      "lineNumber": 0,
+                      "columnNumber": 64089
+                    },
+                    {
+                      "functionName": "p",
+                      "scriptId": "1804",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                      "lineNumber": 1,
+                      "columnNumber": 55159
+                    },
+                    {
+                      "functionName": "",
+                      "scriptId": "1804",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                      "lineNumber": 1,
+                      "columnNumber": 56501
+                    },
+                    {
+                      "functionName": "",
+                      "scriptId": "1804",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                      "lineNumber": 1,
+                      "columnNumber": 55588
+                    },
+                    {
+                      "functionName": "i",
+                      "scriptId": "1804",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                      "lineNumber": 1,
+                      "columnNumber": 132862
+                    },
+                    {
+                      "functionName": "s",
+                      "scriptId": "1804",
+                      "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                      "lineNumber": 1,
+                      "columnNumber": 133065
+                    }
+                  ],
+                  "parent": {
+                    "description": "Promise.then",
+                    "callFrames": [
+                      {
+                        "functionName": "i",
+                        "scriptId": "1804",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                        "lineNumber": 1,
+                        "columnNumber": 132933
+                      },
+                      {
+                        "functionName": "s",
+                        "scriptId": "1804",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                        "lineNumber": 1,
+                        "columnNumber": 133065
+                      },
+                      {
+                        "functionName": "",
+                        "scriptId": "1804",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                        "lineNumber": 1,
+                        "columnNumber": 133124
+                      },
+                      {
+                        "functionName": "",
+                        "scriptId": "1804",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                        "lineNumber": 1,
+                        "columnNumber": 133005
+                      },
+                      {
+                        "functionName": "",
+                        "scriptId": "1816",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                        "lineNumber": 0,
+                        "columnNumber": 64164
+                      },
+                      {
+                        "functionName": "u",
+                        "scriptId": "1804",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                        "lineNumber": 1,
+                        "columnNumber": 207805
+                      },
+                      {
+                        "functionName": "h",
+                        "scriptId": "1804",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                        "lineNumber": 1,
+                        "columnNumber": 207880
+                      },
+                      {
+                        "functionName": "",
+                        "scriptId": "1804",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                        "lineNumber": 1,
+                        "columnNumber": 245578
+                      },
+                      {
+                        "functionName": "E",
+                        "scriptId": "1804",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                        "lineNumber": 1,
+                        "columnNumber": 1955566
+                      },
+                      {
+                        "functionName": "u",
+                        "scriptId": "1804",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                        "lineNumber": 1,
+                        "columnNumber": 207813
+                      },
+                      {
+                        "functionName": "C",
+                        "scriptId": "1804",
+                        "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                        "lineNumber": 1,
+                        "columnNumber": 209528
+                      }
+                    ],
+                    "parent": {
+                      "description": "Promise.then",
+                      "callFrames": [
+                        {
+                          "functionName": "E",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 208869
+                        },
+                        {
+                          "functionName": "A",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 208843
+                        },
+                        {
+                          "functionName": "",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 239413
+                        },
+                        {
+                          "functionName": "trigger",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 1941796
+                        },
+                        {
+                          "functionName": "v",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 1942196
+                        },
+                        {
+                          "functionName": "B",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 1945463
+                        },
+                        {
+                          "functionName": "set",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 1948966
+                        },
+                        {
+                          "functionName": "",
+                          "scriptId": "1816",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                          "lineNumber": 0,
+                          "columnNumber": 4375
+                        },
+                        {
+                          "functionName": "p",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 55159
+                        },
+                        {
+                          "functionName": "",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 56501
+                        },
+                        {
+                          "functionName": "",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 55588
+                        },
+                        {
+                          "functionName": "i",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 132862
+                        },
+                        {
+                          "functionName": "s",
+                          "scriptId": "1804",
+                          "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                          "lineNumber": 1,
+                          "columnNumber": 133065
+                        }
+                      ],
+                      "parent": {
+                        "description": "Promise.then",
+                        "callFrames": [
+                          {
+                            "functionName": "i",
+                            "scriptId": "1804",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                            "lineNumber": 1,
+                            "columnNumber": 132933
+                          },
+                          {
+                            "functionName": "s",
+                            "scriptId": "1804",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                            "lineNumber": 1,
+                            "columnNumber": 133065
+                          },
+                          {
+                            "functionName": "",
+                            "scriptId": "1804",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                            "lineNumber": 1,
+                            "columnNumber": 133124
+                          },
+                          {
+                            "functionName": "",
+                            "scriptId": "1804",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                            "lineNumber": 1,
+                            "columnNumber": 133005
+                          },
+                          {
+                            "functionName": "getLiveDetail",
+                            "scriptId": "1816",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                            "lineNumber": 0,
+                            "columnNumber": 4724
+                          },
+                          {
+                            "functionName": "",
+                            "scriptId": "1804",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                            "lineNumber": 1,
+                            "columnNumber": 201341
+                          },
+                          {
+                            "functionName": "",
+                            "scriptId": "1816",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                            "lineNumber": 0,
+                            "columnNumber": 7454
+                          },
+                          {
+                            "functionName": "p",
+                            "scriptId": "1804",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                            "lineNumber": 1,
+                            "columnNumber": 55159
+                          },
+                          {
+                            "functionName": "",
+                            "scriptId": "1804",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                            "lineNumber": 1,
+                            "columnNumber": 56501
+                          },
+                          {
+                            "functionName": "",
+                            "scriptId": "1804",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                            "lineNumber": 1,
+                            "columnNumber": 55588
+                          },
+                          {
+                            "functionName": "i",
+                            "scriptId": "1804",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                            "lineNumber": 1,
+                            "columnNumber": 132862
+                          },
+                          {
+                            "functionName": "s",
+                            "scriptId": "1804",
+                            "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                            "lineNumber": 1,
+                            "columnNumber": 133065
+                          }
+                        ],
+                        "parent": {
+                          "description": "Promise.then",
+                          "callFrames": [
+                            {
+                              "functionName": "i",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 132933
+                            },
+                            {
+                              "functionName": "s",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 133065
+                            },
+                            {
+                              "functionName": "",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 133124
+                            },
+                            {
+                              "functionName": "",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 133005
+                            },
+                            {
+                              "functionName": "checkPassword",
+                              "scriptId": "1816",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                              "lineNumber": 0,
+                              "columnNumber": 7634
+                            },
+                            {
+                              "functionName": "",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 201341
+                            },
+                            {
+                              "functionName": "",
+                              "scriptId": "1816",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                              "lineNumber": 0,
+                              "columnNumber": 28846
+                            },
+                            {
+                              "functionName": "p",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 55159
+                            },
+                            {
+                              "functionName": "",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 56501
+                            },
+                            {
+                              "functionName": "",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 55588
+                            },
+                            {
+                              "functionName": "i",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 132862
+                            },
+                            {
+                              "functionName": "s",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 133065
+                            },
+                            {
+                              "functionName": "",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 133124
+                            },
+                            {
+                              "functionName": "",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 133005
+                            },
+                            {
+                              "functionName": "m",
+                              "scriptId": "1816",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                              "lineNumber": 0,
+                              "columnNumber": 28932
+                            },
+                            {
+                              "functionName": "h",
+                              "scriptId": "1816",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/liveRoom.f39e14126038dfed8050.js",
+                              "lineNumber": 0,
+                              "columnNumber": 28684
+                            },
+                            {
+                              "functionName": "u",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 207805
+                            },
+                            {
+                              "functionName": "h",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 207880
+                            },
+                            {
+                              "functionName": "r",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 1979997
+                            },
+                            {
+                              "functionName": "n",
+                              "scriptId": "1804",
+                              "url": "https://p2-game.kskwai.com/udata/pkg/KS-GAME-WEB/pc-live-next/js/vendors.f39e14126038dfed8050.js",
+                              "lineNumber": 1,
+                              "columnNumber": 99825
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "_priority": null,
+        "_resourceType": "websocket",
+        "cache": {},
+        "request": {
+          "method": "GET",
+          "url": "wss://livejs-ws.kuaishou.cn/group5",
+          "httpVersion": "HTTP/1.1",
+          "headers": [
+            {
+              "name": "Upgrade",
+              "value": "websocket"
+            },
+            {
+              "name": "Origin",
+              "value": "https://live.kuaishou.com"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "zh,zh-CN;q=0.9"
+            },
+            {
+              "name": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "name": "Connection",
+              "value": "Upgrade"
+            },
+            {
+              "name": "Sec-WebSocket-Key",
+              "value": "mEJ31w11NxfGrRpJ3fT6zg=="
+            },
+            {
+              "name": "Accept-Encoding",
+              "value": "gzip, deflate, br, zstd"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Sec-WebSocket-Version",
+              "value": "13"
+            },
+            {
+              "name": "Host",
+              "value": "livejs-ws.kuaishou.cn"
+            },
+            {
+              "name": "Sec-WebSocket-Extensions",
+              "value": "permessage-deflate; client_max_window_bits"
+            }
+          ],
+          "queryString": [],
+          "cookies": [],
+          "headersSize": 547,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 101,
+          "statusText": "Switching Protocols",
+          "httpVersion": "HTTP/1.1",
+          "headers": [
+            {
+              "name": "upgrade",
+              "value": "websocket"
+            },
+            {
+              "name": "ks-arg-cprs",
+              "value": "clear"
+            },
+            {
+              "name": "Date",
+              "value": "Fri, 10 Apr 2026 16:17:59 GMT"
+            },
+            {
+              "name": "sec-websocket-accept",
+              "value": "TTUVwKJpXHyFOsyQbeYEV54VELI="
+            },
+            {
+              "name": "Server",
+              "value": "Tengine/2.3.2"
+            },
+            {
+              "name": "Connection",
+              "value": "upgrade"
+            }
+          ],
+          "cookies": [],
+          "content": {
+            "size": 0,
+            "mimeType": "x-unknown",
+            "compression": 209
+          },
+          "redirectURL": "",
+          "headersSize": 209,
+          "bodySize": -209,
+          "_transferSize": 0,
+          "_error": null,
+          "_fetchedViaServiceWorker": false
+        },
+        "serverIPAddress": "",
+        "startedDateTime": "2026-04-10T16:17:59.286Z",
+        "time": 20128.743000037502,
+        "timings": {
+          "blocked": -1,
+          "dns": -1,
+          "ssl": -1,
+          "connect": -1,
+          "send": 0,
+          "wait": 20128.743000037502,
+          "receive": 0,
+          "_blocked_queueing": -1
+        },
+        "pageref": "page_4",
+        "_webSocketMessages": [
+          {
+            "type": "send",
+            "time": 1775837879.347662,
+            "opcode": 2,
+            "data": "CMgBGogCCtgBZ3ZqOE5IRFJRVVk2OEJuNU9VdnlxQVJRVTMydGtobGx2cmtpWDBWUU9mOU1aVXpHM01tY1BxWENyUHd3VVhDaGV3amozZ1duSERtZzV5OW5lK0JOb1BDQzVmalEwZUJiOGhuVlJzTk80MkF0aVdHbnJoY0RJTWY2RFB2aUY2UEgveFQxUUNibC9yeXhjZFZ3cGpIZDYvY2ZNVE5UQUZ2emNKQ3NPN3FEWHpqd1U3VXBtSjV2YWV3NVdVN0c1NkI4WVZHTHU2ZHluT0JpUXc2aXdCWFZNQT09Egs1Z2VudDJJVDVETToeVzQ4cmpDUTRtOUZJREF4Y18xNzc1ODM3ODczMzcx"
+          },
+          {
+            "type": "receive",
+            "time": 1775837879.381457,
+            "opcode": 2,
+            "data": "CKwCEAEaCgjoBxCIJxignAEg97m+wdcz"
+          },
+          {
+            "type": "receive",
+            "time": 1775837880.274453,
+            "opcode": 2,
+            "data": "CLYCEAEaBgoBMRIBMCD1wL7B1zM="
+          },
+          {
+            "type": "receive",
+            "time": 1775837886.318402,
+            "opcode": 2,
+            "data": "CLYCEAEakwIKATESATAqigISHAoPM3htdHFzM2NhcDMzang2Egnnjovnv6DoirEaATEiCEZLd3VCZz09OAFC2gE4AVABWjMKJAoGNjM1NjA0EhpsZXZlbF9sYWJlbF92Mi9sZXZlbF8xLnBuZxoLd2VhbHRoR3JhZGVaMgoiCgc0NDY3ODM2EhdyYW5rX3RvcC9yYW5rX3RvcF8xLnBuZxoMYXVkaWVuY2VSYW5rejIKIgoHNDQ2NzgzNhIXcmFua190b3AvcmFua190b3BfMS5wbmcaDGF1ZGllbmNlUmFua3ozCiQKBjYzNTYwNBIabGV2ZWxfbGFiZWxfdjIvbGV2ZWxfMS5wbmcaC3dlYWx0aEdyYWRl6gEBByCS8L7B1zM="
+          },
+          {
+            "type": "receive",
+            "time": 1775837888.312924,
+            "opcode": 2,
+            "data": "CLYCEAEakwIKATISATAqigISHAoPM3htdHFzM2NhcDMzang2Egnnjovnv6DoirEaATIiCEZLd3VCZz09OAFC2gE4AVABWjMKJAoGNjM1NjA0EhpsZXZlbF9sYWJlbF92Mi9sZXZlbF8xLnBuZxoLd2VhbHRoR3JhZGVaMgoiCgc0NDY3ODM2EhdyYW5rX3RvcC9yYW5rX3RvcF8xLnBuZxoMYXVkaWVuY2VSYW5rejIKIgoHNDQ2NzgzNhIXcmFua190b3AvcmFua190b3BfMS5wbmcaDGF1ZGllbmNlUmFua3ozCiQKBjYzNTYwNBIabGV2ZWxfbGFiZWxfdjIvbGV2ZWxfMS5wbmcaC3dlYWx0aEdyYWRl6gEBByDc/77B1zM="
+          },
+          {
+            "type": "receive",
+            "time": 1775837889.34182,
+            "opcode": 2,
+            "data": "CLYCEAEakwIKATISATAqigISHAoPM3htdHFzM2NhcDMzang2Egnnjovnv6DoirEaATMiCEZLd3VCZz09OAFC2gE4AVABWjMKJAoGNjM1NjA0EhpsZXZlbF9sYWJlbF92Mi9sZXZlbF8xLnBuZxoLd2VhbHRoR3JhZGVaMgoiCgc0NDY3ODM2EhdyYW5rX3RvcC9yYW5rX3RvcF8xLnBuZxoMYXVkaWVuY2VSYW5rejIKIgoHNDQ2NzgzNhIXcmFua190b3AvcmFua190b3BfMS5wbmcaDGF1ZGllbmNlUmFua3ozCiQKBjYzNTYwNBIabGV2ZWxfbGFiZWxfdjIvbGV2ZWxfMS5wbmcaC3dlYWx0aEdyYWRl6gEBByC4h7/B1zM="
+          },
+          {
+            "type": "receive",
+            "time": 1775837896.299279,
+            "opcode": 2,
+            "data": "CLYCEAEangIKATISATAqlQISHAoPM3htdHFzM2NhcDMzang2Egnnjovnv6DoirEaDOS4u+aSreS9oOWlvSIIRkt3dUJnPT04AULaATgBUAFaMwokCgY2MzU2MDQSGmxldmVsX2xhYmVsX3YyL2xldmVsXzEucG5nGgt3ZWFsdGhHcmFkZVoyCiIKBzQ0Njc4MzYSF3JhbmtfdG9wL3JhbmtfdG9wXzEucG5nGgxhdWRpZW5jZVJhbmt6MgoiCgc0NDY3ODM2EhdyYW5rX3RvcC9yYW5rX3RvcF8xLnBuZxoMYXVkaWVuY2VSYW5rejMKJAoGNjM1NjA0EhpsZXZlbF9sYWJlbF92Mi9sZXZlbF8xLnBuZxoLd2VhbHRoR3JhZGXqAQEHII6+v8HXMw=="
+          },
+          {
+            "type": "send",
+            "time": 1775837899.385481,
+            "opcode": 2,
+            "data": "CAEaBwj41L/B1zM="
+          },
+          {
+            "type": "receive",
+            "time": 1775837899.414761,
+            "opcode": 2,
+            "data": "CGUQARoOCLrWv8HXMxC61r/B1zMguta/wdcz"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,1868 @@
+{
+  "meta": {
+    "logsDir": "E:\\DouyinBarrageGrab\\Output\\logs",
+    "filesScanned": 2000,
+    "totalUrls": 38357
+  },
+  "summary": {
+    "paramCount": 168,
+    "dynamicParamCount": 18,
+    "stableParamCount": 150
+  },
+  "params": [
+    {
+      "param": "v",
+      "count": 6606,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3.10.33"
+      ]
+    },
+    {
+      "param": "kpn",
+      "count": 6606,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3"
+      ]
+    },
+    {
+      "param": "_json",
+      "count": 6606,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "biz",
+      "count": 6606,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "aid",
+      "count": 2536,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "2079"
+      ]
+    },
+    {
+      "param": "device_platform",
+      "count": 2478,
+      "distinctValues": 3,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "windows",
+        "pc",
+        "iphone"
+      ]
+    },
+    {
+      "param": "live_id",
+      "count": 2478,
+      "distinctValues": 24,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1",
+        "7627409520662252338",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336",
+        "7627421185638353699",
+        "7627425266905664290",
+        "7627425405451963176"
+      ]
+    },
+    {
+      "param": "version_code",
+      "count": 2468,
+      "distinctValues": 3,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "11.8.2",
+        "110802",
+        "1182"
+      ]
+    },
+    {
+      "param": "webcast_sdk_version",
+      "count": 2468,
+      "distinctValues": 4,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1520",
+        "110802",
+        "1770",
+        "1182"
+      ]
+    },
+    {
+      "param": "device_id",
+      "count": 2468,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3581551755921984"
+      ]
+    },
+    {
+      "param": "ac",
+      "count": 2443,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "wifi"
+      ]
+    },
+    {
+      "param": "os_version",
+      "count": 2324,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "10.0.22631"
+      ]
+    },
+    {
+      "param": "app_name",
+      "count": 2299,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "webcast_mate"
+      ]
+    },
+    {
+      "param": "language",
+      "count": 2299,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "zh"
+      ]
+    },
+    {
+      "param": "resolution",
+      "count": 2293,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1707*960"
+      ]
+    },
+    {
+      "param": "channel",
+      "count": 2263,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "online"
+      ]
+    },
+    {
+      "param": "iid",
+      "count": 2011,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3159367000535692"
+      ]
+    },
+    {
+      "param": "msToken",
+      "count": 1851,
+      "distinctValues": 18,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "BuTrqFWWnpR-9uACsBIPoXQkoVQu8GyqTQtgVyTaAsg518JnoIhk1uHL6nseDQMypWqzlXzKD-nqH3GeHEk88NOyl6ulmXSUkkv6rJSWc4DcrOxbAxxXG6Um31FSj7rx-Lp-LT6WIbv0djrkakxDkyhwjLOiWGvFGnWy6nvuoZDpJ_Y7cAvs",
+        "vnTE7DQyZQS2u0ZYfVwwRrEqyHuyTZCoaD4OUyQ8gk8w4jGGonR0CDsyYg5y86-pOwE-UeWO5R8CmlNSO0i54QV4yifNFIsruEEisTk98ZRZwskjagtzVlga7ZkDDgrvi6sdM-Kn1Vr22ESbrLHTREUkShhQQXJxCrrfoxfVYEMnOrUut-BE",
+        "3ZIBfaIqKOQRRQHr--IY7EnmBnT-HuIWSLKuv0lDpk65fGEcCQN8yCzj1g9C7m9POZZb7eOLhIfmx0hek88ZsM0l_yns7LojXUxR20mlSTqxbujQvvAvUcccBpTMwHgVXDIM0_CKTskivLFaIDETmYJaC1XXTmN-oxdZhSzX5E16O7IbIkf8",
+        "BrI0xIrmRkmLqvygctJKPXRqilW2pzRzegcGWWzGOIJ_nbw7TV4EWIOUu3FxH-KYMaD9FlyjsuGrGpHI0HM1QWyE25mh_1bk24EB319VbwNm4j6Dw55euB_-5yOt9VX30OqZWiZEqsdnH3jCEd9kqYTJ_jqhvJCxmi8duoNinLgHKxSD99eg",
+        "ddgW0IBqBMWOoFECnsSvvp1MuZI_NuTjmZLvpJNEP9BauhllZHd7qP8xVBpshELh4Bum-Dtx8t_tN_KBJQhy6MZ6DPqUMZqH_PhtoDkXSHkDaDwPBqLzROGVKXYgux7CbdJcXCok6brQJUBydH0FVE2fmPARAAXNL0KrrfRcouRlBl7fbRZV",
+        "yF2E5AwXTHlVLapr_zPotBILvuW9xpqUUmoKSq6RqGf45Xosk44yEtZP7N5w08RapbewOXv5MJ0h07tNDer9lPDqZb7kW4K1vBK5VqoAe04oEKP_Ww2fS_jSG1O4wIFozvzQrijUHXzN2yoPaf-DJGp8DoUJx7NbVCqzAPMra_yvDmpwzF8p",
+        "pk4KgtBpEmWVw12x92ETrSXBI_7GA51FaPBEybnQVxRxUbYEkWdyzxgU8MrSa0hKD0KBe9Kex3PgU-hRW88tZUalZ8rYYW5xg7GYmtesz8WMF0XMhKXm1sar8OtcXqXSNmNPXtF4101Nh9JmW0uEOh5so_FKWix8nJfx1XF_hubBuxTcNylU",
+        "SWwcruC_OXFsebZpENiKtDheqUamuzh4_JAGRThZe2pjFkHytAeqbzJNtBuug9Uld6R1oT19RSirii7pkPYYmxu1cYE7NbdM9u-H4RlcZ4NXr5PUjdJCVCJYa3Oy-SwVXALFcZTGElA9mdd0nylTk7r3lWZE3XL4gUvVCZLpe-W8yQDwF4ao"
+      ]
+    },
+    {
+      "param": "a_bogus",
+      "count": 1851,
+      "distinctValues": 1851,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "d64nDtXjDq/ncpAG8KajSjOU0XL/NmWyvFT2bcEuePKBPHeYFrPYSNcrjoL94sItEWBGiKIHJxtAbdVcYUii1oHpKmkvSYt6x0/cVU8oZqqVaMisEqmPC80FqwBbl5UL-QQriCfRIs0E2d95INIEABIGC5F75OL2bqMVpZz9GDC8psgTVxQSC3fAIHL=",
+        "dfsjkzUyQNWVcpeSmKr6SJKlvHyArmSyLFTObujutxKsPHFTBNPLSE2rJqoo4P9tEmpGiFVHGxSlYdjPu4OHIKrpLmpvSEXWo0/9V60ogqqpP0ssLHmZChszLwsTlRJLlAQ-ief5AsMJIx95nHI8AQIGy5zL5Oy2brM9p2zycDSWpPLT9x/eecjWN7L=",
+        "OJsVktWLDoWjcpCG8OrSSGql9Z9MNmSyYPioRzEK7xYoa1MGBZPLSxeJjoLosPotEmptiK3HGxtMbEdcuUi01F9kumkDuLJjos/IVU6ogqipaMvsEHDPC08FqwBbMctLe/dHief5UsMJIx95IHIEAQIa75zL5Y62RrMnpZuyJDSU3sLTnoQne-g1",
+        "QX0fDFWLYZ/jPpeGmCrRSJqlr12MrYWyEFTQbuju7xK4aXFTP1PYSiNrnqoo4B9tg8p4ioVHnxSQYDncusTbUoHpKmkDuw0So4/cVUfo8qidPzksDrDqCgmFqwsYMczLaAQ3ie65XsMJIxI59rA8Ad1a95z7QYy2SrMnp/zynDCWpsyT9n/3CaZ1",
+        "mJsfgqXyQZRjO3AtmKaWSbOUhXfMrOSyvFT/RLyK9PuCPXlGMrNYSreJJoLqsBotgWB7iq17axtMYDVcmsii1F9pFmkfSmzRo0/cVWsL/qw3a0vsLHmNC88zFwBbM5tLa/d-iHv5lsMJIx25VrImAQ3GH5zLQYy2WrM9pMuyrDS0pT6TInd4C3SAaH6=",
+        "mXs5gz7yOq/cCpASucrSSGxUtHgMrO8ygeixbz7KCxKRaHlTM1PLSOeJroL9sBotLmpXio3HnxtAYEdc84Ts1Krkomkku27b24/IVXfL2qNVaMJsEqmPCg0FuwsblRtL-5daiCfRIs0jId95VqIgAB3ae5FLQYg2brMCp2Y9nDCU3TyTI9/Ue-Za",
+        "OvUVktSjEoRROpeSYKaySjPlnHnlrQWyDeidbwjKexKmPHlTPpPLSTdJbqLqsP2tL8BJiqVHrxClbDfP80x3IF9kumkvumwWxs/IVU6ogqw3aFisgrmNC88zLwBYMczL-AdHiCv5XsME2dI59HADAQIae5Fw5mg2brZcpZYyJDSW3TyTV92ESXf=",
+        "Q7sfke77ddRjF3etYCrbSbxUJw9lrm8yDeT2bujK9xusPHlTBpPgSOerJoLo4sotgWp7iq1HJxe/YdncmUTw1oHpqmpDSqsfos25V6fL8qNdP0isDHDqC0mzLwsYMcULa5Q-i965Us0E2E25VHIDAB1GS5zw5O62brMcpZu9bDSU3BgT9o2nC-2z"
+      ]
+    },
+    {
+      "param": "room_id",
+      "count": 1141,
+      "distinctValues": 26,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "7627425405451963176",
+        "7627409520662252338",
+        "7627427637874494260",
+        "7627411768909843240",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336",
+        "7627421185638353699"
+      ]
+    },
+    {
+      "param": "from",
+      "count": 638,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3067671334",
+        "openLive"
+      ]
+    },
+    {
+      "param": "software_arch",
+      "count": 515,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "x64"
+      ]
+    },
+    {
+      "param": "os_username",
+      "count": 432,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "wuhan"
+      ]
+    },
+    {
+      "param": "os_arch",
+      "count": 432,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "x64"
+      ]
+    },
+    {
+      "param": "did",
+      "count": 402,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3581551755921984"
+      ]
+    },
+    {
+      "param": "arch_hrchy",
+      "count": 348,
+      "distinctValues": 97,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "",
+        "c1",
+        "c",
+        "c1\\u0026expire=1776499348\\u0026sign=7e9cf927714672ef46fa5d37a9774171\\u0026t_id=037-20260411160228845E68E2AF6C1A29124B-XFGX6H",
+        "c1\\u0026expire=69e33b1a\\u0026sign=3db442abf60f0d4f1c44aa83a22ede8c\\u0026t_id=037-202604111604425D29F7D80D867126F1B9-ICWNyF",
+        "c1\\u0026expire=1776500008\\u0026sign=80ee343a5194a6e048105d291fdd850f\\u0026t_id=037-2026041116132818445263D8BFE92E823A-2pde6B\\u0026volcSecret=80ee343a5194a6e048105d291fdd850f\\u0026volcTime=1776500008",
+        "c1\\u0026expire=69e33a93\\u0026sign=984e20893056ed81190412b3a8b6e2c2\\u0026t_id=037-202604111602275554D47AE77EEC28AB35-wNsH5o",
+        "c1\\u0026expire=69e33a94\\u0026sign=15801a6f277439a14074cfe2bd900358\\u0026t_id=037-202604111602289B0CB9295C921A2B744A-kNYoll"
+      ]
+    },
+    {
+      "param": "arch_hr",
+      "count": 289,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "lk3s",
+      "count": 274,
+      "distinctValues": 128,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "3ec766d0",
+        "071a6596",
+        "3ec766d0\\u0026x-expires=1778486548\\u0026x-signature=YRp628/TihwJyHVo81axS8A5VHg=",
+        "3ec766d0\\u0026x-expires=1778486548\\u0026x-signature=EwbKuvdAXLWjFCXJPXa3VAlLMpk=",
+        "3ec766d0\\u0026x-expires=1778486561\\u0026x-signature=b4AMuPKPtwJJ85u+3vwKLc3ngoY=",
+        "3ec766d0\\u0026x-expires=1778486561\\u0026x-signature=KgAUhiv72b7kanQ6LtjXGB4Pjkg=",
+        "3ec766d0\\u0026x-expires=1778486576\\u0026x-signature=8GLr9MsGNnIzowHVFBX47qjQUlA=",
+        "3ec766d0\\u0026x-expires=1778486576\\u0026x-signature=e7AhmQyn5RLbshyqNGh1v3JLZr4="
+      ]
+    },
+    {
+      "param": "arch_h",
+      "count": 272,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "biz_tag",
+      "count": 226,
+      "distinctValues": 205,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411160242ED656E4AECC95229B9C7\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=202604111604473E8864292E043322201F\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411160658A92B9B902A76382570DD\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411161334ECBE3E9912C2D62A1554\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=202604111648058000FBD3538E512718C8\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411164846EC5CEA6FD876153B2982\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=202604111649333D49A55FBEF15427875B\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411165003752551DC425224301FE9\\u0026s=create_room\\u0026sc=webcast_cover"
+      ]
+    },
+    {
+      "param": "x-kcdn-pid",
+      "count": 225,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "10954"
+      ]
+    },
+    {
+      "param": "anchor_id",
+      "count": 213,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "101428675708"
+      ]
+    },
+    {
+      "param": "roomID",
+      "count": 176,
+      "distinctValues": 22,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "7627408998039407400",
+        "7627409520662252338",
+        "7627410105189272346",
+        "7627411768909843240",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336",
+        "7627421185638353699"
+      ]
+    },
+    {
+      "param": "sec_anchor_id",
+      "count": 153,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE",
+        "101428675708"
+      ]
+    },
+    {
+      "param": "device_type",
+      "count": 153,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "windows",
+        "windows10.0.22631"
+      ]
+    },
+    {
+      "param": "cursor",
+      "count": 144,
+      "distinctValues": 50,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "0",
+        "t-1775894689223_chu-0_chd-0",
+        "t-1775894689399_r-1_d-1_u-7627409090704048128_h-1",
+        "chd-0_t-1775895216628_chu-0",
+        "t-1775895216847_r-1_d-1_u-1_h-1",
+        "u-1_h-1_t-1775897287242_r-1_d-1",
+        "d-1_u-1_h-1_t-1775898329946_r-1",
+        "t-1775898391570_chu-0_chd-0"
+      ]
+    },
+    {
+      "param": "internal_ext",
+      "count": 144,
+      "distinctValues": 50,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "",
+        "internal_src:dim|wss_push_room_id:7627409520662252338|wss_push_did:3581551755921984|first_req_ms:1775894689215|fetch_time:1775894689223|seq:1|wss_info:0-1775894689223-0-0",
+        "internal_src:dim|wss_push_room_id:7627409520662252338|wss_push_did:3581551755921984|first_req_ms:1775894689231|fetch_time:1775894689399|seq:1|wss_info:0-1775894689399-0-0",
+        "internal_src:dim|wss_push_room_id:7627411768909843240|wss_push_did:3581551755921984|first_req_ms:1775895216622|fetch_time:1775895216628|seq:1|wss_info:0-1775895216628-0-0",
+        "internal_src:dim|wss_push_room_id:7627411768909843240|wss_push_did:3581551755921984|first_req_ms:1775895216641|fetch_time:1775895216847|seq:1|wss_info:0-1775895216847-0-0",
+        "internal_src:dim|wss_push_room_id:7627420647215778566|wss_push_did:3581551755921984|first_req_ms:1775897287070|fetch_time:1775897287242|seq:1|wss_info:0-1775897287242-0-0",
+        "internal_src:dim|wss_push_room_id:7627425171296504619|wss_push_did:3581551755921984|first_req_ms:1775898329767|fetch_time:1775898329946|seq:1|wss_info:0-1775898329946-0-0",
+        "internal_src:dim|wss_push_room_id:7627425405451963176|wss_push_did:3581551755921984|first_req_ms:1775898391562|fetch_time:1775898391570|seq:1|wss_info:0-1775898391570-0-0"
+      ]
+    },
+    {
+      "param": "support_wrds",
+      "count": 144,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "resp_content_type",
+      "count": 144,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "protobuf"
+      ]
+    },
+    {
+      "param": "identity",
+      "count": 144,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "anchor"
+      ]
+    },
+    {
+      "param": "last_rtt",
+      "count": 144,
+      "distinctValues": 50,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "0",
+        "795",
+        "638",
+        "769",
+        "726",
+        "955",
+        "822",
+        "873"
+      ]
+    },
+    {
+      "param": "u_code",
+      "count": 140,
+      "distinctValues": 3,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "16i3h",
+        "16i3h2212\\u0026did=MS4wLjABAAAAScO3NfXuRtoG91rFde9sB7sr4fnu9D9RoBvwFERqZCzXWjtOMjhV_fcDxZgSaoOE\\u0026iid=MS4wLjABAAAA2eGrzy5bPQC9yGMG1qdWNvlc8YngMIkIprEbSAbnEXCJRGH9XL30VUKNyZhpCvO1\\u0026with_sec_did=1\\u0026sec_user_id=MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE",
+        "16i3h2212\\u0026did=MS4wLjABAAAAScO3NfXuRtoG91rFde9sB7sr4fnu9D9RoBvwFERqZCzXWjtOMjhV_fcDxZgSaoOE\\u0026iid=MS4wLjABAAAA2eGrzy5bPQC9yGMG1qdWNvlc8YngMIkIprEbSAbnEXCJRGH9XL30VUKNyZhpCvO1\\u0026with_sec_di"
+      ]
+    },
+    {
+      "param": "scene",
+      "count": 140,
+      "distinctValues": 7,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "pc_live_setting",
+        "anchor_group_live",
+        "welfare_project",
+        "room_channel_data",
+        "1",
+        "0",
+        "pc_live_boot"
+      ]
+    },
+    {
+      "param": "download_assets_from",
+      "count": 104,
+      "distinctValues": 3,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "4",
+        "2",
+        "1"
+      ]
+    },
+    {
+      "param": "arch_hrc",
+      "count": 99,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "enable_carousel",
+      "count": 96,
+      "distinctValues": 34,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "true",
+        "true?time=1775894688384",
+        "true?time=1775894688402",
+        "true?time=1775894819303",
+        "true?time=1775894819338",
+        "true?time=1775895215706",
+        "true?time=1775897286183",
+        "true?time=1775897286239"
+      ]
+    },
+    {
+      "param": "extra_first_tag_id",
+      "count": 95,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "26"
+      ]
+    },
+    {
+      "param": "extra_second_tag_id",
+      "count": 95,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "26106"
+      ]
+    },
+    {
+      "param": "extra_third_tag_id",
+      "count": 95,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "26106226"
+      ]
+    },
+    {
+      "param": "extra_encoder_core",
+      "count": 95,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "nvenc"
+      ]
+    },
+    {
+      "param": "extra_codec_name",
+      "count": 95,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "hevc_nvenc_ex"
+      ]
+    },
+    {
+      "param": "extra_codec_is_ex",
+      "count": 95,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "extra_use_265",
+      "count": 95,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "effect_sdk_version",
+      "count": 92,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "12.9.0",
+        "20.6.0"
+      ]
+    },
+    {
+      "param": "arch_",
+      "count": 88,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "liveID",
+      "count": 88,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "userID",
+      "count": 88,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "101428675708"
+      ]
+    },
+    {
+      "param": "update_version_code",
+      "count": 84,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "110802"
+      ]
+    },
+    {
+      "param": "compress",
+      "count": 84,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "gzip"
+      ]
+    },
+    {
+      "param": "cpu_score",
+      "count": 83,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "94.4"
+      ]
+    },
+    {
+      "param": "gpu_score",
+      "count": 83,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "89.9"
+      ]
+    },
+    {
+      "param": "required_asset_ids",
+      "count": 81,
+      "distinctValues": 4,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "[899,900,901,1553,1554,1555,3378]",
+        "[2040, 2059, 2060, 2101, 2102, 2104, 2105, 2184, 2213, 4434, 4445, 4735, 4736, 4737, 4738, 4739, 4740, 4741, 5147]",
+        "[6663]",
+        "[7962,8079,8080,8130,8144,8145,8146,8147,8089,8095,8101,8091,8097,8092,8096]"
+      ]
+    },
+    {
+      "param": "noBackNavi",
+      "count": 78,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "true"
+      ]
+    },
+    {
+      "param": "entry_src",
+      "count": 78,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "LIVE_PENDANT",
+        "LIVE_RIGHT_UP_PENDANT"
+      ]
+    },
+    {
+      "param": "liveStreamId",
+      "count": 78,
+      "distinctValues": 39,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "zhX8xCMw__w",
+        "IjuAguQhZ3E",
+        "Ay1kk8PopxU",
+        "Bvb6Ab-GDnY",
+        "NWHfaYhzr5Q",
+        "HBoN23flT-U",
+        "LoICHyoaPxk",
+        "OY586kqHMiI"
+      ]
+    },
+    {
+      "param": "activityBiz",
+      "count": 78,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "livePeakCup"
+      ]
+    },
+    {
+      "param": "bizId",
+      "count": 78,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "2023-12-star-anchor"
+      ]
+    },
+    {
+      "param": "layoutType",
+      "count": 78,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3"
+      ]
+    },
+    {
+      "param": "authorId",
+      "count": 78,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3701001924"
+      ]
+    },
+    {
+      "param": "disableDisplayInOverlay",
+      "count": 78,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "true",
+        "true:"
+      ]
+    },
+    {
+      "param": "hide_nav_bar",
+      "count": 71,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1\\u0026download_url=https://t.zijieimg.com/Ej32kB/"
+      ]
+    },
+    {
+      "param": "hide_n",
+      "count": 71,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "offset",
+      "count": 69,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "0"
+      ]
+    },
+    {
+      "param": "limit",
+      "count": 69,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "10",
+        "100"
+      ]
+    },
+    {
+      "param": "whitelist[0]",
+      "count": 69,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "WebcastLinkMessage"
+      ]
+    },
+    {
+      "param": "whitelist[1]",
+      "count": 69,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "WebcastLinkMicMethod"
+      ]
+    },
+    {
+      "param": "x-expires",
+      "count": 68,
+      "distinctValues": 68,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "1778307859",
+        "1778486548",
+        "1778486561",
+        "1778486576",
+        "1778486578",
+        "1778486682",
+        "1778486686",
+        "1778486698"
+      ]
+    },
+    {
+      "param": "x-signature",
+      "count": 68,
+      "distinctValues": 68,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "9xnqmLlISn++H7JDmNeA4YPgb8c=",
+        "YRp628/TihwJyHVo81axS8A5VHg=",
+        "b4AMuPKPtwJJ85u+3vwKLc3ngoY=",
+        "e7AhmQyn5RLbshyqNGh1v3JLZr4=",
+        "Zc/cT2hvc8oSUNjYd1RZcTmsjoc=",
+        "zqKhpkWq7jkXllv9GQxheuirH+E=",
+        "Zz7mDVGdXZsCWk1vyJRkV3HbB+8=",
+        "Ts7hbSfi1KzDc1Te56P3pmYqHIc="
+      ]
+    },
+    {
+      "param": "user_id",
+      "count": 67,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "101428675708"
+      ]
+    },
+    {
+      "param": "rankType",
+      "count": 66,
+      "distinctValues": 3,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "5",
+        "3",
+        "2"
+      ]
+    },
+    {
+      "param": "is_living",
+      "count": 64,
+      "distinctValues": 3,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "0",
+        "1",
+        "true"
+      ]
+    },
+    {
+      "param": "protocol_id",
+      "count": 63,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "wishList\\"
+      ]
+    },
+    {
+      "param": "user_type",
+      "count": 63,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "2"
+      ]
+    },
+    {
+      "param": "live_ad_type",
+      "count": 63,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "0"
+      ]
+    },
+    {
+      "param": "fetch_rule",
+      "count": 60,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1",
+        "2"
+      ]
+    },
+    {
+      "param": "category_id",
+      "count": 50,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "5802"
+      ]
+    },
+    {
+      "param": "sec_target_uid",
+      "count": 49,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE"
+      ]
+    },
+    {
+      "param": "search_key",
+      "count": 49,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "游戏玩法"
+      ]
+    },
+    {
+      "param": "game_label_id",
+      "count": 49,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "5802"
+      ]
+    },
+    {
+      "param": "recommendSource",
+      "count": 47,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "10"
+      ]
+    },
+    {
+      "param": "navBtn",
+      "count": 47,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "{navBtn}"
+      ]
+    },
+    {
+      "param": "category_show_type",
+      "count": 47,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "other"
+      ]
+    },
+    {
+      "param": "platform",
+      "count": 46,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "appId",
+      "count": 46,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1128"
+      ]
+    },
+    {
+      "param": "liveId",
+      "count": 46,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "targetType",
+      "count": 46,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3"
+      ]
+    },
+    {
+      "param": "gift_scene",
+      "count": 44,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "sec_to_user_id",
+      "count": 44,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "101428675708",
+        "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE"
+      ]
+    },
+    {
+      "param": "fetch_giftlist_from",
+      "count": 44,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "2",
+        "1"
+      ]
+    },
+    {
+      "param": "to_room_id",
+      "count": 44,
+      "distinctValues": 22,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "7627425757052062473",
+        "7627408998039407400",
+        "7627409520662252338",
+        "7627410105189272346",
+        "7627411768909843240",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336"
+      ]
+    },
+    {
+      "param": "room_ids",
+      "count": 44,
+      "distinctValues": 22,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "7627408998039407400",
+        "7627409520662252338",
+        "7627410105189272346",
+        "7627411768909843240",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336",
+        "7627421185638353699"
+      ]
+    },
+    {
+      "param": "current_room_id",
+      "count": 43,
+      "distinctValues": 22,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "7627408998039407400",
+        "7627409520662252338",
+        "7627410105189272346",
+        "7627411768909843240",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336",
+        "7627421185638353699"
+      ]
+    },
+    {
+      "param": "types",
+      "count": 43,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1,4"
+      ]
+    },
+    {
+      "param": "sec_user_id",
+      "count": 42,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE"
+      ]
+    },
+    {
+      "param": "rank_type",
+      "count": 42,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "30"
+      ]
+    },
+    {
+      "param": "imprp",
+      "count": 42,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "anchor_open_id",
+      "count": 38,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "101428675708"
+      ]
+    },
+    {
+      "param": "meta_ids",
+      "count": 38,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "[]"
+      ]
+    },
+    {
+      "param": "activity_id",
+      "count": 38,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "23v_8_anchor_flow"
+      ]
+    },
+    {
+      "param": "stageType",
+      "count": 31,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "{stageType}"
+      ]
+    },
+    {
+      "param": "rk3s",
+      "count": 27,
+      "distinctValues": 16,
+      "dynamicLikely": true,
+      "stableLikely": false,
+      "sampleValues": [
+        "f02852c0\\u0026x-expires=4875310140\\u0026x-signature=+1U/zbAS2uLdoPEdIpfoTTN4L28=",
+        "2b56ae7f\\u0026x-expires=1775980949\\u0026x-signature=SndVBvrGtA0OyqzFrl+ortYT8rg=",
+        "2b56ae7f\\u0026x-expires=1775980949\\u0026x-signature=lWNQIhjZq1uHLTSI1aSNPQC/pf0=",
+        "4a4a7d73\\u0026x-expires=1776499301\\u0026x-signature=ei6DGQY0mGiSqEnkCuNnVRuBKTY=",
+        "2b56ae7f\\u0026x-expires=1775981083\\u0026x-signature=H+8V+utw8SYTtHTGgGEbKupBpj4=",
+        "2b56ae7f\\u0026x-expires=1775981083\\u0026x-signature=BY5fjn3zs52Uq+lIaTYHLcEfbps=",
+        "4a4a7d73\\u0026x-expires=1776499468\\u0026x-signature=Bm3T1xE7tKqpleLRIm0TYwqfApU=",
+        "2b56ae7f\\u0026x-expires=1775981609\\u0026x-signature=y3s1xEwWssheYqK9jEgFVndhd6M="
+      ]
+    },
+    {
+      "param": "compress_type",
+      "count": 25,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "gzip"
+      ]
+    },
+    {
+      "param": "status",
+      "count": 23,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3"
+      ]
+    },
+    {
+      "param": "exhibition_source",
+      "count": 22,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "cid",
+      "count": 22,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "chgulfbc77u30lfa5e60"
+      ]
+    },
+    {
+      "param": "with_ofchannel_data",
+      "count": 22,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "true"
+      ]
+    },
+    {
+      "param": "_neptun",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "sec_owner_id",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "101428675708"
+      ]
+    },
+    {
+      "param": "keys",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "[7]"
+      ]
+    },
+    {
+      "param": "type",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "category",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "-1"
+      ]
+    },
+    {
+      "param": "fetch_from",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "2"
+      ]
+    },
+    {
+      "param": "anchor_id_str",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "101428675708"
+      ]
+    },
+    {
+      "param": "author_id",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "101428675708"
+      ]
+    },
+    {
+      "param": "use_play_mode_info",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "true"
+      ]
+    },
+    {
+      "param": "asset_265_supported",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "0"
+      ]
+    },
+    {
+      "param": "device_ctx",
+      "count": 21,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "{"
+      ]
+    },
+    {
+      "param": "owner_id",
+      "count": 20,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "101428675708"
+      ]
+    },
+    {
+      "param": "_neptu",
+      "count": 18,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "a",
+      "count": 18,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "arc",
+      "count": 16,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "ar",
+      "count": 15,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "func_keys",
+      "count": 12,
+      "distinctValues": 4,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "temp_invite_allow_setting",
+        "lite_mode",
+        "member_intro_trigger_type,member_intro_style",
+        "face_recognition_switch"
+      ]
+    },
+    {
+      "param": "arch",
+      "count": 10,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "tab_id",
+      "count": 9,
+      "distinctValues": 3,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "2",
+        "1",
+        "0"
+      ]
+    },
+    {
+      "param": "app_version",
+      "count": 7,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "11.8.2"
+      ]
+    },
+    {
+      "param": "appID",
+      "count": 6,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "2079"
+      ]
+    },
+    {
+      "param": "appName",
+      "count": 6,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "webcast_mate"
+      ]
+    },
+    {
+      "param": "version_code_number",
+      "count": 6,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1182"
+      ]
+    },
+    {
+      "param": "appVersion",
+      "count": 6,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "11.8.2"
+      ]
+    },
+    {
+      "param": "devicePlatform",
+      "count": 6,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "windows"
+      ]
+    },
+    {
+      "param": "osVersion",
+      "count": 6,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "10.0.22631"
+      ]
+    },
+    {
+      "param": "deviceID",
+      "count": 6,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3581551755921984"
+      ]
+    },
+    {
+      "param": "setting_custom_libra_filter",
+      "count": 6,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "{"
+      ]
+    },
+    {
+      "param": "setting_type",
+      "count": 6,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3",
+        "7"
+      ]
+    },
+    {
+      "param": "arch_hrch",
+      "count": 5,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "key",
+      "count": 4,
+      "distinctValues": 2,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "anchor_web_im_message_new",
+        "23v_8_anchor_flow"
+      ]
+    },
+    {
+      "param": "invariant",
+      "count": 4,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "ban_type",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "mate_version_code",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "11.8.2"
+      ]
+    },
+    {
+      "param": "_nept",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "_neptune_a",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "group_live_type",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "1"
+      ]
+    },
+    {
+      "param": "scene_name",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "douyin_6dof"
+      ]
+    },
+    {
+      "param": "sec_uids",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE"
+      ]
+    },
+    {
+      "param": "setting_key",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "virtual_cur_setting"
+      ]
+    },
+    {
+      "param": "enter_from",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "5"
+      ]
+    },
+    {
+      "param": "micro_app_entrance_visibility",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "open"
+      ]
+    },
+    {
+      "param": "entrance",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "other"
+      ]
+    },
+    {
+      "param": "permission_name",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "pc_live"
+      ]
+    },
+    {
+      "param": "version",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "version_3"
+      ]
+    },
+    {
+      "param": "request_source",
+      "count": 3,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "click"
+      ]
+    },
+    {
+      "param": "f86b0ce42da79759",
+      "count": 1,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "697e251e8ab6a3fc",
+      "count": 1,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        ""
+      ]
+    },
+    {
+      "param": "version_name",
+      "count": 1,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "11.8.2"
+      ]
+    },
+    {
+      "param": "app_id",
+      "count": 1,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "2079"
+      ]
+    },
+    {
+      "param": "gecko_bkt",
+      "count": 1,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "0"
+      ]
+    },
+    {
+      "param": "id",
+      "count": 1,
+      "distinctValues": 1,
+      "dynamicLikely": false,
+      "stableLikely": true,
+      "sampleValues": [
+        "3334"
+      ]
+    }
+  ]
+}

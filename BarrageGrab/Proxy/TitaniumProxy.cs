@@ -609,7 +609,7 @@ namespace BarrageGrab.Proxy
                         ProcessName = base.GetProcessName(processid),
                         Payload = payload
                     });
-                    Logger.LogInfo($"[RAW_MIRROR_HTTP_FORWARD] host={hostname} process={processName} ct={ct} len={payload.Length} uri={uri}");
+                    // Logger.LogInfo($"[RAW_MIRROR_HTTP_FORWARD] host={hostname} process={processName} ct={ct} len={payload.Length} uri={uri}");
                 }
             }
 
@@ -966,7 +966,7 @@ namespace BarrageGrab.Proxy
             bool isKwaiDebug = processName != null && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
             e.DecryptSsl = isKwaiDebug ? true : (isLiveProcess && CheckHost(hostname));
 
-            Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName}");
+            // Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName}");
         }
 
         // 隧道建立后，对 kwailive 进程订阅 DecryptedDataReceived（含IP直连的弹幕WS）

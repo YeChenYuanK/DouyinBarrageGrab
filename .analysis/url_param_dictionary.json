@@ -1,0 +1,3172 @@
+{
+  "meta": {
+    "logsDir": "E:\\DouyinBarrageGrab\\Output\\logs",
+    "filesScanned": 2000,
+    "totalUrls": 38357
+  },
+  "topSchemes": [
+    {
+      "scheme": "https",
+      "count": 36625
+    },
+    {
+      "scheme": "http",
+      "count": 1468
+    },
+    {
+      "scheme": "rtmp",
+      "count": 264
+    }
+  ],
+  "topHosts": [
+    {
+      "host": "p11-webcast.douyinpic.com",
+      "count": 7636
+    },
+    {
+      "host": "p3-webcast.douyinpic.com",
+      "count": 7500
+    },
+    {
+      "host": "wlog.gifshow.com",
+      "count": 5699
+    },
+    {
+      "host": "webcast5-mate-lq.amemv.com",
+      "count": 2375
+    },
+    {
+      "host": "lf6-webcastcdn-tos.douyinstatic.com",
+      "count": 1676
+    },
+    {
+      "host": "lf5-hl-ali-webcastcdn-tos.douyinstatic.com",
+      "count": 1672
+    },
+    {
+      "host": "sf1-cdn-tos.huoshanstatic.com",
+      "count": 1526
+    },
+    {
+      "host": "p6-webcast-material.byteimg.com",
+      "count": 1105
+    },
+    {
+      "host": "lf3-webcastcdn-tos.douyinstatic.com",
+      "count": 970
+    },
+    {
+      "host": "wlog.ksapisrv.com",
+      "count": 907
+    },
+    {
+      "host": "lf5-webcastcdn-tos.douyinstatic.com",
+      "count": 730
+    },
+    {
+      "host": "p3-webcast-sign.douyinpic.com",
+      "count": 478
+    },
+    {
+      "host": "p11-webcast-sign.douyinpic.com",
+      "count": 460
+    },
+    {
+      "host": "lf-webcast-gr-sourcecdn.bytegecko.com",
+      "count": 436
+    },
+    {
+      "host": "p3.douyinpic.com",
+      "count": 378
+    },
+    {
+      "host": "p26.douyinpic.com",
+      "count": 378
+    },
+    {
+      "host": "p11.douyinpic.com",
+      "count": 378
+    },
+    {
+      "host": "webcast.amemv.com",
+      "count": 359
+    },
+    {
+      "host": "p3-live.wsukwai.com",
+      "count": 298
+    },
+    {
+      "host": "lf1-webcastcdn-tos.douyinstatic.com",
+      "count": 255
+    },
+    {
+      "host": "p23.a.yximgs.com",
+      "count": 229
+    },
+    {
+      "host": "sf1-hscdn-tos.pstatp.com",
+      "count": 167
+    },
+    {
+      "host": "static.yximgs.com",
+      "count": 143
+    },
+    {
+      "host": "zjsms.com",
+      "count": 142
+    },
+    {
+      "host": "p4.a.yximgs.com",
+      "count": 125
+    },
+    {
+      "host": "lf3-static.bytednsdoc.com",
+      "count": 123
+    },
+    {
+      "host": "pull-hls-l11.douyincdn.com",
+      "count": 108
+    },
+    {
+      "host": "pull-flv-l11.douyincdn.com",
+      "count": 98
+    },
+    {
+      "host": "pull-lls-l11.douyincdn.com",
+      "count": 98
+    },
+    {
+      "host": "alive.kuaishou.com",
+      "count": 78
+    }
+  ],
+  "topPaths": [
+    {
+      "hostPath": "wlog.gifshow.com/rest/kd/log/collect",
+      "count": 5699
+    },
+    {
+      "hostPath": "wlog.ksapisrv.com/rest/kd/log/collect",
+      "count": 907
+    },
+    {
+      "hostPath": "p3-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692",
+      "count": 175
+    },
+    {
+      "hostPath": "p11-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692",
+      "count": 173
+    },
+    {
+      "hostPath": "p11-webcast.douyinpic.com/img/webcast/new_user_grade_level_v1_14.png",
+      "count": 157
+    },
+    {
+      "hostPath": "p3-live.wsukwai.com/kos/nlav10954/mentionModuleGuide/pcButtonIcon.png",
+      "count": 147
+    },
+    {
+      "hostPath": "p3-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-image.image",
+      "count": 145
+    },
+    {
+      "hostPath": "webcast.amemv.com/falcon/webcast_douyin/page/obs_intro/index.html",
+      "count": 142
+    },
+    {
+      "hostPath": "zjsms.com/8nY1Ebq/",
+      "count": 142
+    },
+    {
+      "hostPath": "p11-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-image.image",
+      "count": 129
+    },
+    {
+      "hostPath": "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mo",
+      "count": 127
+    },
+    {
+      "hostPath": "p3-webcast.douyinpic.com/img/webcast/new_user_grade_level_v1_14.png",
+      "count": 113
+    },
+    {
+      "hostPath": "p3-webcast.douyinpic.com/img/webcast/aweme_pay_grade_2x_10_14.png",
+      "count": 113
+    },
+    {
+      "hostPath": "p11-webcast.douyinpic.com/img/webcast/aweme_pay_grade_2x_10_14.png",
+      "count": 113
+    },
+    {
+      "hostPath": "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+      "count": 104
+    },
+    {
+      "hostPath": "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/banner_container_h5_douyin/template/pages/task.html",
+      "count": 96
+    },
+    {
+      "hostPath": "p3-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-common-resize:0:0.image",
+      "count": 92
+    },
+    {
+      "hostPath": "p11-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-common-resize:0:0.image",
+      "count": 92
+    },
+    {
+      "hostPath": "p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg",
+      "count": 91
+    },
+    {
+      "hostPath": "p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg",
+      "count": 91
+    },
+    {
+      "hostPath": "p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg",
+      "count": 91
+    },
+    {
+      "hostPath": "p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0ac",
+      "count": 91
+    },
+    {
+      "hostPath": "p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0a",
+      "count": 91
+    },
+    {
+      "hostPath": "p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0a",
+      "count": 91
+    },
+    {
+      "hostPath": "p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.p",
+      "count": 88
+    },
+    {
+      "hostPath": "p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.pn",
+      "count": 88
+    },
+    {
+      "hostPath": "lf1-webcastcdn-tos.douyinstatic.com/obj/webcast/anchor_info_bar_strategy.png",
+      "count": 86
+    },
+    {
+      "hostPath": "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+      "count": 85
+    },
+    {
+      "hostPath": "p3-webcast.douyinpic.com/img/webcast/2756f07818a73a8c79f024e959665110.pn",
+      "count": 84
+    },
+    {
+      "hostPath": "p11-webcast.douyinpic.com/img/webcast/2756f07818a73a8c79f024e959665110.p",
+      "count": 84
+    },
+    {
+      "hostPath": "p11-webcast.douyinpic.com/img/webcast/96e9bc9717d926732e37351fae827813.p",
+      "count": 78
+    },
+    {
+      "hostPath": "p3-webcast.douyinpic.com/img/webcast/96e9bc9717d926732e37351fae827813.pn",
+      "count": 78
+    },
+    {
+      "hostPath": "p23.a.yximgs.com/uhead/AB/2024/06/01/09/BMjAyNDA2MDEwOTEwMzVfMzcwMTAwMTkyNF9vYzEyNDI0MzM3MzkwX2x2.jpg",
+      "count": 71
+    },
+    {
+      "hostPath": "webcast.amemv.com/falcon/webcast_douyin/page/start_live_guide/index.html",
+      "count": 71
+    },
+    {
+      "hostPath": "p3-webcast.douyinpic.com/img/webcast/reach_area_normal_tips.png",
+      "count": 71
+    },
+    {
+      "hostPath": "p11-webcast.douyinpic.com/img/webcast/reach_area_normal_tips.png",
+      "count": 71
+    },
+    {
+      "hostPath": "p11-webcast.douyinpic.com/img/webcast/pupular_begin_outer_icon.png",
+      "count": 71
+    },
+    {
+      "hostPath": "p3-webcast.douyinpic.com/img/webcast/pupular_begin_outer_icon.png",
+      "count": 71
+    },
+    {
+      "hostPath": "p11-webcast.douyinpic.com/img/webcast/accompany_2/inner_icon_interact_pa",
+      "count": 71
+    },
+    {
+      "hostPath": "p3-webcast.douyinpic.com/img/webcast/accompany_2/inner_icon_interact_pan",
+      "count": 71
+    }
+  ],
+  "topUrls": [
+    {
+      "url": "https://wlog.gifshow.com/rest/kd/log/collect?v=3.10.33&kpn=3&_json=1&biz=",
+      "count": 5699
+    },
+    {
+      "url": "https://wlog.ksapisrv.com/rest/kd/log/collect?v=3.10.33&kpn=3&_json=1&biz=",
+      "count": 907
+    },
+    {
+      "url": "https://p3-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692",
+      "count": 175
+    },
+    {
+      "url": "https://p11-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692",
+      "count": 173
+    },
+    {
+      "url": "https://p11-webcast.douyinpic.com/img/webcast/new_user_grade_level_v1_14.png",
+      "count": 157
+    },
+    {
+      "url": "https://p3-live.wsukwai.com/kos/nlav10954/mentionModuleGuide/pcButtonIcon.png?x-kcdn-pid=10954",
+      "count": 147
+    },
+    {
+      "url": "https://zjsms.com/8nY1Ebq/",
+      "count": 142
+    },
+    {
+      "url": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mo",
+      "count": 127
+    },
+    {
+      "url": "https://p3-webcast.douyinpic.com/img/webcast/new_user_grade_level_v1_14.png",
+      "count": 113
+    },
+    {
+      "url": "https://p3-webcast.douyinpic.com/img/webcast/aweme_pay_grade_2x_10_14.png",
+      "count": 113
+    },
+    {
+      "url": "https://p11-webcast.douyinpic.com/img/webcast/aweme_pay_grade_2x_10_14.png",
+      "count": 113
+    },
+    {
+      "url": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg?from=3067671334",
+      "count": 91
+    },
+    {
+      "url": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg?from=3067671334",
+      "count": 91
+    },
+    {
+      "url": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg?from=3067671334",
+      "count": 91
+    },
+    {
+      "url": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0ac",
+      "count": 91
+    },
+    {
+      "url": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0a",
+      "count": 91
+    },
+    {
+      "url": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0a",
+      "count": 91
+    },
+    {
+      "url": "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.p",
+      "count": 88
+    },
+    {
+      "url": "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.pn",
+      "count": 88
+    },
+    {
+      "url": "https://lf1-webcastcdn-tos.douyinstatic.com/obj/webcast/anchor_info_bar_strategy.png",
+      "count": 86
+    },
+    {
+      "url": "https://p3-webcast.douyinpic.com/img/webcast/2756f07818a73a8c79f024e959665110.pn",
+      "count": 84
+    },
+    {
+      "url": "https://p11-webcast.douyinpic.com/img/webcast/2756f07818a73a8c79f024e959665110.p",
+      "count": 84
+    },
+    {
+      "url": "https://p11-webcast.douyinpic.com/img/webcast/96e9bc9717d926732e37351fae827813.p",
+      "count": 78
+    },
+    {
+      "url": "https://p3-webcast.douyinpic.com/img/webcast/96e9bc9717d926732e37351fae827813.pn",
+      "count": 78
+    },
+    {
+      "url": "http://p23.a.yximgs.com/uhead/AB/2024/06/01/09/BMjAyNDA2MDEwOTEwMzVfMzcwMTAwMTkyNF9vYzEyNDI0MzM3MzkwX2x2.jpg",
+      "count": 71
+    },
+    {
+      "url": "https://webcast.amemv.com/falcon/webcast_douyin/page/obs_intro/index.html?hide_nav_bar=1\\u0026download_url=https%3A%2F%2Ft.zijieimg.com%2FEj32kB%2F",
+      "count": 71
+    },
+    {
+      "url": "https://webcast.amemv.com/falcon/webcast_douyin/page/obs_intro/index.html?hide_n",
+      "count": 71
+    },
+    {
+      "url": "https://webcast.amemv.com/falcon/webcast_douyin/page/start_live_guide/index.html",
+      "count": 71
+    },
+    {
+      "url": "https://p3-webcast.douyinpic.com/img/webcast/reach_area_normal_tips.png",
+      "count": 71
+    },
+    {
+      "url": "https://p11-webcast.douyinpic.com/img/webcast/reach_area_normal_tips.png",
+      "count": 71
+    },
+    {
+      "url": "https://p11-webcast.douyinpic.com/img/webcast/pupular_begin_outer_icon.png",
+      "count": 71
+    },
+    {
+      "url": "https://p3-webcast.douyinpic.com/img/webcast/pupular_begin_outer_icon.png",
+      "count": 71
+    },
+    {
+      "url": "https://p11-webcast.douyinpic.com/img/webcast/accompany_2/inner_icon_interact_pa",
+      "count": 71
+    },
+    {
+      "url": "https://p3-webcast.douyinpic.com/img/webcast/accompany_2/inner_icon_interact_pan",
+      "count": 71
+    },
+    {
+      "url": "https://localads.chengzijianzhan.cn/lamp/orders/aweme/create/live?from=openLive",
+      "count": 71
+    },
+    {
+      "url": "https://p3-webcast.douyinpic.com/img/webcast/9f8ce6fa2bed68533f69a60e81b8fbf4.pn",
+      "count": 71
+    },
+    {
+      "url": "https://p11-webcast.douyinpic.com/img/webcast/9f8ce6fa2bed68533f69a60e81b8fbf4.p",
+      "count": 71
+    },
+    {
+      "url": "https://p3-webcast.douyinpic.com/img/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79~tplv-qz53dukwul-gauss.image",
+      "count": 66
+    },
+    {
+      "url": "https://p11-webcast.douyinpic.com/img/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79~tplv-qz53dukwul-gauss.image",
+      "count": 66
+    },
+    {
+      "url": "https://static.yximgs.com/udata/pkg/livePlutusProduct/peakcup/v3/giftIcon.png",
+      "count": 65
+    }
+  ],
+  "topParams": [
+    {
+      "param": "v",
+      "count": 6606,
+      "distinctValues": 1,
+      "topValue": "3.10.33",
+      "topValueCount": 6606,
+      "sampleValues": [
+        "3.10.33"
+      ],
+      "sampleHostPaths": [
+        "wlog.gifshow.com/rest/kd/log/collect",
+        "wlog.ksapisrv.com/rest/kd/log/collect"
+      ]
+    },
+    {
+      "param": "kpn",
+      "count": 6606,
+      "distinctValues": 1,
+      "topValue": "3",
+      "topValueCount": 6606,
+      "sampleValues": [
+        "3"
+      ],
+      "sampleHostPaths": [
+        "wlog.gifshow.com/rest/kd/log/collect",
+        "wlog.ksapisrv.com/rest/kd/log/collect"
+      ]
+    },
+    {
+      "param": "_json",
+      "count": 6606,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 6606,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "wlog.gifshow.com/rest/kd/log/collect",
+        "wlog.ksapisrv.com/rest/kd/log/collect"
+      ]
+    },
+    {
+      "param": "biz",
+      "count": 6606,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 6606,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "wlog.gifshow.com/rest/kd/log/collect",
+        "wlog.ksapisrv.com/rest/kd/log/collect"
+      ]
+    },
+    {
+      "param": "aid",
+      "count": 2536,
+      "distinctValues": 1,
+      "topValue": "2079",
+      "topValueCount": 2536,
+      "sampleValues": [
+        "2079"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "device_platform",
+      "count": 2478,
+      "distinctValues": 3,
+      "topValue": "windows",
+      "topValueCount": 2474,
+      "sampleValues": [
+        "windows",
+        "pc",
+        "iphone"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "live_id",
+      "count": 2478,
+      "distinctValues": 24,
+      "topValue": "1",
+      "topValueCount": 2407,
+      "sampleValues": [
+        "1",
+        "7627409520662252338",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336",
+        "7627421185638353699",
+        "7627425266905664290",
+        "7627425405451963176"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/growth/activity/common_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/"
+      ]
+    },
+    {
+      "param": "version_code",
+      "count": 2468,
+      "distinctValues": 3,
+      "topValue": "11.8.2",
+      "topValueCount": 2299,
+      "sampleValues": [
+        "11.8.2",
+        "110802",
+        "1182"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "webcast_sdk_version",
+      "count": 2468,
+      "distinctValues": 4,
+      "topValue": "1520",
+      "topValueCount": 2241,
+      "sampleValues": [
+        "1520",
+        "110802",
+        "1770",
+        "1182"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "device_id",
+      "count": 2468,
+      "distinctValues": 1,
+      "topValue": "3581551755921984",
+      "topValueCount": 2468,
+      "sampleValues": [
+        "3581551755921984"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "ac",
+      "count": 2443,
+      "distinctValues": 1,
+      "topValue": "wifi",
+      "topValueCount": 2443,
+      "sampleValues": [
+        "wifi"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "os_version",
+      "count": 2324,
+      "distinctValues": 1,
+      "topValue": "10.0.22631",
+      "topValueCount": 2324,
+      "sampleValues": [
+        "10.0.22631"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "app_name",
+      "count": 2299,
+      "distinctValues": 1,
+      "topValue": "webcast_mate",
+      "topValueCount": 2299,
+      "sampleValues": [
+        "webcast_mate"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "language",
+      "count": 2299,
+      "distinctValues": 1,
+      "topValue": "zh",
+      "topValueCount": 2299,
+      "sampleValues": [
+        "zh"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "resolution",
+      "count": 2293,
+      "distinctValues": 1,
+      "topValue": "1707*960",
+      "topValueCount": 2293,
+      "sampleValues": [
+        "1707*960"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "channel",
+      "count": 2263,
+      "distinctValues": 1,
+      "topValue": "online",
+      "topValueCount": 2263,
+      "sampleValues": [
+        "online"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "iid",
+      "count": 2011,
+      "distinctValues": 1,
+      "topValue": "3159367000535692",
+      "topValueCount": 2011,
+      "sampleValues": [
+        "3159367000535692"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/user/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_all_category/"
+      ]
+    },
+    {
+      "param": "msToken",
+      "count": 1851,
+      "distinctValues": 18,
+      "topValue": "BuTrqFWWnpR-9uACsBIPoXQkoVQu8GyqTQtgVyTaAsg518JnoIhk1uHL6nseDQMypWqzlXzKD-nqH3GeHEk88NOyl6ulmXSUkkv6rJSWc4DcrOxbAxxXG6Um31FSj7rx-Lp-LT6WIbv0djrkakxDkyhwjLOiWGvFGnWy6nvuoZDpJ_Y7cAvs",
+      "topValueCount": 461,
+      "sampleValues": [
+        "BuTrqFWWnpR-9uACsBIPoXQkoVQu8GyqTQtgVyTaAsg518JnoIhk1uHL6nseDQMypWqzlXzKD-nqH3GeHEk88NOyl6ulmXSUkkv6rJSWc4DcrOxbAxxXG6Um31FSj7rx-Lp-LT6WIbv0djrkakxDkyhwjLOiWGvFGnWy6nvuoZDpJ_Y7cAvs",
+        "vnTE7DQyZQS2u0ZYfVwwRrEqyHuyTZCoaD4OUyQ8gk8w4jGGonR0CDsyYg5y86-pOwE-UeWO5R8CmlNSO0i54QV4yifNFIsruEEisTk98ZRZwskjagtzVlga7ZkDDgrvi6sdM-Kn1Vr22ESbrLHTREUkShhQQXJxCrrfoxfVYEMnOrUut-BE",
+        "3ZIBfaIqKOQRRQHr--IY7EnmBnT-HuIWSLKuv0lDpk65fGEcCQN8yCzj1g9C7m9POZZb7eOLhIfmx0hek88ZsM0l_yns7LojXUxR20mlSTqxbujQvvAvUcccBpTMwHgVXDIM0_CKTskivLFaIDETmYJaC1XXTmN-oxdZhSzX5E16O7IbIkf8",
+        "BrI0xIrmRkmLqvygctJKPXRqilW2pzRzegcGWWzGOIJ_nbw7TV4EWIOUu3FxH-KYMaD9FlyjsuGrGpHI0HM1QWyE25mh_1bk24EB319VbwNm4j6Dw55euB_-5yOt9VX30OqZWiZEqsdnH3jCEd9kqYTJ_jqhvJCxmi8duoNinLgHKxSD99eg",
+        "ddgW0IBqBMWOoFECnsSvvp1MuZI_NuTjmZLvpJNEP9BauhllZHd7qP8xVBpshELh4Bum-Dtx8t_tN_KBJQhy6MZ6DPqUMZqH_PhtoDkXSHkDaDwPBqLzROGVKXYgux7CbdJcXCok6brQJUBydH0FVE2fmPARAAXNL0KrrfRcouRlBl7fbRZV",
+        "yF2E5AwXTHlVLapr_zPotBILvuW9xpqUUmoKSq6RqGf45Xosk44yEtZP7N5w08RapbewOXv5MJ0h07tNDer9lPDqZb7kW4K1vBK5VqoAe04oEKP_Ww2fS_jSG1O4wIFozvzQrijUHXzN2yoPaf-DJGp8DoUJx7NbVCqzAPMra_yvDmpwzF8p",
+        "pk4KgtBpEmWVw12x92ETrSXBI_7GA51FaPBEybnQVxRxUbYEkWdyzxgU8MrSa0hKD0KBe9Kex3PgU-hRW88tZUalZ8rYYW5xg7GYmtesz8WMF0XMhKXm1sar8OtcXqXSNmNPXtF4101Nh9JmW0uEOh5so_FKWix8nJfx1XF_hubBuxTcNylU",
+        "SWwcruC_OXFsebZpENiKtDheqUamuzh4_JAGRThZe2pjFkHytAeqbzJNtBuug9Uld6R1oT19RSirii7pkPYYmxu1cYE7NbdM9u-H4RlcZ4NXr5PUjdJCVCJYa3Oy-SwVXALFcZTGElA9mdd0nylTk7r3lWZE3XL4gUvVCZLpe-W8yQDwF4ao"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/user/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_all_category/"
+      ]
+    },
+    {
+      "param": "a_bogus",
+      "count": 1851,
+      "distinctValues": 1851,
+      "topValue": "d64nDtXjDq/ncpAG8KajSjOU0XL/NmWyvFT2bcEuePKBPHeYFrPYSNcrjoL94sItEWBGiKIHJxtAbdVcYUii1oHpKmkvSYt6x0/cVU8oZqqVaMisEqmPC80FqwBbl5UL-QQriCfRIs0E2d95INIEABIGC5F75OL2bqMVpZz9GDC8psgTVxQSC3fAIHL=",
+      "topValueCount": 1,
+      "sampleValues": [
+        "d64nDtXjDq/ncpAG8KajSjOU0XL/NmWyvFT2bcEuePKBPHeYFrPYSNcrjoL94sItEWBGiKIHJxtAbdVcYUii1oHpKmkvSYt6x0/cVU8oZqqVaMisEqmPC80FqwBbl5UL-QQriCfRIs0E2d95INIEABIGC5F75OL2bqMVpZz9GDC8psgTVxQSC3fAIHL=",
+        "dfsjkzUyQNWVcpeSmKr6SJKlvHyArmSyLFTObujutxKsPHFTBNPLSE2rJqoo4P9tEmpGiFVHGxSlYdjPu4OHIKrpLmpvSEXWo0/9V60ogqqpP0ssLHmZChszLwsTlRJLlAQ-ief5AsMJIx95nHI8AQIGy5zL5Oy2brM9p2zycDSWpPLT9x/eecjWN7L=",
+        "OJsVktWLDoWjcpCG8OrSSGql9Z9MNmSyYPioRzEK7xYoa1MGBZPLSxeJjoLosPotEmptiK3HGxtMbEdcuUi01F9kumkDuLJjos/IVU6ogqipaMvsEHDPC08FqwBbMctLe/dHief5UsMJIx95IHIEAQIa75zL5Y62RrMnpZuyJDSU3sLTnoQne-g1",
+        "QX0fDFWLYZ/jPpeGmCrRSJqlr12MrYWyEFTQbuju7xK4aXFTP1PYSiNrnqoo4B9tg8p4ioVHnxSQYDncusTbUoHpKmkDuw0So4/cVUfo8qidPzksDrDqCgmFqwsYMczLaAQ3ie65XsMJIxI59rA8Ad1a95z7QYy2SrMnp/zynDCWpsyT9n/3CaZ1",
+        "mJsfgqXyQZRjO3AtmKaWSbOUhXfMrOSyvFT/RLyK9PuCPXlGMrNYSreJJoLqsBotgWB7iq17axtMYDVcmsii1F9pFmkfSmzRo0/cVWsL/qw3a0vsLHmNC88zFwBbM5tLa/d-iHv5lsMJIx25VrImAQ3GH5zLQYy2WrM9pMuyrDS0pT6TInd4C3SAaH6=",
+        "mXs5gz7yOq/cCpASucrSSGxUtHgMrO8ygeixbz7KCxKRaHlTM1PLSOeJroL9sBotLmpXio3HnxtAYEdc84Ts1Krkomkku27b24/IVXfL2qNVaMJsEqmPCg0FuwsblRtL-5daiCfRIs0jId95VqIgAB3ae5FLQYg2brMCp2Y9nDCU3TyTI9/Ue-Za",
+        "OvUVktSjEoRROpeSYKaySjPlnHnlrQWyDeidbwjKexKmPHlTPpPLSTdJbqLqsP2tL8BJiqVHrxClbDfP80x3IF9kumkvumwWxs/IVU6ogqw3aFisgrmNC88zLwBYMczL-AdHiCv5XsME2dI59HADAQIae5Fw5mg2brZcpZYyJDSW3TyTV92ESXf=",
+        "Q7sfke77ddRjF3etYCrbSbxUJw9lrm8yDeT2bujK9xusPHlTBpPgSOerJoLo4sotgWp7iq1HJxe/YdncmUTw1oHpqmpDSqsfos25V6fL8qNdP0isDHDqC0mzLwsYMcULa5Q-i965Us0E2E25VHIDAB1GS5zw5O62brMcpZu9bDSU3BgT9o2nC-2z"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/ping/anchor/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_latest_room/",
+        "webcast5-mate-lq.amemv.com/webcast/user/",
+        "webcast5-mate-lq.amemv.com/webcast/room/get_all_category/"
+      ]
+    },
+    {
+      "param": "room_id",
+      "count": 1141,
+      "distinctValues": 26,
+      "topValue": "7627425405451963176",
+      "topValueCount": 61,
+      "sampleValues": [
+        "7627425405451963176",
+        "7627409520662252338",
+        "7627427637874494260",
+        "7627411768909843240",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336",
+        "7627421185638353699"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/",
+        "webcast5-mate-lq.amemv.com/webcast/gift/list/",
+        "webcast5-mate-lq.amemv.com/webcast/ranklist/audience/",
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/",
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/audience_limit/query/",
+        "webcast5-mate-lq.amemv.com/webcast/growth/activity/common_banner/"
+      ]
+    },
+    {
+      "param": "from",
+      "count": 638,
+      "distinctValues": 2,
+      "topValue": "3067671334",
+      "topValueCount": 567,
+      "sampleValues": [
+        "3067671334",
+        "openLive"
+      ],
+      "sampleHostPaths": [
+        "p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg",
+        "p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg",
+        "p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg",
+        "localads.chengzijianzhan.cn/lamp/orders/aweme/create/live",
+        "p11.douyinpic.com/aweme/720x720/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg",
+        "p3.douyinpic.com/aweme/720x720/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg",
+        "p26.douyinpic.com/aweme/720x720/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg",
+        "p26.douyinpic.com/aweme/1080x1080/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79.jpeg"
+      ]
+    },
+    {
+      "param": "software_arch",
+      "count": 515,
+      "distinctValues": 1,
+      "topValue": "x64",
+      "topValueCount": 515,
+      "sampleValues": [
+        "x64"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/",
+        "webcast5-mate-lq.amemv.com/webcast/show/resource/group_list/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/me/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/pk_play/get_rand_match",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/group_live/check_stage_face_completion/",
+        "webcast5-mate-lq.amemv.com/webcast/gift/exhibition/home/"
+      ]
+    },
+    {
+      "param": "os_username",
+      "count": 432,
+      "distinctValues": 1,
+      "topValue": "wuhan",
+      "topValueCount": 432,
+      "sampleValues": [
+        "wuhan"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/",
+        "webcast5-mate-lq.amemv.com/webcast/show/resource/group_list/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/me/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/pk_play/get_rand_match",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/group_live/check_stage_face_completion/",
+        "webcast5-mate-lq.amemv.com/webcast/gift/exhibition/home/",
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/"
+      ]
+    },
+    {
+      "param": "os_arch",
+      "count": 432,
+      "distinctValues": 1,
+      "topValue": "x64",
+      "topValueCount": 432,
+      "sampleValues": [
+        "x64"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/",
+        "webcast5-mate-lq.amemv.com/webcast/show/resource/group_list/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/me/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/pk_play/get_rand_match",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/group_live/check_stage_face_completion/",
+        "webcast5-mate-lq.amemv.com/webcast/gift/exhibition/home/",
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/"
+      ]
+    },
+    {
+      "param": "did",
+      "count": 402,
+      "distinctValues": 1,
+      "topValue": "3581551755921984",
+      "topValueCount": 402,
+      "sampleValues": [
+        "3581551755921984"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/",
+        "webcast5-mate-lq.amemv.com/webcast/show/resource/group_list/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/me/",
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/pk_play/get_rand_match",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/group_live/check_stage_face_completion/",
+        "webcast5-mate-lq.amemv.com/webcast/gift/exhibition/home/",
+        "webcast5-mate-lq.amemv.com/webcast/gift/list/"
+      ]
+    },
+    {
+      "param": "arch_hrchy",
+      "count": 348,
+      "distinctValues": 97,
+      "topValue": "",
+      "topValueCount": 85,
+      "sampleValues": [
+        "",
+        "c1",
+        "c",
+        "c1\\u0026expire=1776499348\\u0026sign=7e9cf927714672ef46fa5d37a9774171\\u0026t_id=037-20260411160228845E68E2AF6C1A29124B-XFGX6H",
+        "c1\\u0026expire=69e33b1a\\u0026sign=3db442abf60f0d4f1c44aa83a22ede8c\\u0026t_id=037-202604111604425D29F7D80D867126F1B9-ICWNyF",
+        "c1\\u0026expire=1776500008\\u0026sign=80ee343a5194a6e048105d291fdd850f\\u0026t_id=037-2026041116132818445263D8BFE92E823A-2pde6B\\u0026volcSecret=80ee343a5194a6e048105d291fdd850f\\u0026volcTime=1776500008",
+        "c1\\u0026expire=69e33a93\\u0026sign=984e20893056ed81190412b3a8b6e2c2\\u0026t_id=037-202604111602275554D47AE77EEC28AB35-wNsH5o",
+        "c1\\u0026expire=69e33a94\\u0026sign=15801a6f277439a14074cfe2bd900358\\u0026t_id=037-202604111602289B0CB9295C921A2B744A-kNYoll"
+      ],
+      "sampleHostPaths": [
+        "push-rtmp-l11.douyincdn.com/third/stream-695639018608001500",
+        "push-rtmp-l1.douyincdn.com/third/stream-119178283023859750",
+        "push-rtmp-l26.douyincdn.com/third/stream-695627023843066342",
+        "push-rtmp-t5.douyincdn.com/third/stream-119178274425537338",
+        "push-rtmp-l11.douyincdn.com/third/stream-407408823319396828",
+        "push-rtmp-l11.douyincdn.com/third/stream-695639203630547420",
+        "push-rtmp-hs-f5.douyincdn.com/third/stream-695639207324156587",
+        "push-rtmp-l13.douyincdn.com/third/stream-695639209400337171"
+      ]
+    },
+    {
+      "param": "arch_hr",
+      "count": 289,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 289,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-flv-l1.douyincdn.com/third/stream-119178283023859750_or4.flv",
+        "pull-lls-l1.douyincdn.com/third/stream-119178283023859750_or4.sdp",
+        "pull-flv-l11.douyincdn.com/third/stream-695639018608001500_ld.flv",
+        "pull-flv-l11.douyincdn.com/third/stream-695639018608001500_sd.flv",
+        "pull-lls-l11.douyincdn.com/third/stream-695639018608001500_md.sdp",
+        "pull-lls-l11.douyincdn.com/third/stream-695639018608001500_ld.sdp",
+        "pull-lls-l11.douyincdn.com/third/stream-695639018608001500_sd.sdp",
+        "pull-flv-l1.douyincdn.com/third/stream-119178283023859750_uhd.flv"
+      ]
+    },
+    {
+      "param": "lk3s",
+      "count": 274,
+      "distinctValues": 128,
+      "topValue": "3ec766d0",
+      "topValueCount": 46,
+      "sampleValues": [
+        "3ec766d0",
+        "071a6596",
+        "3ec766d0\\u0026x-expires=1778486548\\u0026x-signature=YRp628/TihwJyHVo81axS8A5VHg=",
+        "3ec766d0\\u0026x-expires=1778486548\\u0026x-signature=EwbKuvdAXLWjFCXJPXa3VAlLMpk=",
+        "3ec766d0\\u0026x-expires=1778486561\\u0026x-signature=b4AMuPKPtwJJ85u+3vwKLc3ngoY=",
+        "3ec766d0\\u0026x-expires=1778486561\\u0026x-signature=KgAUhiv72b7kanQ6LtjXGB4Pjkg=",
+        "3ec766d0\\u0026x-expires=1778486576\\u0026x-signature=8GLr9MsGNnIzowHVFBX47qjQUlA=",
+        "3ec766d0\\u0026x-expires=1778486576\\u0026x-signature=e7AhmQyn5RLbshyqNGh1v3JLZr4="
+      ],
+      "sampleHostPaths": [
+        "p3-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-image.image",
+        "p11-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-image.image"
+      ]
+    },
+    {
+      "param": "arch_h",
+      "count": 272,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 272,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-hls-l11.douyincdn.com/third/stream-695639018608001500_md.m3u8",
+        "pull-hls-l11.douyincdn.com/third/stream-695639018608001500_ld.m3u8",
+        "pull-hls-l11.douyincdn.com/third/stream-695639018608001500_sd.m3u8",
+        "pull-flv-l11.douyincdn.com/third/stream-695639018608001500_or4.flv",
+        "pull-lls-l11.douyincdn.com/third/stream-695639018608001500_or4.sdp",
+        "pull-hls-l11.douyincdn.com/third/stream-695639018608001500_hd.m3u8",
+        "pull-flv-l11.douyincdn.com/third/stream-695639018608001500_uhd.flv",
+        "pull-lls-l11.douyincdn.com/third/stream-695639018608001500_uhd.sdp"
+      ]
+    },
+    {
+      "param": "biz_tag",
+      "count": 226,
+      "distinctValues": 205,
+      "topValue": "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411160242ED656E4AECC95229B9C7\\u0026s=create_room\\u0026sc=webcast_cover",
+      "topValueCount": 2,
+      "sampleValues": [
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411160242ED656E4AECC95229B9C7\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=202604111604473E8864292E043322201F\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411160658A92B9B902A76382570DD\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411161334ECBE3E9912C2D62A1554\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=202604111648058000FBD3538E512718C8\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411164846EC5CEA6FD876153B2982\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=202604111649333D49A55FBEF15427875B\\u0026s=create_room\\u0026sc=webcast_cover",
+        "app_2079_webcast\\u0026from=webcast.room.pack\\u0026l=20260411165003752551DC425224301FE9\\u0026s=create_room\\u0026sc=webcast_cover"
+      ],
+      "sampleHostPaths": [
+        "p3-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-common-resize:0:0.image",
+        "p11-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-common-resize:0:0.image",
+        "p11-webcast.douyinpic.com/img/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79~tplv-resize:0:0.image",
+        "p3-webcast.douyinpic.com/img/aweme-avatar/tos-cn-avt-0015_0bf29027a0aced551fd509bacb83ef79~tplv-resize:0:0.image"
+      ]
+    },
+    {
+      "param": "x-kcdn-pid",
+      "count": 225,
+      "distinctValues": 1,
+      "topValue": "10954",
+      "topValueCount": 225,
+      "sampleValues": [
+        "10954"
+      ],
+      "sampleHostPaths": [
+        "p3-live.wsukwai.com/kos/nlav10954/mentionModuleGuide/pcButtonIcon.png",
+        "p3-live.wsukwai.com/kos/nlav10954/end_page/live_increase_popularity_reservation.png",
+        "p3-live.wsukwai.com/kos/nlav10954/end_page/live_increase_popularity_red_package.png",
+        "p3-live.wsukwai.com/kos/nlav10954/end_page/live_increase_popularity_chat.png"
+      ]
+    },
+    {
+      "param": "anchor_id",
+      "count": 213,
+      "distinctValues": 1,
+      "topValue": "101428675708",
+      "topValueCount": 213,
+      "sampleValues": [
+        "101428675708"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/ranklist/audience/",
+        "webcast5-mate-lq.amemv.com/webcast/growth/activity/common_banner/",
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/banner_container_h5_douyin/template/pages/task.html",
+        "webcast5-mate-lq.amemv.com/webcast/gift/exhibition/home/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/variety_show_game/get_variety_show_game/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/group_live/get_container/",
+        "webcast5-mate-lq.amemv.com/webcast/ranklist/hour_entrance/",
+        "webcast.amemv.com/webcast/strategy/setting/absdk/"
+      ]
+    },
+    {
+      "param": "roomID",
+      "count": 176,
+      "distinctValues": 22,
+      "topValue": "7627408998039407400",
+      "topValueCount": 8,
+      "sampleValues": [
+        "7627408998039407400",
+        "7627409520662252338",
+        "7627410105189272346",
+        "7627411768909843240",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336",
+        "7627421185638353699"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list",
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/mobile_douyin/template/pages/live_partner.html",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/native/webcast_api/room/replay/funnel_show_control/",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/replay/playback",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/close/overview",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/close/minute_trend"
+      ]
+    },
+    {
+      "param": "sec_anchor_id",
+      "count": 153,
+      "distinctValues": 2,
+      "topValue": "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE",
+      "topValueCount": 130,
+      "sampleValues": [
+        "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE",
+        "101428675708"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/user/",
+        "webcast5-mate-lq.amemv.com/webcast/gift/list/",
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/banner_container_h5_douyin/template/pages/task.html",
+        "webcast5-mate-lq.amemv.com/webcast/wish/list/",
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/",
+        "webcast5-mate-lq.amemv.com/webcast/user/permission/"
+      ]
+    },
+    {
+      "param": "device_type",
+      "count": 153,
+      "distinctValues": 2,
+      "topValue": "windows",
+      "topValueCount": 144,
+      "sampleValues": [
+        "windows",
+        "windows10.0.22631"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/",
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/channel/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/interaction_plugin/list/"
+      ]
+    },
+    {
+      "param": "cursor",
+      "count": 144,
+      "distinctValues": 50,
+      "topValue": "0",
+      "topValueCount": 43,
+      "sampleValues": [
+        "0",
+        "t-1775894689223_chu-0_chd-0",
+        "t-1775894689399_r-1_d-1_u-7627409090704048128_h-1",
+        "chd-0_t-1775895216628_chu-0",
+        "t-1775895216847_r-1_d-1_u-1_h-1",
+        "u-1_h-1_t-1775897287242_r-1_d-1",
+        "d-1_u-1_h-1_t-1775898329946_r-1",
+        "t-1775898391570_chu-0_chd-0"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/",
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/channel/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/"
+      ]
+    },
+    {
+      "param": "internal_ext",
+      "count": 144,
+      "distinctValues": 50,
+      "topValue": "",
+      "topValueCount": 43,
+      "sampleValues": [
+        "",
+        "internal_src:dim|wss_push_room_id:7627409520662252338|wss_push_did:3581551755921984|first_req_ms:1775894689215|fetch_time:1775894689223|seq:1|wss_info:0-1775894689223-0-0",
+        "internal_src:dim|wss_push_room_id:7627409520662252338|wss_push_did:3581551755921984|first_req_ms:1775894689231|fetch_time:1775894689399|seq:1|wss_info:0-1775894689399-0-0",
+        "internal_src:dim|wss_push_room_id:7627411768909843240|wss_push_did:3581551755921984|first_req_ms:1775895216622|fetch_time:1775895216628|seq:1|wss_info:0-1775895216628-0-0",
+        "internal_src:dim|wss_push_room_id:7627411768909843240|wss_push_did:3581551755921984|first_req_ms:1775895216641|fetch_time:1775895216847|seq:1|wss_info:0-1775895216847-0-0",
+        "internal_src:dim|wss_push_room_id:7627420647215778566|wss_push_did:3581551755921984|first_req_ms:1775897287070|fetch_time:1775897287242|seq:1|wss_info:0-1775897287242-0-0",
+        "internal_src:dim|wss_push_room_id:7627425171296504619|wss_push_did:3581551755921984|first_req_ms:1775898329767|fetch_time:1775898329946|seq:1|wss_info:0-1775898329946-0-0",
+        "internal_src:dim|wss_push_room_id:7627425405451963176|wss_push_did:3581551755921984|first_req_ms:1775898391562|fetch_time:1775898391570|seq:1|wss_info:0-1775898391570-0-0"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/",
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/channel/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/"
+      ]
+    },
+    {
+      "param": "support_wrds",
+      "count": 144,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 144,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/",
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/channel/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/"
+      ]
+    },
+    {
+      "param": "resp_content_type",
+      "count": 144,
+      "distinctValues": 1,
+      "topValue": "protobuf",
+      "topValueCount": 144,
+      "sampleValues": [
+        "protobuf"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/",
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/channel/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/"
+      ]
+    },
+    {
+      "param": "identity",
+      "count": 144,
+      "distinctValues": 1,
+      "topValue": "anchor",
+      "topValueCount": 144,
+      "sampleValues": [
+        "anchor"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/",
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/channel/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/"
+      ]
+    },
+    {
+      "param": "last_rtt",
+      "count": 144,
+      "distinctValues": 50,
+      "topValue": "0",
+      "topValueCount": 42,
+      "sampleValues": [
+        "0",
+        "795",
+        "638",
+        "769",
+        "726",
+        "955",
+        "822",
+        "873"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/",
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/channel/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/"
+      ]
+    },
+    {
+      "param": "u_code",
+      "count": 140,
+      "distinctValues": 3,
+      "topValue": "16i3h",
+      "topValueCount": 70,
+      "sampleValues": [
+        "16i3h",
+        "16i3h2212\\u0026did=MS4wLjABAAAAScO3NfXuRtoG91rFde9sB7sr4fnu9D9RoBvwFERqZCzXWjtOMjhV_fcDxZgSaoOE\\u0026iid=MS4wLjABAAAA2eGrzy5bPQC9yGMG1qdWNvlc8YngMIkIprEbSAbnEXCJRGH9XL30VUKNyZhpCvO1\\u0026with_sec_did=1\\u0026sec_user_id=MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE",
+        "16i3h2212\\u0026did=MS4wLjABAAAAScO3NfXuRtoG91rFde9sB7sr4fnu9D9RoBvwFERqZCzXWjtOMjhV_fcDxZgSaoOE\\u0026iid=MS4wLjABAAAA2eGrzy5bPQC9yGMG1qdWNvlc8YngMIkIprEbSAbnEXCJRGH9XL30VUKNyZhpCvO1\\u0026with_sec_di"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/douyin/webcast/reflow/7627408998039407400",
+        "webcast.amemv.com/douyin/webcast/reflow/7627410105189272346",
+        "webcast.amemv.com/douyin/webcast/reflow/7626641377291553536",
+        "webcast.amemv.com/douyin/webcast/reflow/7627409520662252338",
+        "webcast.amemv.com/douyin/webcast/reflow/7627420647215778566",
+        "webcast.amemv.com/douyin/webcast/reflow/7627420825943165711",
+        "webcast.amemv.com/douyin/webcast/reflow/7627421034342894336",
+        "webcast.amemv.com/douyin/webcast/reflow/7627421185638353699"
+      ]
+    },
+    {
+      "param": "scene",
+      "count": 140,
+      "distinctValues": 7,
+      "topValue": "pc_live_setting",
+      "topValueCount": 43,
+      "sampleValues": [
+        "pc_live_setting",
+        "anchor_group_live",
+        "welfare_project",
+        "room_channel_data",
+        "1",
+        "0",
+        "pc_live_boot"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/info_by_scene/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/me/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/interaction_game/get_available_gift_list/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/game/match/self_org/entrance/"
+      ]
+    },
+    {
+      "param": "download_assets_from",
+      "count": 104,
+      "distinctValues": 3,
+      "topValue": "4",
+      "topValueCount": 60,
+      "sampleValues": [
+        "4",
+        "2",
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/"
+      ]
+    },
+    {
+      "param": "arch_hrc",
+      "count": 99,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 99,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-flv-l1.douyincdn.com/third/stream-119178283023859750_ld.flv",
+        "pull-flv-l1.douyincdn.com/third/stream-119178283023859750_sd.flv",
+        "pull-lls-l1.douyincdn.com/third/stream-119178283023859750_md.sdp",
+        "pull-lls-l1.douyincdn.com/third/stream-119178283023859750_ld.sdp",
+        "pull-lls-l1.douyincdn.com/third/stream-119178283023859750_sd.sdp",
+        "pull-flv-l1.douyincdn.com/third/stream-119178283023859750_hd.flv",
+        "pull-lls-l1.douyincdn.com/third/stream-119178283023859750_hd.sdp",
+        "pull-lls-t5.douyincdn.com/third/stream-119178274425537338_sd.sdp"
+      ]
+    },
+    {
+      "param": "enable_carousel",
+      "count": 96,
+      "distinctValues": 34,
+      "topValue": "true",
+      "topValueCount": 63,
+      "sampleValues": [
+        "true",
+        "true?time=1775894688384",
+        "true?time=1775894688402",
+        "true?time=1775894819303",
+        "true?time=1775894819338",
+        "true?time=1775895215706",
+        "true?time=1775897286183",
+        "true?time=1775897286239"
+      ],
+      "sampleHostPaths": [
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/banner_container_h5_douyin/template/pages/task.html"
+      ]
+    },
+    {
+      "param": "extra_first_tag_id",
+      "count": 95,
+      "distinctValues": 1,
+      "topValue": "26",
+      "topValueCount": 95,
+      "sampleValues": [
+        "26"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create/",
+        "webcast5-mate-lq.amemv.com/webcast/room/push_stream/speed_test/"
+      ]
+    },
+    {
+      "param": "extra_second_tag_id",
+      "count": 95,
+      "distinctValues": 1,
+      "topValue": "26106",
+      "topValueCount": 95,
+      "sampleValues": [
+        "26106"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create/",
+        "webcast5-mate-lq.amemv.com/webcast/room/push_stream/speed_test/"
+      ]
+    },
+    {
+      "param": "extra_third_tag_id",
+      "count": 95,
+      "distinctValues": 1,
+      "topValue": "26106226",
+      "topValueCount": 95,
+      "sampleValues": [
+        "26106226"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create/",
+        "webcast5-mate-lq.amemv.com/webcast/room/push_stream/speed_test/"
+      ]
+    },
+    {
+      "param": "extra_encoder_core",
+      "count": 95,
+      "distinctValues": 1,
+      "topValue": "nvenc",
+      "topValueCount": 95,
+      "sampleValues": [
+        "nvenc"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create/",
+        "webcast5-mate-lq.amemv.com/webcast/room/push_stream/speed_test/"
+      ]
+    },
+    {
+      "param": "extra_codec_name",
+      "count": 95,
+      "distinctValues": 1,
+      "topValue": "hevc_nvenc_ex",
+      "topValueCount": 95,
+      "sampleValues": [
+        "hevc_nvenc_ex"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create/",
+        "webcast5-mate-lq.amemv.com/webcast/room/push_stream/speed_test/"
+      ]
+    },
+    {
+      "param": "extra_codec_is_ex",
+      "count": 95,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 95,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create/",
+        "webcast5-mate-lq.amemv.com/webcast/room/push_stream/speed_test/"
+      ]
+    },
+    {
+      "param": "extra_use_265",
+      "count": 95,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 95,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/create_info/",
+        "webcast5-mate-lq.amemv.com/webcast/room/create/",
+        "webcast5-mate-lq.amemv.com/webcast/room/push_stream/speed_test/"
+      ]
+    },
+    {
+      "param": "effect_sdk_version",
+      "count": 92,
+      "distinctValues": 2,
+      "topValue": "12.9.0",
+      "topValueCount": 83,
+      "sampleValues": [
+        "12.9.0",
+        "20.6.0"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/",
+        "webcast5-mate-lq.amemv.com/webcast/anchor/interaction_plugin/list/"
+      ]
+    },
+    {
+      "param": "arch_",
+      "count": 88,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 88,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-hls-l11.douyincdn.com/third/stream-695639018608001500_or4.m3u8",
+        "pull-hls-l11.douyincdn.com/third/stream-695639018608001500_uhd.m3u8",
+        "pull-t5.douyincdn.com/third/stream-119178274425537338_sd/index.m3u8",
+        "pull-t5.douyincdn.com/third/stream-119178274425537338_md/index.m3u8",
+        "pull-t5.douyincdn.com/third/stream-119178274425537338_ld/index.m3u8",
+        "pull-hls-l11.douyincdn.com/third/stream-407408823319396828_or4.m3u8",
+        "pull-hls-l11.douyincdn.com/third/stream-695639203630547420_or4.m3u8",
+        "pull-hls-l13.douyincdn.com/third/stream-695639209400337171_or4.m3u8"
+      ]
+    },
+    {
+      "param": "liveID",
+      "count": 88,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 88,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/mobile_douyin/template/pages/live_partner.html",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/replay/playback",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/close/overview",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/close/minute_trend"
+      ]
+    },
+    {
+      "param": "userID",
+      "count": 88,
+      "distinctValues": 1,
+      "topValue": "101428675708",
+      "topValueCount": 88,
+      "sampleValues": [
+        "101428675708"
+      ],
+      "sampleHostPaths": [
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/mobile_douyin/template/pages/live_partner.html",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/replay/playback",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/close/overview",
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/close/minute_trend"
+      ]
+    },
+    {
+      "param": "update_version_code",
+      "count": 84,
+      "distinctValues": 1,
+      "topValue": "110802",
+      "topValueCount": 84,
+      "sampleValues": [
+        "110802"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/",
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/"
+      ]
+    },
+    {
+      "param": "compress",
+      "count": 84,
+      "distinctValues": 1,
+      "topValue": "gzip",
+      "topValueCount": 84,
+      "sampleValues": [
+        "gzip"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/",
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/"
+      ]
+    },
+    {
+      "param": "cpu_score",
+      "count": 83,
+      "distinctValues": 1,
+      "topValue": "94.4",
+      "topValueCount": 83,
+      "sampleValues": [
+        "94.4"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/"
+      ]
+    },
+    {
+      "param": "gpu_score",
+      "count": 83,
+      "distinctValues": 1,
+      "topValue": "89.9",
+      "topValueCount": 83,
+      "sampleValues": [
+        "89.9"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/"
+      ]
+    },
+    {
+      "param": "required_asset_ids",
+      "count": 81,
+      "distinctValues": 4,
+      "topValue": "[899,900,901,1553,1554,1555,3378]",
+      "topValueCount": 22,
+      "sampleValues": [
+        "[899,900,901,1553,1554,1555,3378]",
+        "[2040, 2059, 2060, 2101, 2102, 2104, 2105, 2184, 2213, 4434, 4445, 4735, 4736, 4737, 4738, 4739, 4740, 4741, 5147]",
+        "[6663]",
+        "[7962,8079,8080,8130,8144,8145,8146,8147,8089,8095,8101,8091,8097,8092,8096]"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/"
+      ]
+    },
+    {
+      "param": "noBackNavi",
+      "count": 78,
+      "distinctValues": 1,
+      "topValue": "true",
+      "topValueCount": 78,
+      "sampleValues": [
+        "true"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/lottery",
+        "alive.kuaishou.com/live/act/regularly-activity/task-group"
+      ]
+    },
+    {
+      "param": "entry_src",
+      "count": 78,
+      "distinctValues": 2,
+      "topValue": "LIVE_PENDANT",
+      "topValueCount": 62,
+      "sampleValues": [
+        "LIVE_PENDANT",
+        "LIVE_RIGHT_UP_PENDANT"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/lottery",
+        "alive.kuaishou.com/live/act/regularly-activity/task-group"
+      ]
+    },
+    {
+      "param": "liveStreamId",
+      "count": 78,
+      "distinctValues": 39,
+      "topValue": "zhX8xCMw__w",
+      "topValueCount": 3,
+      "sampleValues": [
+        "zhX8xCMw__w",
+        "IjuAguQhZ3E",
+        "Ay1kk8PopxU",
+        "Bvb6Ab-GDnY",
+        "NWHfaYhzr5Q",
+        "HBoN23flT-U",
+        "LoICHyoaPxk",
+        "OY586kqHMiI"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/lottery",
+        "alive.kuaishou.com/live/act/regularly-activity/task-group"
+      ]
+    },
+    {
+      "param": "activityBiz",
+      "count": 78,
+      "distinctValues": 1,
+      "topValue": "livePeakCup",
+      "topValueCount": 78,
+      "sampleValues": [
+        "livePeakCup"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/lottery",
+        "alive.kuaishou.com/live/act/regularly-activity/task-group"
+      ]
+    },
+    {
+      "param": "bizId",
+      "count": 78,
+      "distinctValues": 1,
+      "topValue": "2023-12-star-anchor",
+      "topValueCount": 78,
+      "sampleValues": [
+        "2023-12-star-anchor"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/lottery",
+        "alive.kuaishou.com/live/act/regularly-activity/task-group"
+      ]
+    },
+    {
+      "param": "layoutType",
+      "count": 78,
+      "distinctValues": 1,
+      "topValue": "3",
+      "topValueCount": 78,
+      "sampleValues": [
+        "3"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/lottery",
+        "alive.kuaishou.com/live/act/regularly-activity/task-group"
+      ]
+    },
+    {
+      "param": "authorId",
+      "count": 78,
+      "distinctValues": 1,
+      "topValue": "3701001924",
+      "topValueCount": 78,
+      "sampleValues": [
+        "3701001924"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/lottery",
+        "alive.kuaishou.com/live/act/regularly-activity/task-group"
+      ]
+    },
+    {
+      "param": "disableDisplayInOverlay",
+      "count": 78,
+      "distinctValues": 2,
+      "topValue": "true",
+      "topValueCount": 62,
+      "sampleValues": [
+        "true",
+        "true:"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/lottery",
+        "alive.kuaishou.com/live/act/regularly-activity/task-group"
+      ]
+    },
+    {
+      "param": "hide_nav_bar",
+      "count": 71,
+      "distinctValues": 1,
+      "topValue": "1\\u0026download_url=https://t.zijieimg.com/Ej32kB/",
+      "topValueCount": 71,
+      "sampleValues": [
+        "1\\u0026download_url=https://t.zijieimg.com/Ej32kB/"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/falcon/webcast_douyin/page/obs_intro/index.html"
+      ]
+    },
+    {
+      "param": "hide_n",
+      "count": 71,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 71,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/falcon/webcast_douyin/page/obs_intro/index.html"
+      ]
+    },
+    {
+      "param": "offset",
+      "count": 69,
+      "distinctValues": 1,
+      "topValue": "0",
+      "topValueCount": 69,
+      "sampleValues": [
+        "0"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/",
+        "webcast5-mate-lq.amemv.com/webcast/giftmail/inbox/list/"
+      ]
+    },
+    {
+      "param": "limit",
+      "count": 69,
+      "distinctValues": 2,
+      "topValue": "10",
+      "topValueCount": 49,
+      "sampleValues": [
+        "10",
+        "100"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/",
+        "webcast5-mate-lq.amemv.com/webcast/giftmail/inbox/list/"
+      ]
+    },
+    {
+      "param": "whitelist[0]",
+      "count": 69,
+      "distinctValues": 1,
+      "topValue": "WebcastLinkMessage",
+      "topValueCount": 69,
+      "sampleValues": [
+        "WebcastLinkMessage"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/"
+      ]
+    },
+    {
+      "param": "whitelist[1]",
+      "count": 69,
+      "distinctValues": 1,
+      "topValue": "WebcastLinkMicMethod",
+      "topValueCount": 69,
+      "sampleValues": [
+        "WebcastLinkMicMethod"
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-web-lq.amemv.com/webcast/im/push/v2/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/"
+      ]
+    },
+    {
+      "param": "x-expires",
+      "count": 68,
+      "distinctValues": 68,
+      "topValue": "1778307859",
+      "topValueCount": 1,
+      "sampleValues": [
+        "1778307859",
+        "1778486548",
+        "1778486561",
+        "1778486576",
+        "1778486578",
+        "1778486682",
+        "1778486686",
+        "1778486698"
+      ],
+      "sampleHostPaths": [
+        "p3-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-image.image",
+        "p11-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-image.image"
+      ]
+    },
+    {
+      "param": "x-signature",
+      "count": 68,
+      "distinctValues": 68,
+      "topValue": "9xnqmLlISn++H7JDmNeA4YPgb8c=",
+      "topValueCount": 1,
+      "sampleValues": [
+        "9xnqmLlISn++H7JDmNeA4YPgb8c=",
+        "YRp628/TihwJyHVo81axS8A5VHg=",
+        "b4AMuPKPtwJJ85u+3vwKLc3ngoY=",
+        "e7AhmQyn5RLbshyqNGh1v3JLZr4=",
+        "Zc/cT2hvc8oSUNjYd1RZcTmsjoc=",
+        "zqKhpkWq7jkXllv9GQxheuirH+E=",
+        "Zz7mDVGdXZsCWk1vyJRkV3HbB+8=",
+        "Ts7hbSfi1KzDc1Te56P3pmYqHIc="
+      ],
+      "sampleHostPaths": [
+        "p3-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-image.image",
+        "p11-webcast-sign.douyinpic.com/webcast-cover/7565186242810022692~tplv-qz53dukwul-image.image"
+      ]
+    },
+    {
+      "param": "user_id",
+      "count": 67,
+      "distinctValues": 1,
+      "topValue": "101428675708",
+      "topValueCount": 67,
+      "sampleValues": [
+        "101428675708"
+      ],
+      "sampleHostPaths": [
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/banner_container_h5_douyin/template/pages/task.html",
+        "webcast5-mate-lq.amemv.com/webcast/trace/report/",
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/",
+        "webcast5-mate-lf.amemv.com/webcast/anchor_mount/biz_guide/bubble/"
+      ]
+    },
+    {
+      "param": "rankType",
+      "count": 66,
+      "distinctValues": 3,
+      "topValue": "5",
+      "topValueCount": 22,
+      "sampleValues": [
+        "5",
+        "3",
+        "2"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/detail/room_stats_top_list"
+      ]
+    },
+    {
+      "param": "is_living",
+      "count": 64,
+      "distinctValues": 3,
+      "topValue": "0",
+      "topValueCount": 22,
+      "sampleValues": [
+        "0",
+        "1",
+        "true"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/me/",
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/"
+      ]
+    },
+    {
+      "param": "protocol_id",
+      "count": 63,
+      "distinctValues": 1,
+      "topValue": "wishList\\",
+      "topValueCount": 63,
+      "sampleValues": [
+        "wishList\\"
+      ],
+      "sampleHostPaths": [
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/wish_list_banner_douyin/resource/pages/main.024371.js"
+      ]
+    },
+    {
+      "param": "user_type",
+      "count": 63,
+      "distinctValues": 1,
+      "topValue": "2",
+      "topValueCount": 63,
+      "sampleValues": [
+        "2"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/"
+      ]
+    },
+    {
+      "param": "live_ad_type",
+      "count": 63,
+      "distinctValues": 1,
+      "topValue": "0",
+      "topValueCount": 63,
+      "sampleValues": [
+        "0"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/in_room_banner/"
+      ]
+    },
+    {
+      "param": "fetch_rule",
+      "count": 60,
+      "distinctValues": 2,
+      "topValue": "1",
+      "topValueCount": 43,
+      "sampleValues": [
+        "1",
+        "2"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/channel/",
+        "webcast5-mate-lq.amemv.com/webcast/im/fetch/"
+      ]
+    },
+    {
+      "param": "category_id",
+      "count": 50,
+      "distinctValues": 1,
+      "topValue": "5802",
+      "topValueCount": 50,
+      "sampleValues": [
+        "5802"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/show/resource/group_list/",
+        "webcast5-mate-lq.amemv.com/webcast/game/feed/get_battle_info_display_status"
+      ]
+    },
+    {
+      "param": "sec_target_uid",
+      "count": 49,
+      "distinctValues": 1,
+      "topValue": "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE",
+      "topValueCount": 49,
+      "sampleValues": [
+        "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/user/",
+        "webcast5-mate-lq.amemv.com/webcast/user/setting/"
+      ]
+    },
+    {
+      "param": "search_key",
+      "count": 49,
+      "distinctValues": 1,
+      "topValue": "游戏玩法",
+      "topValueCount": 49,
+      "sampleValues": [
+        "游戏玩法"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "game_label_id",
+      "count": 49,
+      "distinctValues": 1,
+      "topValue": "5802",
+      "topValueCount": 49,
+      "sampleValues": [
+        "5802"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gameplay/link/anchor_entrance/search_game/"
+      ]
+    },
+    {
+      "param": "recommendSource",
+      "count": 47,
+      "distinctValues": 1,
+      "topValue": "10",
+      "topValueCount": 47,
+      "sampleValues": [
+        "10"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/lottery"
+      ]
+    },
+    {
+      "param": "navBtn",
+      "count": 47,
+      "distinctValues": 1,
+      "topValue": "{navBtn}",
+      "topValueCount": 47,
+      "sampleValues": [
+        "{navBtn}"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/lottery"
+      ]
+    },
+    {
+      "param": "category_show_type",
+      "count": 47,
+      "distinctValues": 1,
+      "topValue": "other",
+      "topValueCount": 47,
+      "sampleValues": [
+        "other"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/show/resource/group_list/"
+      ]
+    },
+    {
+      "param": "platform",
+      "count": 46,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 46,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/get_all_category/"
+      ]
+    },
+    {
+      "param": "appId",
+      "count": 46,
+      "distinctValues": 1,
+      "topValue": "1128",
+      "topValueCount": 46,
+      "sampleValues": [
+        "1128"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/frisbee/task/get_task_list"
+      ]
+    },
+    {
+      "param": "liveId",
+      "count": 46,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 46,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/frisbee/task/get_task_list"
+      ]
+    },
+    {
+      "param": "targetType",
+      "count": 46,
+      "distinctValues": 1,
+      "topValue": "3",
+      "topValueCount": 46,
+      "sampleValues": [
+        "3"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/frisbee/task/get_task_list"
+      ]
+    },
+    {
+      "param": "gift_scene",
+      "count": 44,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 44,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gift/list/"
+      ]
+    },
+    {
+      "param": "sec_to_user_id",
+      "count": 44,
+      "distinctValues": 2,
+      "topValue": "101428675708",
+      "topValueCount": 23,
+      "sampleValues": [
+        "101428675708",
+        "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gift/list/"
+      ]
+    },
+    {
+      "param": "fetch_giftlist_from",
+      "count": 44,
+      "distinctValues": 2,
+      "topValue": "2",
+      "topValueCount": 43,
+      "sampleValues": [
+        "2",
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gift/list/"
+      ]
+    },
+    {
+      "param": "to_room_id",
+      "count": 44,
+      "distinctValues": 22,
+      "topValue": "7627425757052062473",
+      "topValueCount": 3,
+      "sampleValues": [
+        "7627425757052062473",
+        "7627408998039407400",
+        "7627409520662252338",
+        "7627410105189272346",
+        "7627411768909843240",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gift/list/"
+      ]
+    },
+    {
+      "param": "room_ids",
+      "count": 44,
+      "distinctValues": 22,
+      "topValue": "7627408998039407400",
+      "topValueCount": 2,
+      "sampleValues": [
+        "7627408998039407400",
+        "7627409520662252338",
+        "7627410105189272346",
+        "7627411768909843240",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336",
+        "7627421185638353699"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/replay/info/"
+      ]
+    },
+    {
+      "param": "current_room_id",
+      "count": 43,
+      "distinctValues": 22,
+      "topValue": "7627408998039407400",
+      "topValueCount": 2,
+      "sampleValues": [
+        "7627408998039407400",
+        "7627409520662252338",
+        "7627410105189272346",
+        "7627411768909843240",
+        "7627420647215778566",
+        "7627420825943165711",
+        "7627421034342894336",
+        "7627421185638353699"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/user/"
+      ]
+    },
+    {
+      "param": "types",
+      "count": 43,
+      "distinctValues": 1,
+      "topValue": "1,4",
+      "topValueCount": 43,
+      "sampleValues": [
+        "1,4"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/room/live_fragment/count/",
+        "webcast5-mate-lq.amemv.com/webcast/room/live_fragment/list/"
+      ]
+    },
+    {
+      "param": "sec_user_id",
+      "count": 42,
+      "distinctValues": 1,
+      "topValue": "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE",
+      "topValueCount": 42,
+      "sampleValues": [
+        "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE"
+      ],
+      "sampleHostPaths": [
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/banner_container_h5_douyin/template/pages/task.html",
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/",
+        "webcast5-mate-lq.amemv.com/webcast/wallet/info/"
+      ]
+    },
+    {
+      "param": "rank_type",
+      "count": 42,
+      "distinctValues": 1,
+      "topValue": "30",
+      "topValueCount": 42,
+      "sampleValues": [
+        "30"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/ranklist/audience/"
+      ]
+    },
+    {
+      "param": "imprp",
+      "count": 42,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 42,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "webcast100-ws-c-lq.amemv.com/webcast/im/push/channel/v2/"
+      ]
+    },
+    {
+      "param": "anchor_open_id",
+      "count": 38,
+      "distinctValues": 1,
+      "topValue": "101428675708",
+      "topValueCount": 38,
+      "sampleValues": [
+        "101428675708"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/growth/activity/common_banner/"
+      ]
+    },
+    {
+      "param": "meta_ids",
+      "count": 38,
+      "distinctValues": 1,
+      "topValue": "[]",
+      "topValueCount": 38,
+      "sampleValues": [
+        "[]"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/growth/activity/common_banner/"
+      ]
+    },
+    {
+      "param": "activity_id",
+      "count": 38,
+      "distinctValues": 1,
+      "topValue": "23v_8_anchor_flow",
+      "topValueCount": 38,
+      "sampleValues": [
+        "23v_8_anchor_flow"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/growth/activity/common_banner/"
+      ]
+    },
+    {
+      "param": "stageType",
+      "count": 31,
+      "distinctValues": 1,
+      "topValue": "{stageType}",
+      "topValueCount": 31,
+      "sampleValues": [
+        "{stageType}"
+      ],
+      "sampleHostPaths": [
+        "alive.kuaishou.com/live/act/regularly-activity/task-group"
+      ]
+    },
+    {
+      "param": "rk3s",
+      "count": 27,
+      "distinctValues": 16,
+      "topValue": "f02852c0\\u0026x-expires=4875310140\\u0026x-signature=+1U/zbAS2uLdoPEdIpfoTTN4L28=",
+      "topValueCount": 3,
+      "sampleValues": [
+        "f02852c0\\u0026x-expires=4875310140\\u0026x-signature=+1U/zbAS2uLdoPEdIpfoTTN4L28=",
+        "2b56ae7f\\u0026x-expires=1775980949\\u0026x-signature=SndVBvrGtA0OyqzFrl+ortYT8rg=",
+        "2b56ae7f\\u0026x-expires=1775980949\\u0026x-signature=lWNQIhjZq1uHLTSI1aSNPQC/pf0=",
+        "4a4a7d73\\u0026x-expires=1776499301\\u0026x-signature=ei6DGQY0mGiSqEnkCuNnVRuBKTY=",
+        "2b56ae7f\\u0026x-expires=1775981083\\u0026x-signature=H+8V+utw8SYTtHTGgGEbKupBpj4=",
+        "2b56ae7f\\u0026x-expires=1775981083\\u0026x-signature=BY5fjn3zs52Uq+lIaTYHLcEfbps=",
+        "4a4a7d73\\u0026x-expires=1776499468\\u0026x-signature=Bm3T1xE7tKqpleLRIm0TYwqfApU=",
+        "2b56ae7f\\u0026x-expires=1775981609\\u0026x-signature=y3s1xEwWssheYqK9jEgFVndhd6M="
+      ],
+      "sampleHostPaths": [
+        "p3-developer-sign.bytemaimg.com/tos-cn-i-ke512zj2cu/9d26d1e1d42843bd8d0d77330fbc14ed~tplv-noop.jpeg",
+        "p3-interaction-plugin-sign.byteimg.com/tos-cn-i-yyqayckydn/8503121bbb464093ba963c9248a36c6c",
+        "p26-profitopenresouce-sign.douyinpic.com/tos-cn-i-wfv7lngdqh/ttedbc9b01728bde8410/ttstool_1.1.2.zip",
+        "p11-interaction-plugin-sign.byteimg.com/tos-cn-i-yyqayckydn/04239f806a70469c8769dbb792315d2e",
+        "p3-webcast-game-sign.byteimg.com/tos-cn-i-23auat310x/4a613f1ce56ac49c1ccea9ba86029475~tplv-23auat310x-image.image",
+        "p3-interaction-plugin-sign.byteimg.com/tos-cn-i-yyqayckydn/04239f806a70469c8769dbb792315d2e",
+        "p11-interaction-plugin-sign.byteimg.com/tos-cn-i-yyqayckydn/8503121bbb464093ba963c9248a36c6c",
+        "p3-profitopenresouce-sign.douyinpic.com/tos-cn-i-wfv7lngdqh/ttedbc9b01728bde8410/ttstool_1.1.2.zip"
+      ]
+    },
+    {
+      "param": "compress_type",
+      "count": 25,
+      "distinctValues": 1,
+      "topValue": "gzip",
+      "topValueCount": 25,
+      "sampleValues": [
+        "gzip"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/trace/report/"
+      ]
+    },
+    {
+      "param": "status",
+      "count": 23,
+      "distinctValues": 1,
+      "topValue": "3",
+      "topValueCount": 23,
+      "sampleValues": [
+        "3"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/group_live/check_stage_face_completion/"
+      ]
+    },
+    {
+      "param": "exhibition_source",
+      "count": 22,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 22,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gift/exhibition/home/"
+      ]
+    },
+    {
+      "param": "cid",
+      "count": 22,
+      "distinctValues": 1,
+      "topValue": "chgulfbc77u30lfa5e60",
+      "topValueCount": 22,
+      "sampleValues": [
+        "chgulfbc77u30lfa5e60"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/data/api/v1/component/lego/webcast_api/data/room/close/overview"
+      ]
+    },
+    {
+      "param": "with_ofchannel_data",
+      "count": 22,
+      "distinctValues": 1,
+      "topValue": "true",
+      "topValueCount": 22,
+      "sampleValues": [
+        "true"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/data/data_center/room_watch_entrance"
+      ]
+    },
+    {
+      "param": "_neptun",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 21,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-flv-l26.douyincdn.com/third/stream-695627023843066342_hd.flv",
+        "pull-flv-l26.douyincdn.com/third/stream-695627023843066342_ld.flv",
+        "pull-flv-l26.douyincdn.com/third/stream-695627023843066342_sd.flv",
+        "pull-lls-l26.douyincdn.com/third/stream-695627023843066342_md.sdp",
+        "pull-lls-l26.douyincdn.com/third/stream-695627023843066342_hd.sdp",
+        "pull-lls-l26.douyincdn.com/third/stream-695627023843066342_sd.sdp",
+        "pull-lls-l26.douyincdn.com/third/stream-695627023843066342_ld.sdp"
+      ]
+    },
+    {
+      "param": "sec_owner_id",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "101428675708",
+      "topValueCount": 21,
+      "sampleValues": [
+        "101428675708"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/linkmic_audience/get_settings/"
+      ]
+    },
+    {
+      "param": "keys",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "[7]",
+      "topValueCount": 21,
+      "sampleValues": [
+        "[7]"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/linkmic_audience/get_audience_settings/"
+      ]
+    },
+    {
+      "param": "type",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 21,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/group_live/get_container/"
+      ]
+    },
+    {
+      "param": "category",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "-1",
+      "topValueCount": 21,
+      "sampleValues": [
+        "-1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gamecp/anchor/promotion_games/"
+      ]
+    },
+    {
+      "param": "fetch_from",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "2",
+      "topValueCount": 21,
+      "sampleValues": [
+        "2"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/wish/list/"
+      ]
+    },
+    {
+      "param": "anchor_id_str",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "101428675708",
+      "topValueCount": 21,
+      "sampleValues": [
+        "101428675708"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/wish/list/"
+      ]
+    },
+    {
+      "param": "author_id",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "101428675708",
+      "topValueCount": 21,
+      "sampleValues": [
+        "101428675708"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/subscribe/task_center/get_task_center_info/"
+      ]
+    },
+    {
+      "param": "use_play_mode_info",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "true",
+      "topValueCount": 21,
+      "sampleValues": [
+        "true"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/linkmic_audience/get_play_mode_info/"
+      ]
+    },
+    {
+      "param": "asset_265_supported",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "0",
+      "topValueCount": 21,
+      "sampleValues": [
+        "0"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/"
+      ]
+    },
+    {
+      "param": "device_ctx",
+      "count": 21,
+      "distinctValues": 1,
+      "topValue": "{",
+      "topValueCount": 21,
+      "sampleValues": [
+        "{"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/assets/effects/"
+      ]
+    },
+    {
+      "param": "owner_id",
+      "count": 20,
+      "distinctValues": 1,
+      "topValue": "101428675708",
+      "topValueCount": 20,
+      "sampleValues": [
+        "101428675708"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/linkmic_audience/get_settings/v3/"
+      ]
+    },
+    {
+      "param": "_neptu",
+      "count": 18,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 18,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-flv-l26.douyincdn.com/third/stream-695627023843066342_or4.flv",
+        "pull-hls-l26.douyincdn.com/third/stream-695627023843066342_hd.m3u8",
+        "pull-hls-l26.douyincdn.com/third/stream-695627023843066342_md.m3u8",
+        "pull-lls-l26.douyincdn.com/third/stream-695627023843066342_or4.sdp",
+        "pull-hls-l26.douyincdn.com/third/stream-695627023843066342_sd.m3u8",
+        "pull-hls-l26.douyincdn.com/third/stream-695627023843066342_ld.m3u8"
+      ]
+    },
+    {
+      "param": "a",
+      "count": 18,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 18,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-flv-l1-admin.douyincdn.com/third/stream-119178283023859750_md.flv",
+        "pull-flv-t5-admin.douyincdn.com/third/stream-119178274425537338_md.flv",
+        "pull-flv-t3-admin.douyincdn.com/third/stream-119178527831753530_md.flv",
+        "pull-flv-l1-admin.douyincdn.com/third/stream-695639309596491814_md.flv",
+        "pull-flv-t5-admin.douyincdn.com/third/stream-695639210408018746_md.flv",
+        "pull-flv-l1-admin.douyincdn.com/third/stream-695639197254942758_md.flv",
+        "pull-flv-l1-admin.douyincdn.com/third/stream-695639308051415078_md.flv"
+      ]
+    },
+    {
+      "param": "arc",
+      "count": 16,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 16,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-hs-f5.flive.douyincdn.com/third/stream-695639207324156587_ld.flv",
+        "pull-hs-f5.flive.douyincdn.com/third/stream-695639207324156587_sd.flv",
+        "pull-hs-f5.flive.douyincdn.com/third/stream-695639275509645995_ld.flv",
+        "pull-hs-f5.flive.douyincdn.com/third/stream-695639275509645995_sd.flv",
+        "pull-hs-f5.flive.douyincdn.com/third/stream-695639207324156587_hd.flv",
+        "pull-hs-f5.flive.douyincdn.com/third/stream-695639275509645995_hd.flv"
+      ]
+    },
+    {
+      "param": "ar",
+      "count": 15,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 15,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-hs-f5.flive.douyincdn.com/third/stream-695639207324156587_or4.flv",
+        "pull-hs-f5.flive.douyincdn.com/third/stream-695639207324156587_md.flv",
+        "pull-hs-f5.flive.douyincdn.com/third/stream-695639275509645995_or4.flv",
+        "pull-hs-f5.flive.douyincdn.com/third/stream-695639275509645995_md.flv",
+        "pull-flv-gravity-l11.douyincdn.com/third/stream-695639018608001500.flv",
+        "pull-flv-gravity-t11.douyincdn.com/third/stream-695639062027961146.flv",
+        "pull-flv-gravity-l11.douyincdn.com/third/stream-119178563666313692.flv"
+      ]
+    },
+    {
+      "param": "func_keys",
+      "count": 12,
+      "distinctValues": 4,
+      "topValue": "temp_invite_allow_setting",
+      "topValueCount": 3,
+      "sampleValues": [
+        "temp_invite_allow_setting",
+        "lite_mode",
+        "member_intro_trigger_type,member_intro_style",
+        "face_recognition_switch"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/group_live/get_func_status/"
+      ]
+    },
+    {
+      "param": "arch",
+      "count": 10,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 10,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-t5.douyincdn.com/third/stream-119178274425537338_or4/index.m3u8",
+        "pull-t5.douyincdn.com/third/stream-119178274425537338_uhd/index.m3u8",
+        "pull-t5.douyincdn.com/third/stream-695639210408018746_or4/index.m3u8",
+        "pull-x4-f5-lls.douyincdn.com/third/stream-695639284694909611_or4.sdp",
+        "pull-t5.douyincdn.com/third/stream-695639210408018746_uhd/index.m3u8"
+      ]
+    },
+    {
+      "param": "tab_id",
+      "count": 9,
+      "distinctValues": 3,
+      "topValue": "2",
+      "topValueCount": 3,
+      "sampleValues": [
+        "2",
+        "1",
+        "0"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/interaction_plugin/list/"
+      ]
+    },
+    {
+      "param": "app_version",
+      "count": 7,
+      "distinctValues": 1,
+      "topValue": "11.8.2",
+      "topValueCount": 7,
+      "sampleValues": [
+        "11.8.2"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/",
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/cdn/api/scheme_config/api.roma.config.json"
+      ]
+    },
+    {
+      "param": "appID",
+      "count": 6,
+      "distinctValues": 1,
+      "topValue": "2079",
+      "topValueCount": 6,
+      "sampleValues": [
+        "2079"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/"
+      ]
+    },
+    {
+      "param": "appName",
+      "count": 6,
+      "distinctValues": 1,
+      "topValue": "webcast_mate",
+      "topValueCount": 6,
+      "sampleValues": [
+        "webcast_mate"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/"
+      ]
+    },
+    {
+      "param": "version_code_number",
+      "count": 6,
+      "distinctValues": 1,
+      "topValue": "1182",
+      "topValueCount": 6,
+      "sampleValues": [
+        "1182"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/"
+      ]
+    },
+    {
+      "param": "appVersion",
+      "count": 6,
+      "distinctValues": 1,
+      "topValue": "11.8.2",
+      "topValueCount": 6,
+      "sampleValues": [
+        "11.8.2"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/"
+      ]
+    },
+    {
+      "param": "devicePlatform",
+      "count": 6,
+      "distinctValues": 1,
+      "topValue": "windows",
+      "topValueCount": 6,
+      "sampleValues": [
+        "windows"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/"
+      ]
+    },
+    {
+      "param": "osVersion",
+      "count": 6,
+      "distinctValues": 1,
+      "topValue": "10.0.22631",
+      "topValueCount": 6,
+      "sampleValues": [
+        "10.0.22631"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/"
+      ]
+    },
+    {
+      "param": "deviceID",
+      "count": 6,
+      "distinctValues": 1,
+      "topValue": "3581551755921984",
+      "topValueCount": 6,
+      "sampleValues": [
+        "3581551755921984"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/"
+      ]
+    },
+    {
+      "param": "setting_custom_libra_filter",
+      "count": 6,
+      "distinctValues": 1,
+      "topValue": "{",
+      "topValueCount": 6,
+      "sampleValues": [
+        "{"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/webcast/strategy/setting/absdk/",
+        "webcast5-mate-lq.amemv.com/webcast/strategy/setting/"
+      ]
+    },
+    {
+      "param": "setting_type",
+      "count": 6,
+      "distinctValues": 2,
+      "topValue": "3",
+      "topValueCount": 3,
+      "sampleValues": [
+        "3",
+        "7"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/settings/query_list_settings/"
+      ]
+    },
+    {
+      "param": "arch_hrch",
+      "count": 5,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 5,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-x4-f5.douyincdn.com/third/stream-695639284694909611_ld.flv",
+        "pull-x4-f5.douyincdn.com/third/stream-695639284694909611_sd.flv",
+        "pull-x4-f5.douyincdn.com/third/stream-695639284694909611_hd.flv"
+      ]
+    },
+    {
+      "param": "key",
+      "count": 4,
+      "distinctValues": 2,
+      "topValue": "anchor_web_im_message_new",
+      "topValueCount": 3,
+      "sampleValues": [
+        "anchor_web_im_message_new",
+        "23v_8_anchor_flow"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/im_message/query_ab_info/",
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/h5/protocol_banner/0.0.49/protocol-runtime.min.js"
+      ]
+    },
+    {
+      "param": "invariant",
+      "count": 4,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 4,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "reactjs.org/docs/error-decoder.html"
+      ]
+    },
+    {
+      "param": "ban_type",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 3,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/review/get_latest_ban_record/"
+      ]
+    },
+    {
+      "param": "mate_version_code",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "11.8.2",
+      "topValueCount": 3,
+      "sampleValues": [
+        "11.8.2"
+      ],
+      "sampleHostPaths": [
+        "webcast.amemv.com/webcast/setting/"
+      ]
+    },
+    {
+      "param": "_nept",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 3,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-hls-l26.douyincdn.com/third/stream-695627023843066342_or4.m3u8"
+      ]
+    },
+    {
+      "param": "_neptune_a",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 3,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "pull-flv-l26.douyincdn.com/third/stream-695627023843066342.flv"
+      ]
+    },
+    {
+      "param": "group_live_type",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "1",
+      "topValueCount": 3,
+      "sampleValues": [
+        "1"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/group_live/get_member_stage_face_permission/"
+      ]
+    },
+    {
+      "param": "scene_name",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "douyin_6dof",
+      "topValueCount": 3,
+      "sampleValues": [
+        "douyin_6dof"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/vr_create/allow_list/in/"
+      ]
+    },
+    {
+      "param": "sec_uids",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE",
+      "topValueCount": 3,
+      "sampleValues": [
+        "MS4wLjABAAAAb8JqbHabkvNopdlEw82k_H7BHysI91nlSa2AJ_1b5HE"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/vr_create/allow_list/in/"
+      ]
+    },
+    {
+      "param": "setting_key",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "virtual_cur_setting",
+      "topValueCount": 3,
+      "sampleValues": [
+        "virtual_cur_setting"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/settings/query_settings/"
+      ]
+    },
+    {
+      "param": "enter_from",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "5",
+      "topValueCount": 3,
+      "sampleValues": [
+        "5"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/quiz/permission/"
+      ]
+    },
+    {
+      "param": "micro_app_entrance_visibility",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "open",
+      "topValueCount": 3,
+      "sampleValues": [
+        "open"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/user/permission/"
+      ]
+    },
+    {
+      "param": "entrance",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "other",
+      "topValueCount": 3,
+      "sampleValues": [
+        "other"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/wallet/info/"
+      ]
+    },
+    {
+      "param": "permission_name",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "pc_live",
+      "topValueCount": 3,
+      "sampleValues": [
+        "pc_live"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/permission/status/"
+      ]
+    },
+    {
+      "param": "version",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "version_3",
+      "topValueCount": 3,
+      "sampleValues": [
+        "version_3"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/anchor/permission/status/"
+      ]
+    },
+    {
+      "param": "request_source",
+      "count": 3,
+      "distinctValues": 1,
+      "topValue": "click",
+      "topValueCount": 3,
+      "sampleValues": [
+        "click"
+      ],
+      "sampleHostPaths": [
+        "webcast5-mate-lq.amemv.com/webcast/gift/vote/list/"
+      ]
+    },
+    {
+      "param": "f86b0ce42da79759",
+      "count": 1,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 1,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/disallowedcertstl.cab"
+      ]
+    },
+    {
+      "param": "697e251e8ab6a3fc",
+      "count": 1,
+      "distinctValues": 1,
+      "topValue": "",
+      "topValueCount": 1,
+      "sampleValues": [
+        ""
+      ],
+      "sampleHostPaths": [
+        "ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/pinrulesstl.cab"
+      ]
+    },
+    {
+      "param": "version_name",
+      "count": 1,
+      "distinctValues": 1,
+      "topValue": "11.8.2",
+      "topValueCount": 1,
+      "sampleValues": [
+        "11.8.2"
+      ],
+      "sampleHostPaths": [
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/cdn/api/scheme_config/api.roma.config.json"
+      ]
+    },
+    {
+      "param": "app_id",
+      "count": 1,
+      "distinctValues": 1,
+      "topValue": "2079",
+      "topValueCount": 1,
+      "sampleValues": [
+        "2079"
+      ],
+      "sampleHostPaths": [
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/cdn/api/scheme_config/api.roma.config.json"
+      ]
+    },
+    {
+      "param": "gecko_bkt",
+      "count": 1,
+      "distinctValues": 1,
+      "topValue": "0",
+      "topValueCount": 1,
+      "sampleValues": [
+        "0"
+      ],
+      "sampleHostPaths": [
+        "lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/cdn/api/scheme_config/api.roma.config.json"
+      ]
+    },
+    {
+      "param": "id",
+      "count": 1,
+      "distinctValues": 1,
+      "topValue": "3334",
+      "topValueCount": 1,
+      "sampleValues": [
+        "3334"
+      ],
+      "sampleHostPaths": [
+        "bugs.chromium.org/p/v8/issues/detail"
+      ]
+    }
+  ]
+}
