@@ -45,8 +45,20 @@ def main():
     parser = argparse.ArgumentParser(description="Generate viability report from live/blind signal files")
     parser.add_argument("--file", default="E:/DouyinBarrageGrab/Output/logs/live_control_signal.jsonl")
     parser.add_argument("--blind-file", default="E:/DouyinBarrageGrab/Output/logs/blind_control_signal.jsonl")
+    parser.add_argument(
+        "--platform",
+        choices=["douyin", "kuaishou"],
+        help="Use preset signal files for platform",
+    )
     parser.add_argument("--last", type=int, default=10, help="Only analyze last N records (default: 10)")
     args = parser.parse_args()
+
+    if args.platform == "douyin":
+        args.file = "E:/DouyinBarrageGrab/Output/logs/dy_control_signal.jsonl"
+        args.blind_file = "E:/DouyinBarrageGrab/Output/logs/blind_control_signal.jsonl"
+    elif args.platform == "kuaishou":
+        args.file = "E:/DouyinBarrageGrab/Output/logs/live_control_signal.jsonl"
+        args.blind_file = "E:/DouyinBarrageGrab/Output/logs/blind_control_signal.jsonl"
 
     path = Path(args.file)
     rows = load_lines(path)
