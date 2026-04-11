@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-04-11T23:00:04.427Z",
+  "url": "wss://livejs-ws.kuaishou.cn/group2",
+  "authParams": {
+    "appver": "10.0.0",
+    "did": "5686d7dd9cd24685",
+    "clientid": "1",
+    "timestamp": "1775948284005",
+    "nonce": "da611fea32d67231",
+    "sign": "3b445b1439b1ade55af9c5a761ce4864"
+  },
+  "totalMessages": 0,
+  "messageTypes": {},
+  "protocolHeaders": [],
+  "messages": []
+}

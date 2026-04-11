@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快手WebSocket消息解析测试</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; border-bottom: 2px solid #ff3366; padding-bottom: 10px; }
+        .section { margin: 20px 0; padding: 15px; border-left: 4px solid #3366ff; background: #f8f9fa; }
+        .status { padding: 10px; border-radius: 5px; margin: 10px 0; font-weight: bold; }
+        .connected { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .disconnected { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .message { background: #e9ecef; padding: 10px; margin: 5px 0; border-radius: 4px; font-family: monospace; }
+        .message.binary { background: #fff3cd; border-left: 4px solid #ffc107; }
+        .message.text { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+        .message.heartbeat { background: #d4edda; border-left: 4px solid #28a745; }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .btn:hover { background: #0056b3; }
+        .btn.stop { background: #dc3545; }
+        .btn.stop:hover { background: #c82333; }
+        .analysis-result { background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; border-radius: 5px; margin: 10px 0; }
+        .field-path { color: #e83e8c; font-weight: bold; }
+        .hex-view { font-family: monospace; font-size: 12px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 快手WebSocket消息解析测试</h1>
+        
+        <div class="section">
+            <h2>📡 连接配置</h2>
+            <div>
+                <label>WebSocket URL:</label>
+                <input type="text" id="wsUrl" value="wss://livejs-ws.kuaishou.cn/group5" style="width: 400px; padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            <div>
+                <button class="btn" onclick="connectWebSocket()">🔗 连接WebSocket</button>
+                <button class="btn stop" onclick="disconnectWebSocket()">❌ 断开连接</button>
+            </div>
+            <div id="connectionStatus" class="status disconnected">❌ 未连接</div>
+        </div>
+
+        <div class="section">
+            <h2>📊 连接状态</h2>
+            <div id="stats">
+                <div>总消息数: <span id="totalMessages">0</span></div>
+                <div>二进制消息: <span id="binaryMessages">0</span></div>
+                <div>文本消息: <span id="textMessages">0</span></div>
+                <div>心跳消息: <span id="heartbeatMessages">0</span></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔍 消息分析</h2>
+            <div id="messageAnalysis" class="analysis-result">
+                等待消息进行分析...
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📨 实时消息</h2>
+            <div id="messages" style="max-height: 400px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let messageCount = 0;
+        let binaryCount = 0;
+        let textCount = 0;
+        let heartbeatCount = 0;
+
+        function connectWebSocket() {
+            const url = document.getElementById('wsUrl').value;
+            if (!url) {
+                alert('请输入WebSocket URL');
+                return;
+            }
+
+            try {
+                ws = new WebSocket(url);
+                
+                ws.onopen = function(event) {
+                    updateStatus('✅ 连接成功', 'connected');
+                    console.log('WebSocket连接已建立');
+                };
+
+                ws.onmessage = function(event) {
+                    processMessage(event.data);
+                };
+
+                ws.onerror = function(error) {
+                    console.error('WebSocket错误:', error);
+                    updateStatus('❌ 连接错误', 'disconnected');
+                };
+
+                ws.onclose = function(event) {
+                    console.log('连接关闭:', event.code, event.reason);
+                    updateStatus('❌ 连接已关闭', 'disconnected');
+                };
+
+            } catch (error) {
+                console.error('连接失败:', error);
+                updateStatus('❌ 连接失败: ' + error.message, 'disconnected');
+            }
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            updateStatus('❌ 已断开连接', 'disconnected');
+        }
+
+        function updateStatus(message, type) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        function processMessage(data) {
+            messageCount++;
+            document.getElementById('totalMessages').textContent = messageCount;
+
+            let messageType = 'unknown';
+            let parsedData = '';
+            let analysis = '';
+
+            try {
+                if (data instanceof Blob) {
+                    // 二进制消息处理
+                    binaryCount++;
+                    messageType = 'binary';
+                    
+                    data.arrayBuffer().then(buffer => {
+                        const uint8Array = new Uint8Array(buffer);
+                        parsedData = Array.from(uint8Array).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                        
+                        // 分析二进制消息结构
+                        analysis = analyzeBinaryMessage(uint8Array);
+                        
+                        displayMessage(parsedData, messageType, analysis);
+                        document.getElementById('binaryMessages').textContent = binaryCount;
+                    });
+                    return;
+
+                } else if (typeof data === 'string') {
+                    // 文本消息处理
+                    textCount++;
+                    messageType = 'text';
+                    parsedData = data;
+                    
+                    // 分析文本消息
+                    analysis = analyzeTextMessage(data);
+                    document.getElementById('textMessages').textContent = textCount;
+
+                } else {
+                    parsedData = String(data);
+                }
+
+                // 检测心跳消息
+                if (isHeartbeatMessage(data)) {
+                    heartbeatCount++;
+                    messageType = 'heartbeat';
+                    document.getElementById('heartbeatMessages').textContent = heartbeatCount;
+                }
+
+                displayMessage(parsedData, messageType, analysis);
+
+            } catch (error) {
+                console.error('消息处理错误:', error);
+                displayMessage('处理错误: ' + error.message, 'error');
+            }
+        }
+
+        function analyzeBinaryMessage(uint8Array) {
+            const analysis = [];
+            const data = uint8Array;
+            
+            // 1. 检查GZIP头部 (0x1f 0x8b)
+            if (data.length >= 2 && data[0] === 0x1F && data[1] === 0x8B) {
+                analysis.push('📦 检测到GZIP压缩数据');
+                
+                // 尝试GZIP解压（offset=24）
+                if (data.length > 24) {
+                    analysis.push('🔧 尝试GZIP offset=24解压');
+                }
+            }
+            
+            // 2. 检查Protobuf特征
+            if (isLikelyProtobuf(data)) {
+                analysis.push('🔍 检测到Protobuf格式');
+                
+                // 尝试解析字段标签
+                const fields = detectProtobufFields(data);
+                if (fields.length > 0) {
+                    analysis.push('🏷️ Protobuf字段: ' + fields.join(', '));
+                }
+            }
+            
+            // 3. 检查快手心跳包特征
+            if (isKsHeartbeat(data)) {
+                analysis.push('💓 快手心跳包');
+            }
+            
+            // 4. 检查可能的文本内容
+            const textContent = extractPossibleText(data);
+            if (textContent) {
+                analysis.push('📝 可能包含文本: ' + textContent);
+            }
+            
+            return analysis.length > 0 ? analysis.join('<br>') : '无法识别消息格式';
+        }
+
+        function analyzeTextMessage(text) {
+            const analysis = [];
+            
+            if (text.includes('heartbeat') || text.includes('ping')) {
+                analysis.push('💓 心跳消息');
+            }
+            
+            if (text.includes('danmu') || text.includes('comment')) {
+                analysis.push('💬 弹幕消息');
+            }
+            
+            if (text.includes('nickname') || text.includes('user')) {
+                analysis.push('👤 用户信息');
+            }
+            
+            // 尝试JSON解析
+            try {
+                const json = JSON.parse(text);
+                analysis.push('📋 JSON格式消息');
+                if (json.type) analysis.push(`📦 消息类型: ${json.type}`);
+                if (json.data) analysis.push('🔧 包含数据字段');
+            } catch (e) {
+                // 不是JSON格式
+            }
+            
+            return analysis.length > 0 ? analysis.join('<br>') : '文本消息';
+        }
+
+        function isHeartbeatMessage(data) {
+            if (typeof data === 'string') {
+                return data.includes('heartbeat') || data.includes('ping') || data.includes('pong');
+            }
+            return false;
+        }
+
+        function isKsHeartbeat(data) {
+            if (data instanceof Uint8Array) {
+                const buf = data;
+                // 快手心跳包特征
+                if (buf.length >= 30 && buf.length <= 45) return true;
+                if (buf.length >= 16) {
+                    if (buf[0] === 0x02 && buf[1] === 0x00 && buf[2] === 0x00) return true;
+                    if (buf[0] === 0x03 && buf[1] === 0x00 && buf[4] === 0x00) return true;
+                }
+            }
+            return false;
+        }
+
+        function isLikelyProtobuf(data) {
+            if (!(data instanceof Uint8Array)) return false;
+            if (data.length < 4) return false;
+            
+            // 检查Protobuf字段标签模式
+            for (let i = 0; i < Math.min(data.length, 20); i++) {
+                const byte = data[i];
+                if (byte >= 0x08 && byte <= 0xFF) {
+                    const wireType = byte & 0x07;
+                    if (wireType >= 0 && wireType <= 5) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function detectProtobufFields(data) {
+            const fields = [];
+            if (!(data instanceof Uint8Array)) return fields;
+            
+            for (let i = 0; i < Math.min(data.length, 30); i++) {
+                const byte = data[i];
+                if (byte >= 0x08 && byte <= 0xFF) {
+                    const fieldNum = byte >> 3;
+                    const wireType = byte & 0x07;
+                    
+                    if (fieldNum > 0 && fieldNum <= 20) {
+                        fields.push(`field${fieldNum}(wire=${wireType})`);
+                        if (fields.length >= 5) break; // 最多显示5个字段
+                    }
+                }
+            }
+            return fields;
+        }
+
+        function extractPossibleText(data) {
+            if (!(data instanceof Uint8Array)) return '';
+            
+            // 查找可打印的ASCII字符
+            let text = '';
+            for (let i = 0; i < data.length; i++) {
+                if (data[i] >= 32 && data[i] <= 126) {
+                    text += String.fromCharCode(data[i]);
+                } else if (text.length > 3) {
+                    break;
+                }
+            }
+            
+            return text.length >= 4 ? text : '';
+        }
+
+        function displayMessage(content, type, analysis) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            let displayContent = content;
+            if (type === 'binary' && content.length > 100) {
+                displayContent = content.substring(0, 100) + '...';
+            }
+            
+            messageDiv.innerHTML = `
+                <strong>${new Date().toLocaleTimeString()}</strong> 
+                <span style="color: #666;">[${type}]</span><br>
+                <div class="hex-view">${displayContent}</div>
+                ${analysis ? `<div style="margin-top: 5px; color: #28a745;">${analysis}</div>` : ''}
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // 更新分析面板
+            if (analysis && analysis !== '无法识别消息格式') {
+                document.getElementById('messageAnalysis').innerHTML = `
+                    <h3>📊 最新分析结果</h3>
+                    <div>${analysis.replace(/<br>/g, '<br>• ')}</div>
+                `;
+            }
+        }
+
+        // 初始化
+        console.log('快手WebSocket消息分析工具已加载');
+    </script>
+</body>
+</html>
