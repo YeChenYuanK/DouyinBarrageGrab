@@ -150,9 +150,9 @@ namespace BarrageGrab
                 processName.IndexOf("kscloud", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 processName.IndexOf("kuaishou", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 processName.IndexOf("gifshow", StringComparison.OrdinalIgnoreCase) >= 0;
-            var isKuaishouHost = hostName.Contains("kuaishou") || hostName.Contains("wsukwai") || hostName.Contains("gifshow") || hostName.Contains("ksapis") || hostName.StartsWith("ksraw:");
+            var isKuaishouHost = hostName.Contains("kuaishou") || hostName.Contains("wsukwai") || hostName.Contains("gifshow") || hostName.Contains("ksapis") || hostName.StartsWith("ksraw:") || hostName.StartsWith("ksrawtx:");
             // 快手官方客户端抓包场景允许按域名放行，但仍要求进程特征，避免浏览器/其他应用噪音误触发
-            var allowKuaishouBypass = isKuaishouHost && (isLikelyKuaishouProcess || hostName.StartsWith("ksraw:"));
+            var allowKuaishouBypass = isKuaishouHost && (isLikelyKuaishouProcess || hostName.StartsWith("ksraw:") || hostName.StartsWith("ksrawtx:"));
             if (!allowByProcessFilter && !allowKuaishouBypass)
             {
                 Logger.LogInfo($"[WS] 进程被过滤: {e.ProcessName}，不在白名单内");
@@ -220,9 +220,15 @@ namespace BarrageGrab
 
             DumpKuaishouRawBytes("ws_raw", e.HostName, buff);
             Logger.LogInfo($"[快手] ProcessKuaishouWsData 收到数据 Len={buff.Length}");
-            if (buff.Length >= 120 || (e.HostName ?? "").StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase))
+            if (buff.Length >= 120 || (e.HostName ?? "").StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase) || (e.HostName ?? "").StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase))
             {
                 LogKuaishouPacketSignature(buff, e.HostName);
+            }
+
+            // 专门针对上行原始帧（send）做认证参数抽取，优先解决 token 抓不到的问题。
+            if ((e.HostName ?? string.Empty).StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase))
+            {
+                TryCaptureKsRuntimeParamFromRawWsPacket(buff, e.HostName, e.ProcessName, "ws.raw.tx");
             }
 
             bool protobufParsed = false;
@@ -255,6 +261,43 @@ namespace BarrageGrab
             catch (Exception ex2)
             {
                 Logger.LogWarn($"[快手] WebSocket 数据解析失败: Protobuf({protobufErr ?? "no-hit"}), JSON({ex2.Message})");
+            }
+        }
+
+        private void TryCaptureKsRuntimeParamFromRawWsPacket(byte[] buff, string hostName, string processName, string sourceTag)
+        {
+            try
+            {
+                if (buff == null || buff.Length == 0) return;
+
+                // 先尝试结构化 proto 命中
+                if (TryCaptureKsRuntimeParamFromProtoBytes(buff, sourceTag, processName))
+                {
+                    return;
+                }
+
+                // send 帧常见为 token 长串，先提取 token，再使用 synthetic id 兜底存储
+                var token = TryPickKsBinaryTokenCandidate(buff);
+                if (string.IsNullOrWhiteSpace(token)) return;
+
+                var syntheticLiveStreamId = BuildSyntheticKsLiveStreamId(processName);
+                var rawHost = (hostName ?? string.Empty).Trim();
+                if (rawHost.StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase))
+                {
+                    rawHost = rawHost.Substring("ksrawtx:".Length);
+                }
+                else if (rawHost.StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase))
+                {
+                    rawHost = rawHost.Substring("ksraw:".Length);
+                }
+
+                var wsUrl = string.IsNullOrWhiteSpace(rawHost) ? string.Empty : ("wss://" + rawHost);
+                AppRuntime.KsRuntimeParams?.Upsert(syntheticLiveStreamId, token, wsUrl, sourceTag + ".candidate");
+                Logger.LogInfo($"[KS_RUNTIME_CAPTURE_WS_SEND] source={sourceTag}.candidate process={processName} liveStreamId={syntheticLiveStreamId} tokenLen={(token?.Length ?? 0)} host={rawHost}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarn("[KS_RUNTIME_CAPTURE_WS_SEND_FAIL] " + ex.Message);
             }
         }
 

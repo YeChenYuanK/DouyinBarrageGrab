@@ -1233,6 +1233,7 @@ namespace BarrageGrab.Proxy
             var host = args.HttpClient.Request.RequestUri.Host;
             var processId = args.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processId);
+            bool isKwaiProcess = !string.IsNullOrWhiteSpace(processName) && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
             if (!string.IsNullOrWhiteSpace(processName)
                 && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0
                 && e.Count == 27 && e.Buffer[e.Offset] == 0x01)
@@ -1250,6 +1251,23 @@ namespace BarrageGrab.Proxy
             if (IsKuaishouObserveProcess(processName))
             {
                 UpdateKsFlowProfile(host, processName, e.Count, isRx: false);
+            }
+
+            // 上行原始帧透传到上层，便于提取首个 send 认证参数（token/liveStreamId）
+            bool looksTlsRecord = first == 0x16 || first == 0x17 || first == 0x14;
+            if (isKwaiProcess && !looksTlsRecord && e.Count >= 20)
+            {
+                var payload = new byte[e.Count];
+                Buffer.BlockCopy(e.Buffer, e.Offset, payload, 0, e.Count);
+                Logger.LogInfo($"[KS_TUNNEL_RAW_FORWARD_TX] host:{host} size:{payload.Length} firstByte:0x{first:X2}");
+                base.FireWsEvent(new WsMessageEventArgs()
+                {
+                    ProcessID = processId,
+                    HostName = "ksrawtx:" + host,
+                    Payload = payload,
+                    ProcessName = processName,
+                    NeedDecompress = false
+                });
             }
         }
 
