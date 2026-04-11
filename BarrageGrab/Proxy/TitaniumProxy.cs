@@ -581,6 +581,15 @@ namespace BarrageGrab.Proxy
                 var tokenPreview2 = !string.IsNullOrEmpty(token2) && token2.Length > 10 
                     ? token2.Substring(0, 10) + "..." 
                     : (token2 ?? "N/A");
+
+                if (!string.IsNullOrWhiteSpace(liveStreamId2) && liveStreamId2 != "N/A")
+                {
+                    AppRuntime.KsRuntimeParams?.Upsert(
+                        liveStreamId2,
+                        token2,
+                        uri.Contains("://") ? uri : $"wss://{hostname}{uri}",
+                        "proxy.ws.connect");
+                }
                 
                 Logger.LogInfo($"[快手] 订阅DataReceived hostname:{hostname} liveStreamId:{liveStreamId2} token:{tokenPreview2}");
             }

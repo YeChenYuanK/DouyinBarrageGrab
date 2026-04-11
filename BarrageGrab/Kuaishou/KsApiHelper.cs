@@ -343,8 +343,29 @@ namespace BarrageGrab.Kuaishou
             if (string.IsNullOrWhiteSpace(liveStreamId)) return null;
             try
             {
-                var token = TryExtractTokenFromHtml(rawHtml);
-                var wsUrls = BuildDefaultWsUrls(liveStreamId, token);
+                var token = "";
+                var wsUrls = new List<string>();
+
+                // 优先使用代理实流提取到的运行时参数，避免仅靠页面/接口猜测。
+                var runtime = AppRuntime.KsRuntimeParams?.GetByLiveStreamId(liveStreamId);
+                if (runtime != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(runtime.Token)) token = runtime.Token;
+                    if (!string.IsNullOrWhiteSpace(runtime.LastWsUrl))
+                    {
+                        wsUrls.Add(runtime.LastWsUrl);
+                    }
+                    Logger.LogInfo($"[KS] 运行时参数命中: liveStreamId={liveStreamId}, source={runtime.Source}, token长度={runtime.Token?.Length ?? 0}");
+                }
+
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    token = TryExtractTokenFromHtml(rawHtml);
+                }
+                if (!wsUrls.Any())
+                {
+                    wsUrls = BuildDefaultWsUrls(liveStreamId, token);
+                }
 
                 var apiResult = await TryGetWsInfoFromApi(liveStreamId, authorId);
                 if (apiResult != null)
@@ -353,6 +374,11 @@ namespace BarrageGrab.Kuaishou
                     if (apiResult.Item2 != null && apiResult.Item2.Any()) wsUrls = apiResult.Item2;
                 }
 
+                // 兜底：确保返回中带有当前 token 的候选地址（便于后续重试）
+                if (wsUrls == null || wsUrls.Count == 0)
+                {
+                    wsUrls = BuildDefaultWsUrls(liveStreamId, token);
+                }
                 return Tuple.Create(token, wsUrls);
             }
             catch (Exception ex)

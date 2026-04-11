@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,6 +31,11 @@ namespace BarrageGrab
         public static ComPortServer ComPortServer { get; private set; }
 
         /// <summary>
+        /// 快手运行时参数缓存（从代理流量中提取）
+        /// </summary>
+        public static KsRuntimeParamStore KsRuntimeParams { get; private set; }
+
+        /// <summary>
         /// 程序进程信息
         /// </summary>
         public static Process CurrentProcess { get; private set; } = System.Diagnostics.Process.GetCurrentProcess();
@@ -45,6 +50,7 @@ namespace BarrageGrab
             WsServer = new WsBarrageServer();
             RoomCaches = new RoomCacheManager();
             ComPortServer = new ComPortServer(WsServer);
+            KsRuntimeParams = new KsRuntimeParamStore();
         }
 
         /// <summary>
@@ -184,6 +190,56 @@ namespace BarrageGrab
                 /// </summary>
                 public int Model { get; set; }
             }
+        }
+
+        /// <summary>
+        /// 快手运行时参数缓存
+        /// </summary>
+        public class KsRuntimeParamStore
+        {
+            private readonly ConcurrentDictionary<string, KsRuntimeParam> _byLiveStreamId =
+                new ConcurrentDictionary<string, KsRuntimeParam>(StringComparer.OrdinalIgnoreCase);
+
+            public void Upsert(string liveStreamId, string token, string wsUrl, string source)
+            {
+                if (string.IsNullOrWhiteSpace(liveStreamId)) return;
+                var now = DateTime.Now;
+
+                _byLiveStreamId.AddOrUpdate(
+                    liveStreamId,
+                    _ => new KsRuntimeParam
+                    {
+                        LiveStreamId = liveStreamId,
+                        Token = token ?? string.Empty,
+                        LastWsUrl = wsUrl ?? string.Empty,
+                        Source = source ?? string.Empty,
+                        LastSeenAt = now
+                    },
+                    (_, old) =>
+                    {
+                        old.Token = !string.IsNullOrWhiteSpace(token) ? token : old.Token;
+                        old.LastWsUrl = !string.IsNullOrWhiteSpace(wsUrl) ? wsUrl : old.LastWsUrl;
+                        old.Source = !string.IsNullOrWhiteSpace(source) ? source : old.Source;
+                        old.LastSeenAt = now;
+                        return old;
+                    });
+            }
+
+            public KsRuntimeParam GetByLiveStreamId(string liveStreamId)
+            {
+                if (string.IsNullOrWhiteSpace(liveStreamId)) return null;
+                KsRuntimeParam hit;
+                return _byLiveStreamId.TryGetValue(liveStreamId, out hit) ? hit : null;
+            }
+        }
+
+        public class KsRuntimeParam
+        {
+            public string LiveStreamId { get; set; }
+            public string Token { get; set; }
+            public string LastWsUrl { get; set; }
+            public string Source { get; set; }
+            public DateTime LastSeenAt { get; set; }
         }
     }
 }
