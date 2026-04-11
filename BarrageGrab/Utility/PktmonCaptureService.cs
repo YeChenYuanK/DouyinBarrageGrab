@@ -265,13 +265,25 @@ namespace BarrageGrab.Utility
 
         private string ResolvePktmonPath()
         {
-            var system32 = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-                "System32",
-                "pktmon.exe");
-            if (File.Exists(system32)) return system32;
+            var winDir = Environment.GetEnvironmentVariable("WINDIR")
+                ?? Environment.GetFolderPath(Environment.SpecialFolder.Windows)
+                ?? @"C:\Windows";
+            var systemDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            var candidates = new[]
+            {
+                Path.Combine(winDir, "Sysnative", "pktmon.exe"),
+                Path.Combine(winDir, "System32", "pktmon.exe"),
+                Path.Combine(winDir, "System32", "PktMon.exe"),
+                string.IsNullOrWhiteSpace(systemDir) ? null : Path.Combine(systemDir, "pktmon.exe"),
+                string.IsNullOrWhiteSpace(systemDir) ? null : Path.Combine(systemDir, "PktMon.exe")
+            };
+            foreach (var file in candidates)
+            {
+                if (string.IsNullOrWhiteSpace(file)) continue;
+                if (File.Exists(file)) return file;
+            }
 
-            var where = RunProcess("cmd.exe", "/c where pktmon", 8000);
+            var where = RunProcess("cmd.exe", "/c where pktmon.exe", 8000);
             if (where.ExitCode != 0 || string.IsNullOrWhiteSpace(where.Stdout)) return null;
             var first = where.Stdout
                 .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
