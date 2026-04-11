@@ -351,6 +351,15 @@ namespace BarrageGrab.Kuaishou
 
                 // 优先使用代理实流提取到的运行时参数，避免仅靠页面/接口猜测。
                 var runtime = AppRuntime.KsRuntimeParams?.GetByLiveStreamId(liveStreamId);
+                if (runtime == null)
+                {
+                    // Fallback to latest runtime entry when key differs between API and payload capture.
+                    runtime = AppRuntime.KsRuntimeParams?.GetLatest();
+                    if (runtime != null)
+                    {
+                        Logger.LogInfo($"[KS] 运行时参数回退命中: queryLiveStreamId={liveStreamId}, fallbackLiveStreamId={runtime.LiveStreamId}, source={runtime.Source}");
+                    }
+                }
                 if (runtime != null)
                 {
                     if (!string.IsNullOrWhiteSpace(runtime.Token)) token = runtime.Token;

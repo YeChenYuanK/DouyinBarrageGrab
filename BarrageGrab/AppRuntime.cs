@@ -243,6 +243,19 @@ namespace BarrageGrab
                 return ok ? hit : null;
             }
 
+            public KsRuntimeParam GetLatest(int maxAgeSeconds = 180)
+            {
+                var now = DateTime.Now;
+                var latest = _byLiveStreamId.Values
+                    .OrderByDescending(v => v.LastSeenAt)
+                    .FirstOrDefault();
+                if (latest == null) return null;
+                var age = (now - latest.LastSeenAt).TotalSeconds;
+                var valid = age <= maxAgeSeconds;
+                Logger.LogInfo($"[KS_RUNTIME_LOOKUP_LATEST] hit={valid} ageSec={age:F1} liveStreamId={latest.LiveStreamId}");
+                return valid ? latest : null;
+            }
+
             private void TryFlushSnapshot(DateTime now)
             {
                 // Avoid excessive disk writes when network bursts happen.
