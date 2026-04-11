@@ -181,6 +181,7 @@ namespace BarrageGrab.Kuaishou
 
                 Logger.LogInfo($"[KS] 移动端页面解析成功: liveStreamId={info.LiveStreamId}, authorId={info.AuthorId}, authorName={info.AuthorName}");
 
+                Logger.LogInfo($"[KS_RUNTIME_CALLSITE] RefreshWsInfoAsync liveStreamId={info.LiveStreamId} authorId={info.AuthorId}");
                 var wsInfo = await GetDanmuWsInfo(info.LiveStreamId, info.AuthorId, html);
                 if (wsInfo != null)
                 {
@@ -320,6 +321,7 @@ namespace BarrageGrab.Kuaishou
 
                 Logger.LogInfo($"[KS] PC端页面解析成功: liveStreamId={info.LiveStreamId}, authorId={info.AuthorId}, authorName={info.AuthorName}");
 
+                Logger.LogInfo($"[KS_RUNTIME_CALLSITE] EnterRoomByRoomIdAsync liveStreamId={info.LiveStreamId} authorId={info.AuthorId}");
                 var wsInfo = await GetDanmuWsInfo(info.LiveStreamId, info.AuthorId, html);
                 if (wsInfo != null)
                 {

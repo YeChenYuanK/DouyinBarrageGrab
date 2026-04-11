@@ -51,6 +51,7 @@ namespace BarrageGrab
             RoomCaches = new RoomCacheManager();
             ComPortServer = new ComPortServer(WsServer);
             KsRuntimeParams = new KsRuntimeParamStore();
+            Logger.LogInfo("[KS_RUNTIME_BOOT] AppRuntime initialized with KsRuntimeParamStore");
         }
 
         /// <summary>
