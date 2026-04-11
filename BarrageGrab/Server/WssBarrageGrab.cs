@@ -127,7 +127,6 @@ namespace BarrageGrab
         //ws数据处理
         private void Proxy_OnWebSocketData(object sender, WsMessageEventArgs e)
         {
-            Logger.LogInfo($"[WS入口] ★★★ Proxy_OnWebSocketData 被调用 Host={e.HostName} Process={e.ProcessName} Len={e.Payload?.Length ?? -1} NeedDecomp={e.NeedDecompress}");
             var buff = e.Payload;
             if (buff != null && buff.Length > 0)
             {
@@ -155,22 +154,17 @@ namespace BarrageGrab
             var allowKuaishouBypass = isKuaishouHost && (isLikelyKuaishouProcess || hostName.StartsWith("ksraw:") || hostName.StartsWith("ksrawtx:"));
             if (!allowByProcessFilter && !allowKuaishouBypass)
             {
-                Logger.LogInfo($"[WS] 进程被过滤: {e.ProcessName}，不在白名单内");
                 return;
             }
             if (buff == null || buff.Length == 0)
             {
-                Logger.LogInfo($"[WS] 空数据包，跳过");
                 return;
             }
-
-            Logger.LogInfo($"[WS] 收到数据 Host={e.HostName} Process={e.ProcessName} Len={buff.Length} NeedDecompress={e.NeedDecompress}");
 
             // 判断是否为快手弹幕请求
             if (isKuaishouHost)
             {
                 RecordKuaishouFlow("ws", e.HostName, string.Empty, e.ProcessName, buff.Length, string.Empty, TryDecodeFlowHintText(buff));
-                Logger.LogInfo($"[WS] 识别为快手域名，转交ProcessKuaishouWsData");
                 ProcessKuaishouWsData(e);
                 return;
             }
@@ -178,7 +172,6 @@ namespace BarrageGrab
             //如果需要Gzip解压缩，但是开头字节不符合Gzip特征字节 则不处理
             if (e.NeedDecompress && buff[0] != 0x08)
             {
-                Logger.LogInfo($"[WS] Gzip数据但字节头不对({buff[0]:X2})，跳过");
                 return;
             }
 
@@ -187,14 +180,12 @@ namespace BarrageGrab
                 var enty = Serializer.Deserialize<WssResponse>(new ReadOnlyMemory<byte>(buff));
                 if (enty == null)
                 {
-                    Logger.LogInfo($"[WS] WssResponse解析为null，跳过");
                     return;
                 }
 
                 //检测包格式
                 if (!enty.Headers.Any(a => a.Key == "compress_type" && a.Value == "gzip"))
                 {
-                    Logger.LogInfo($"[WS] 无compress_type=gzip头，跳过");
                     return;
                 }
 
@@ -202,8 +193,6 @@ namespace BarrageGrab
                 //解压gzip
                 allBuff = e.NeedDecompress ? Decompress(enty.Payload) : enty.Payload;
                 var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(allBuff));
-
-                Logger.LogInfo($"[WS] 抖音解析成功，消息数={response.Messages.Count}");
                 response.Messages.ForEach(f => DoMessage(f, e.ProcessName));
             }
             catch (Exception ex)

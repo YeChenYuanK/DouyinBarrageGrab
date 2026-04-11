@@ -531,21 +531,6 @@ namespace BarrageGrab.Proxy
             var isLiveCompan = processName == "直播伴侣";
             var isWs = e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket;
 
-            // 记录所有 WebSocket CONNECT 请求，方便调试
-            if (isWs)
-            {
-                var isDouyin = webcastBarrageReg.IsMatch(uri);
-                var isKuaishou = IsKuaishouBarrageRequest(hostname, uri);
-                Logger.LogInfo($"[WS连接] Host={hostname} URI={uri} Process={processName} 抖音={isDouyin} 快手={isKuaishou}");
-            }
-
-            // 调试：记录 wsukwai 域名的所有请求（不管是否 WS）
-            if (hostname.Contains("wsukwai"))
-            {
-                var tunnelType = e.HttpClient.ConnectRequest?.TunnelType.ToString() ?? "null";
-                Logger.LogInfo($"[wsukwai调试] isWs={isWs} TunnelType={tunnelType} URI={uri} Process={processName}");
-            }
-
             // 在代理主链路上尝试提取快手运行时参数，避免仅依赖直连链路触发。
             TryCaptureKsRuntimeParamFromRequest(hostname, uri, processName, isWs ? "proxy.ws.any" : "proxy.http.any");
 
@@ -557,14 +542,6 @@ namespace BarrageGrab.Proxy
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
                 Logger.LogInfo($"[抖音] 订阅到新的弹幕流地址，roomid:{roomid}");
-            }
-
-            // 全量镜像模式：所有WS会话都订阅原始DataReceived
-            if (isWs)
-            {
-                e.DataReceived -= WebSocket_DataReceived;
-                e.DataReceived += WebSocket_DataReceived;
-                Logger.LogInfo($"[RAW_MIRROR_WS_SUB] host={hostname} process={processName} uri={uri}");
             }
 
             //ws 方式 - 快手（仅当 TunnelType 是 Websocket 时才订阅，避免对普通HTTP响应误订阅）
