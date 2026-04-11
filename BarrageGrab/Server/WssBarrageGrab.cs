@@ -1466,9 +1466,17 @@ namespace BarrageGrab
             if (text.IndexOf("主播", StringComparison.OrdinalIgnoreCase) >= 0) score += 60;
             if (text.IndexOf("你好", StringComparison.OrdinalIgnoreCase) >= 0) score += 30;
             if (ContainsGuidLikeFragment(text)) score -= 200;
+            if (text.IndexOf("人在看", StringComparison.OrdinalIgnoreCase) >= 0) score -= 260;
+            if (text.IndexOf("在线", StringComparison.OrdinalIgnoreCase) >= 0) score -= 120;
+            if (text.IndexOf("commentSource", StringComparison.OrdinalIgnoreCase) >= 0) score -= 200;
+            if (text.IndexOf("BOTTOM_BUTTON", StringComparison.OrdinalIgnoreCase) >= 0) score -= 200;
 
             // 纯昵称词倾向降分，避免把“王翠花”误当评论
             if (IsLikelyKuaishouNickname(text)) score -= 50;
+
+            var cjkCount = text.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF);
+            var alphaNumCount = text.Count(char.IsLetterOrDigit);
+            if (cjkCount >= 2 && alphaNumCount >= 4) score += 45;
 
             return score;
         }
@@ -1616,7 +1624,7 @@ namespace BarrageGrab
             {
                 "livePeakCup", "MERCHANT_", "lottie", "stickerImage", "正在看", "直播间正在开启", "host-name", "result",
                 "快手平台账号", "未成年人", "严禁主播", "人气里程碑", "欢迎开播",
-                "抢红包", "红包", "城市巅峰赛"
+                "抢红包", "红包", "城市巅峰赛", "人在看", "author_label", "commentSource", "BOTTOM_BUTTON"
             };
             if (blacklist.Any(k => text.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0)) return false;
 
