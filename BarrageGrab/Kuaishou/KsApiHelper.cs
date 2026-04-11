@@ -343,6 +343,7 @@ namespace BarrageGrab.Kuaishou
             if (string.IsNullOrWhiteSpace(liveStreamId)) return null;
             try
             {
+                Logger.LogInfo($"[KS_RUNTIME_FLOW] enter GetDanmuWsInfo liveStreamId={liveStreamId} authorId={authorId}");
                 var token = "";
                 var wsUrls = new List<string>();
 
@@ -379,6 +380,7 @@ namespace BarrageGrab.Kuaishou
                 {
                     wsUrls = BuildDefaultWsUrls(liveStreamId, token);
                 }
+                Logger.LogInfo($"[KS_RUNTIME_FLOW] exit GetDanmuWsInfo liveStreamId={liveStreamId} tokenLen={token?.Length ?? 0} wsCount={wsUrls?.Count ?? 0}");
                 return Tuple.Create(token, wsUrls);
             }
             catch (Exception ex)

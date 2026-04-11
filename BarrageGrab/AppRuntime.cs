@@ -204,6 +204,8 @@ namespace BarrageGrab
             {
                 if (string.IsNullOrWhiteSpace(liveStreamId)) return;
                 var now = DateTime.Now;
+                var tokenLen = string.IsNullOrWhiteSpace(token) ? 0 : token.Length;
+                Logger.LogInfo($"[KS_RUNTIME_UPSERT] liveStreamId={liveStreamId} tokenLen={tokenLen} source={source}");
 
                 _byLiveStreamId.AddOrUpdate(
                     liveStreamId,
@@ -229,7 +231,9 @@ namespace BarrageGrab
             {
                 if (string.IsNullOrWhiteSpace(liveStreamId)) return null;
                 KsRuntimeParam hit;
-                return _byLiveStreamId.TryGetValue(liveStreamId, out hit) ? hit : null;
+                var ok = _byLiveStreamId.TryGetValue(liveStreamId, out hit);
+                Logger.LogInfo($"[KS_RUNTIME_LOOKUP] liveStreamId={liveStreamId} hit={ok}");
+                return ok ? hit : null;
             }
         }
 
