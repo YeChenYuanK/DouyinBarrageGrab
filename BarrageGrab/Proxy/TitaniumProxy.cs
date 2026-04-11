@@ -277,18 +277,12 @@ namespace BarrageGrab.Proxy
         }
 
         /// <summary>
-        /// 检测是否为快手弹幕相关请求
+        /// 检测是否为快手弹幕相关请求（硬路由：只认固定 IP）
         /// </summary>
         private bool IsKuaishouBarrageRequest(string hostname, string uri)
         {
-            hostname = hostname?.ToLower() ?? "";
-            uri = uri?.ToLower() ?? "";
-            foreach (var h in ksBarrageHosts)
-            {
-                if (hostname.Contains(h)) return true;
-            }
-            if (ksBarrageReg.IsMatch(uri)) return true;
-            return false;
+            // 硬规则：只认 103.107.218.222，其余全部拒绝
+            return hostname == "103.107.218.222";
         }
 
         private Task ProxyServer_BeforeRequest(object sender, SessionEventArgs e)
@@ -308,7 +302,7 @@ namespace BarrageGrab.Proxy
             bool isWsUpgrade = upgradeHeader.IndexOf("websocket", StringComparison.OrdinalIgnoreCase) >= 0;
 
             // 快手抓包模式只跟随官方客户端进程，避免浏览器流量干扰鉴权链路
-            if (isKwaiProcess && (isTunnelWs || isWsUpgrade))
+            if (isKwaiProcess && isKuaishouDomain && (isTunnelWs || isWsUpgrade))
             {
                 e.DataReceived -= WebSocket_DataReceived;
                 e.DataReceived += WebSocket_DataReceived;

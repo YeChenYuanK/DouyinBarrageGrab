@@ -218,6 +218,11 @@ namespace BarrageGrab
             var buff = e.Payload;
             if (buff.Length == 0) return;
 
+            if (TryProcessKuaishouHardRouteWsPacket(buff, e.HostName, e.ProcessName))
+            {
+                return;
+            }
+
             DumpKuaishouRawBytes("ws_raw", e.HostName, buff);
             Logger.LogInfo($"[快手] ProcessKuaishouWsData 收到数据 Len={buff.Length}");
             if (buff.Length >= 120 || (e.HostName ?? "").StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase) || (e.HostName ?? "").StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase))
@@ -267,6 +272,81 @@ namespace BarrageGrab
             catch (Exception ex2)
             {
                 Logger.LogWarn($"[快手] WebSocket 数据解析失败: Protobuf({protobufErr ?? "no-hit"}), JSON({ex2.Message})");
+            }
+        }
+
+        private bool TryProcessKuaishouHardRouteWsPacket(byte[] buff, string hostName, string processName)
+        {
+            try
+            {
+                if (buff == null || buff.Length < 64) return false;
+                if (!IsKsHardWsHost(hostName)) return false;
+                if (buff[0] != 0x01) return false;
+                if (buff.Length <= 24 + 16) return false;
+
+                var gzipLen = buff.Length - 24;
+                if (gzipLen <= 0) return false;
+                if (buff[24] != 0x1F || buff[25] != 0x8B || buff[26] != 0x08) return false;
+
+                var gzip = new byte[gzipLen];
+                Buffer.BlockCopy(buff, 24, gzip, 0, gzipLen);
+                var inflated = Decompress(gzip);
+                if (inflated == null || inflated.Length == 0) return false;
+
+                var sessionId = ExtractKsSessionId(inflated);
+                if (string.IsNullOrWhiteSpace(sessionId)) return false;
+
+                var tokens = ExtractProtoStringTokens(inflated, maxTokens: 192);
+                var expanded = ExpandKuaishouTokensWithBase64(tokens, maxTokens: 240);
+                var chatCandidate = expanded
+                    .Where(t => IsLikelyKuaishouChatText(t))
+                    .Where(t => !IsLikelyKuaishouNickname(t))
+                    .Where(t => !ContainsGuidLikeFragment(t))
+                    .OrderByDescending(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF))
+                    .ThenBy(t => t.Length)
+                    .FirstOrDefault();
+
+                if (string.IsNullOrWhiteSpace(chatCandidate)) return true;
+                if (!TryPushKuaishouFallbackText(chatCandidate)) return true;
+
+                var nickname = ResolveKuaishouNickname(expanded, chatCandidate);
+                FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
+                {
+                    Content = chatCandidate,
+                    User = new Modles.ProtoEntity.KsUser
+                    {
+                        Nickname = nickname,
+                        UserId = "",
+                        HeadUrl = ""
+                    }
+                });
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool IsKsHardWsHost(string hostName)
+        {
+            var h = (hostName ?? string.Empty).Trim();
+            if (h.StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase)) h = h.Substring("ksrawtx:".Length);
+            if (h.StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase)) h = h.Substring("ksraw:".Length);
+            return string.Equals(h, "103.107.218.222", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private string ExtractKsSessionId(byte[] inflated)
+        {
+            try
+            {
+                var text = Encoding.UTF8.GetString(inflated);
+                var m = Regex.Match(text, @"[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}");
+                return m.Success ? m.Value : string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
             }
         }
 
@@ -2072,6 +2152,7 @@ namespace BarrageGrab
             Logger.LogInfo($"[快手][弹幕] {msg.User?.Nickname ?? "快手用户"}: {msg.Content ?? ""}");
             var data = new JObject
             {
+                ["Timestamp"] = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
                 ["Content"] = msg.Content ?? "",
                 ["User"] = new JObject
                 {

@@ -22,14 +22,29 @@ namespace BarrageGrab
             "[KS_RAW_ALL_TOKENS]",
             "[KS_FLOW_LEDGER]",
             "[KS_FLOW_SCORE]",
+            "[KS_BIZ_PACKET]",
             "[KS_HTTP_HOST_TOP]",
             "[KS_HTTP_PREFLIGHT_ROUTE]",
             "[RAW_MIRROR_HTTP_FORWARD]",
             "[KS_STATE_TEXT_PROBE]",
+            "[KS_STATE_PROBE]",
+            "[KS_STATE_CONFIRMED]",
+            "[KS_STATE_CANDIDATE]",
+            "[KS_ROOM_JSON_RAW]",
             "[KS_ROOM_JSON]",
+            "[KS_ROOM_HINT]",
+            "[KS_ROLE]",
+            "[KS_SESSION]",
             "[KS_URL_DECODED]",
             "[KS_REVERSE]",
-            "[KS_DEBUG]"
+            "[KS_DEBUG]",
+            "[快手] ProcessKuaishouWsData",
+            "[快手][包特征]",
+            "[快手] GZIP命中",
+            "[快手] GZIP解包后",
+            "[快手] Protobuf命中",
+            "[快手] Protobuf解析成功",
+            "[快手][Fallback]"
         };
 
         static Logger()
