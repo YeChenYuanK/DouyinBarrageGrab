@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -437,6 +437,7 @@ namespace BarrageGrab
                         Logger.LogInfo($"[KS_REVERSE] classify=broadcast wire={wireSummary}");
                     }
                     LogKuaishouStateTextProbe(inflated, wireSummary);
+                    TryCaptureKsRuntimeParamFromInflated(inflated, $"ws.gzip.at.{i}", processName);
                     LogKuaishouPacketSignature(inflated, $"ksgzip:{i}");
                     // hints 更适合做观测，不再直接触发评论，避免“江北/王翠花”类误报
                     TryLogKuaishouSessionInfo(inflated, allowFallbackEmit: false);
@@ -480,6 +481,42 @@ namespace BarrageGrab
             }
 
             return false;
+        }
+
+        private void TryCaptureKsRuntimeParamFromInflated(byte[] inflated, string sourceTag, string processName)
+        {
+            try
+            {
+                if (inflated == null || inflated.Length == 0) return;
+                var text = Encoding.UTF8.GetString(inflated);
+                if (string.IsNullOrWhiteSpace(text)) return;
+
+                var liveStreamId = Regex.Match(
+                    text,
+                    @"liveStreamId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})",
+                    RegexOptions.IgnoreCase).Groups[1].Value;
+                if (string.IsNullOrWhiteSpace(liveStreamId))
+                {
+                    liveStreamId = Regex.Match(
+                        text,
+                        @"roomId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})",
+                        RegexOptions.IgnoreCase).Groups[1].Value;
+                }
+                if (string.IsNullOrWhiteSpace(liveStreamId)) return;
+
+                var token = Regex.Match(
+                    text,
+                    @"token[=:\""\\s]{0,6}([A-Za-z0-9_\-\.]{8,256})",
+                    RegexOptions.IgnoreCase).Groups[1].Value;
+                var wsUrl = Regex.Match(text, @"wss://[^\s\""']+", RegexOptions.IgnoreCase).Value;
+
+                AppRuntime.KsRuntimeParams?.Upsert(liveStreamId, token, wsUrl, sourceTag);
+                Logger.LogInfo($"[KS_RUNTIME_CAPTURE_TEXT] source={sourceTag} process={processName} liveStreamId={liveStreamId} tokenLen={(token?.Length ?? 0)}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarn("[KS_RUNTIME_CAPTURE_TEXT_FAIL] " + ex.Message);
+            }
         }
 
         private void LogKuaishouStateTextProbe(byte[] inflated, string wireSummary)
