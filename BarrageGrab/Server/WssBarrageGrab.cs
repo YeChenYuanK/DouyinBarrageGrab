@@ -250,6 +250,12 @@ namespace BarrageGrab
                 return;
             }
 
+            // 基于实战样本：大量评论事件包在 raw/candidate 层可抽出文本 token，但未命中标准 envelope。
+            if (TryProcessKuaishouBusinessPacketWithCandidates(buff, e.ProcessName))
+            {
+                return;
+            }
+
             // 二层协议：外层二进制头 + 内层 GZIP（日志已确认存在 1F 8B 08）
             if (TryProcessKuaishouEmbeddedGzip(buff, e.ProcessName)) return;
 
@@ -326,6 +332,122 @@ namespace BarrageGrab
             }
 
             return false;
+        }
+
+        private readonly List<string> _ksBizPacketDedup = new List<string>();
+        private readonly object _ksBizPacketDedupLock = new object();
+
+        private bool TryPushKuaishouBizPacketDedup(string key)
+        {
+            lock (_ksBizPacketDedupLock)
+            {
+                if (_ksBizPacketDedup.Contains(key)) return false;
+                _ksBizPacketDedup.Add(key);
+                while (_ksBizPacketDedup.Count > 240) _ksBizPacketDedup.RemoveAt(0);
+                return true;
+            }
+        }
+
+        private bool TryProcessKuaishouBusinessPacketWithCandidates(byte[] buff, string processName)
+        {
+            if (buff == null || buff.Length < 64) return false;
+
+            var probes = new List<(byte[] payload, string strategy)>();
+            probes.Add((buff, "raw"));
+            foreach (var c in BuildKuaishouDecodeCandidates(buff).Take(24))
+            {
+                var len = c.Data.Length - c.Offset;
+                if (len < 64) continue;
+                var payload = new byte[len];
+                Buffer.BlockCopy(c.Data, c.Offset, payload, 0, len);
+                probes.Add((payload, c.Strategy));
+            }
+
+            foreach (var probe in probes)
+            {
+                var tokens = ExtractProtoStringTokens(probe.payload, maxTokens: 128);
+                if (tokens.Count == 0) continue;
+                var expanded = ExpandKuaishouTokensWithBase64(tokens, maxTokens: 192);
+                var score = ScoreKuaishouBusinessPacket(expanded, probe.payload.Length);
+                if (score <= 0) continue;
+
+                var chatCandidate = expanded
+                    .Where(t => IsLikelyKuaishouChatText(t))
+                    .Where(t => !IsLikelyKuaishouNickname(t))
+                    .Where(t => !ContainsGuidLikeFragment(t))
+                    .OrderByDescending(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF))
+                    .ThenBy(t => t.Length)
+                    .FirstOrDefault();
+
+                var sigTop = string.Join("|", expanded.Take(4)).Replace("\r", "").Replace("\n", " ");
+                var dedupKey = $"{probe.strategy}:{probe.payload.Length}:{sigTop}";
+                if (!TryPushKuaishouBizPacketDedup(dedupKey)) continue;
+
+                Logger.LogInfo($"[KS_BIZ_PACKET] strategy={probe.strategy} len={probe.payload.Length} score={score} process={processName} top={sigTop}");
+
+                if (string.IsNullOrWhiteSpace(chatCandidate)) continue;
+                if (score < 38) continue;
+                if (!TryPushKuaishouFallbackText(chatCandidate)) continue;
+
+                var nickname = ResolveKuaishouNickname(expanded, chatCandidate);
+                Logger.LogInfo($"[快手][Fallback][BIZ_PACKET] 命中评论 strategy={probe.strategy}, score={score}, nickname={nickname}, content={chatCandidate}, len={probe.payload.Length}");
+                FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
+                {
+                    Content = chatCandidate,
+                    User = new Modles.ProtoEntity.KsUser
+                    {
+                        Nickname = nickname,
+                        UserId = "",
+                        HeadUrl = ""
+                    }
+                });
+                return true;
+            }
+
+            return false;
+        }
+
+        private List<string> ExpandKuaishouTokensWithBase64(List<string> tokens, int maxTokens)
+        {
+            var output = new List<string>();
+            foreach (var raw in tokens ?? new List<string>())
+            {
+                var t = (raw ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(t)) continue;
+                output.Add(t);
+                if (output.Count >= maxTokens) break;
+                if (TryDecodeBase64Utf8(t, out var decoded) && !string.IsNullOrWhiteSpace(decoded))
+                {
+                    output.Add(decoded.Trim());
+                    if (output.Count >= maxTokens) break;
+                }
+            }
+            return output
+                .Select(s => (s ?? string.Empty).Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct()
+                .Take(maxTokens)
+                .ToList();
+        }
+
+        private int ScoreKuaishouBusinessPacket(List<string> tokens, int payloadLen)
+        {
+            if (tokens == null || tokens.Count == 0) return 0;
+            var score = 0;
+            if (payloadLen >= 600 && payloadLen <= 7000) score += 8;
+            if (tokens.Any(t => t.IndexOf("uhead", StringComparison.OrdinalIgnoreCase) >= 0)) score += 6;
+            if (tokens.Any(t => t.IndexOf("yximgs.com", StringComparison.OrdinalIgnoreCase) >= 0)) score += 6;
+            if (tokens.Any(t => t.IndexOf("comment", StringComparison.OrdinalIgnoreCase) >= 0)) score += 18;
+            if (tokens.Any(t => t.IndexOf("fans_group_comment_bg", StringComparison.OrdinalIgnoreCase) >= 0)) score += 16;
+
+            var chatLike = tokens.Where(IsLikelyKuaishouChatText).ToList();
+            if (chatLike.Count > 0) score += 26;
+            if (chatLike.Any(t => t.IndexOf("主播", StringComparison.OrdinalIgnoreCase) >= 0)) score += 8;
+            if (chatLike.Any(t => t.IndexOf("你好", StringComparison.OrdinalIgnoreCase) >= 0)) score += 6;
+
+            // 礼物事件通常和评论混在一起，轻微降权防止误把纯礼物提示当评论。
+            if (tokens.Any(IsLikelyGiftTriggerToken)) score -= 6;
+            return score;
         }
 
         private bool TryProcessKuaishouProfileChatPacketCore(byte[] payload, string strategy)
