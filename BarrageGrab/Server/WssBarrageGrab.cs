@@ -491,23 +491,43 @@ namespace BarrageGrab
                 var text = Encoding.UTF8.GetString(inflated);
                 if (string.IsNullOrWhiteSpace(text)) return;
 
-                var liveStreamId = Regex.Match(
-                    text,
+                Func<string[], string> firstMatch = patterns =>
+                {
+                    foreach (var p in patterns)
+                    {
+                        var m = Regex.Match(text, p, RegexOptions.IgnoreCase);
+                        if (m.Success && m.Groups.Count > 1 && !string.IsNullOrWhiteSpace(m.Groups[1].Value))
+                        {
+                            return m.Groups[1].Value;
+                        }
+                    }
+                    return "";
+                };
+
+                var liveStreamId = firstMatch(new[]
+                {
                     @"liveStreamId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})",
-                    RegexOptions.IgnoreCase).Groups[1].Value;
+                    @"live_stream_id[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})",
+                    @"streamId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})"
+                });
                 if (string.IsNullOrWhiteSpace(liveStreamId))
                 {
-                    liveStreamId = Regex.Match(
-                        text,
+                    liveStreamId = firstMatch(new[]
+                    {
                         @"roomId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})",
-                        RegexOptions.IgnoreCase).Groups[1].Value;
+                        @"room_id[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})"
+                    });
                 }
                 if (string.IsNullOrWhiteSpace(liveStreamId)) return;
 
-                var token = Regex.Match(
-                    text,
-                    @"token[=:\""\\s]{0,6}([A-Za-z0-9_\-\.]{8,256})",
-                    RegexOptions.IgnoreCase).Groups[1].Value;
+                var token = firstMatch(new[]
+                {
+                    @"websocketToken[=:\""\\s]{0,6}([A-Za-z0-9_\-\.%+/=]{8,512})",
+                    @"wsToken[=:\""\\s]{0,6}([A-Za-z0-9_\-\.%+/=]{8,512})",
+                    @"accessToken[=:\""\\s]{0,6}([A-Za-z0-9_\-\.%+/=]{8,512})",
+                    @"serviceToken[=:\""\\s]{0,6}([A-Za-z0-9_\-\.%+/=]{8,512})",
+                    @"token[=:\""\\s]{0,6}([A-Za-z0-9_\-\.%+/=]{8,512})"
+                });
                 var wsUrl = Regex.Match(text, @"wss://[^\s\""']+", RegexOptions.IgnoreCase).Value;
 
                 AppRuntime.KsRuntimeParams?.Upsert(liveStreamId, token, wsUrl, sourceTag);
