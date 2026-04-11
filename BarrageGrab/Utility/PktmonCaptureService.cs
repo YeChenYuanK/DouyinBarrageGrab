@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 
 namespace BarrageGrab.Utility
 {
@@ -59,11 +60,20 @@ namespace BarrageGrab.Utility
             Directory.CreateDirectory(logsDir);
             var ts = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             var etlPath = Path.Combine(logsDir, $"pktmon_live_{ts}.etl");
+            var pktmonPath = ResolvePktmonPath();
+            if (string.IsNullOrWhiteSpace(pktmonPath))
+            {
+                return new CaptureResult
+                {
+                    Success = false,
+                    Message = "未找到 pktmon.exe，请确认系统为 Windows 10/11 且具备该组件。"
+                };
+            }
 
-            RunProcess("pktmon", "stop", 5000);
-            RunProcess("pktmon", "filter remove", 5000);
+            RunProcess(pktmonPath, "stop", 5000);
+            RunProcess(pktmonPath, "filter remove", 5000);
 
-            var add443 = RunProcess("pktmon", "filter add -p 443", 10000);
+            var add443 = RunProcess(pktmonPath, "filter add -p 443", 10000);
             if (add443.ExitCode != 0)
             {
                 return new CaptureResult
@@ -73,7 +83,7 @@ namespace BarrageGrab.Utility
                 };
             }
 
-            var add1935 = RunProcess("pktmon", "filter add -p 1935", 10000);
+            var add1935 = RunProcess(pktmonPath, "filter add -p 1935", 10000);
             if (add1935.ExitCode != 0)
             {
                 return new CaptureResult
@@ -83,7 +93,7 @@ namespace BarrageGrab.Utility
                 };
             }
 
-            var start = RunProcess("pktmon", $"start --etw --pkt-size 0 --file-name \"{etlPath}\"", 15000);
+            var start = RunProcess(pktmonPath, $"start --etw --pkt-size 0 --file-name \"{etlPath}\"", 15000);
             if (start.ExitCode != 0)
             {
                 return new CaptureResult
@@ -124,7 +134,17 @@ namespace BarrageGrab.Utility
                 etlPath = currentEtlPath;
             }
 
-            var stop = RunProcess("pktmon", "stop", 10000);
+            var pktmonPath = ResolvePktmonPath();
+            if (string.IsNullOrWhiteSpace(pktmonPath))
+            {
+                return new CaptureResult
+                {
+                    Success = false,
+                    Message = "未找到 pktmon.exe，无法停止并分析。"
+                };
+            }
+
+            var stop = RunProcess(pktmonPath, "stop", 10000);
             if (stop.ExitCode != 0)
             {
                 return new CaptureResult
@@ -138,7 +158,7 @@ namespace BarrageGrab.Utility
             var sniPath = Path.ChangeExtension(etlPath, ".sni.txt");
             var summaryPath = Path.ChangeExtension(etlPath, ".sni.summary.txt");
 
-            var etl2pcap = RunProcess("pktmon", $"etl2pcap \"{etlPath}\" -o \"{pcapPath}\"", 30000);
+            var etl2pcap = RunProcess(pktmonPath, $"etl2pcap \"{etlPath}\" -o \"{pcapPath}\"", 30000);
             if (etl2pcap.ExitCode != 0 || !File.Exists(pcapPath))
             {
                 lock (syncRoot)
@@ -243,6 +263,22 @@ namespace BarrageGrab.Utility
             return File.Exists(first) ? first : null;
         }
 
+        private string ResolvePktmonPath()
+        {
+            var system32 = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                "System32",
+                "pktmon.exe");
+            if (File.Exists(system32)) return system32;
+
+            var where = RunProcess("cmd.exe", "/c where pktmon", 8000);
+            if (where.ExitCode != 0 || string.IsNullOrWhiteSpace(where.Stdout)) return null;
+            var first = where.Stdout
+                .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault();
+            return File.Exists(first) ? first : null;
+        }
+
         private ProcessResult RunProcess(string fileName, string arguments, int timeoutMs)
         {
             var psi = new ProcessStartInfo
@@ -258,7 +294,19 @@ namespace BarrageGrab.Utility
             using (var process = new Process())
             {
                 process.StartInfo = psi;
-                process.Start();
+                try
+                {
+                    process.Start();
+                }
+                catch (Win32Exception ex)
+                {
+                    return new ProcessResult
+                    {
+                        ExitCode = -1,
+                        Stdout = string.Empty,
+                        Stderr = $"启动失败: {fileName} {arguments}; {ex.Message}"
+                    };
+                }
                 var stdout = process.StandardOutput.ReadToEnd();
                 var stderr = process.StandardError.ReadToEnd();
                 if (!process.WaitForExit(timeoutMs))
