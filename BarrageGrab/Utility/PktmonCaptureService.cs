@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
+using System.Globalization;
 
 namespace BarrageGrab.Utility
 {
@@ -13,6 +14,7 @@ namespace BarrageGrab.Utility
         private readonly object syncRoot = new object();
         private string currentEtlPath;
         private bool isCapturing;
+        private DateTime currentCaptureStartAt;
 
         public class CaptureResult
         {
@@ -31,6 +33,12 @@ namespace BarrageGrab.Utility
             public int KsapisrvApiHits { get; set; }
             public int WsukwaiHits { get; set; }
             public int MateHits { get; set; }
+        }
+
+        private class ProxyWindowEval
+        {
+            public int KnownControlReqIndexCount { get; set; }
+            public int HttpCandidateCount { get; set; }
         }
 
         private class ProcessResult
@@ -116,6 +124,7 @@ namespace BarrageGrab.Utility
             {
                 currentEtlPath = etlPath;
                 isCapturing = true;
+                currentCaptureStartAt = DateTime.Now;
             }
 
             Logger.LogInfo($"[KS_PKT_CAPTURE_START] etl={etlPath}");
@@ -130,6 +139,7 @@ namespace BarrageGrab.Utility
         public CaptureResult StopAndAnalyze()
         {
             string etlPath;
+            DateTime captureStartedAt;
             lock (syncRoot)
             {
                 if (!isCapturing || string.IsNullOrWhiteSpace(currentEtlPath))
@@ -141,7 +151,9 @@ namespace BarrageGrab.Utility
                     };
                 }
                 etlPath = currentEtlPath;
+                captureStartedAt = currentCaptureStartAt;
             }
+            var captureStoppedAt = DateTime.Now;
 
             var pktmonPath = ResolvePktmonPath();
             if (string.IsNullOrWhiteSpace(pktmonPath))
@@ -207,12 +219,14 @@ namespace BarrageGrab.Utility
 
             var topSnis = BuildTopSnis(raw);
             var liveControl = EvaluateLiveControl(raw);
+            var proxyEval = EvaluateProxyCallbacksInWindow(captureStartedAt.AddSeconds(-2), captureStoppedAt.AddSeconds(2));
             File.WriteAllLines(summaryPath, topSnis, Encoding.UTF8);
 
             lock (syncRoot)
             {
                 isCapturing = false;
                 currentEtlPath = null;
+                currentCaptureStartAt = DateTime.MinValue;
             }
 
             var topText = topSnis.Any() ? string.Join("|", topSnis.Take(5)) : "EMPTY";
@@ -230,6 +244,16 @@ namespace BarrageGrab.Utility
                 default:
                     Logger.LogInfo($"[KS_LIVE_CONTROL_NO_HIT] {controlLine}");
                     break;
+            }
+
+            var bypass = liveControl.Level == "CONFIRMED" && proxyEval.KnownControlReqIndexCount == 0 && proxyEval.HttpCandidateCount == 0;
+            if (bypass)
+            {
+                Logger.LogInfo($"[KS_PREFLIGHT_HTTP_BYPASS_CONFIRMED] level=CONFIRMED knownControlReqIndex=0 httpCandidate=0 gifshowApi={liveControl.GifshowApiHits} ksapisrvApi={liveControl.KsapisrvApiHits} wsukwai={liveControl.WsukwaiHits}");
+            }
+            else
+            {
+                Logger.LogInfo($"[KS_PREFLIGHT_HTTP_BYPASS_CHECK] bypass={bypass} knownControlReqIndex={proxyEval.KnownControlReqIndexCount} httpCandidate={proxyEval.HttpCandidateCount} liveControl={liveControl.Level}");
             }
 
             return new CaptureResult
@@ -302,6 +326,60 @@ namespace BarrageGrab.Utility
             }
             eval.Level = "NO_HIT";
             return eval;
+        }
+
+        private ProxyWindowEval EvaluateProxyCallbacksInWindow(DateTime startAt, DateTime endAt)
+        {
+            var eval = new ProxyWindowEval();
+            try
+            {
+                var infoDir = Path.Combine(AppContext.BaseDirectory, "logs", "info");
+                var logPath = Path.Combine(infoDir, $"{DateTime.Now:yyyy-MM-dd}.log");
+                if (!File.Exists(logPath)) return eval;
+
+                using (var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var sr = new StreamReader(fs, Encoding.UTF8, true))
+                {
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        if (!TryParseLogTime(line, out var t)) continue;
+                        if (t < startAt || t > endAt) continue;
+
+                        if (line.Contains("[KS_HTTP_REQ_INDEX]") && line.Contains("knownControl=True"))
+                        {
+                            eval.KnownControlReqIndexCount++;
+                        }
+                        if (line.Contains("[KS_HTTP_REQ_CANDIDATE]") || line.Contains("[KS_HTTP_RESP_CANDIDATE]"))
+                        {
+                            if (line.IndexOf("apijs", StringComparison.OrdinalIgnoreCase) >= 0
+                                || line.IndexOf("ksapisrv", StringComparison.OrdinalIgnoreCase) >= 0
+                                || line.IndexOf("gifshow.com", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                eval.HttpCandidateCount++;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_PREFLIGHT_HTTP_BYPASS_CHECK] evaluate-failed: {ex.Message}");
+            }
+            return eval;
+        }
+
+        private bool TryParseLogTime(string line, out DateTime t)
+        {
+            t = DateTime.MinValue;
+            if (string.IsNullOrWhiteSpace(line) || line.Length < 23) return false;
+            var head = line.Substring(0, 23);
+            return DateTime.TryParseExact(
+                head,
+                "yyyy-MM-dd HH:mm:ss.fff",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out t);
         }
 
         private string ResolveTsharkPath()
