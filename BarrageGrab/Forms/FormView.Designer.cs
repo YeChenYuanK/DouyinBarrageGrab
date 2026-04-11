@@ -1,4 +1,4 @@
-﻿namespace BarrageGrab
+namespace BarrageGrab
 {
     partial class FormView
     {
@@ -44,6 +44,8 @@
             this.cbx_barrageLog = new System.Windows.Forms.CheckBox();
             this.panel3 = new System.Windows.Forms.Panel();
             this.btn_updateUpProxy = new System.Windows.Forms.Button();
+            this.btn_pktmonStart = new System.Windows.Forms.Button();
+            this.btn_pktmonStopAnalyze = new System.Windows.Forms.Button();
             this.txb_upstreamProxy = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
@@ -236,6 +238,8 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel3.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel3.Controls.Add(this.txb_wsaddr);
+            this.panel3.Controls.Add(this.btn_pktmonStopAnalyze);
+            this.panel3.Controls.Add(this.btn_pktmonStart);
             this.panel3.Controls.Add(this.btn_updateUpProxy);
             this.panel3.Controls.Add(this.txb_upstreamProxy);
             this.panel3.Controls.Add(this.label5);
@@ -255,6 +259,27 @@
             this.btn_updateUpProxy.Text = "确定";
             this.btn_updateUpProxy.UseVisualStyleBackColor = true;
             this.btn_updateUpProxy.Click += new System.EventHandler(this.btn_updateUpProxy_Click);
+            // 
+            // btn_pktmonStart
+            // 
+            this.btn_pktmonStart.Location = new System.Drawing.Point(85, 85);
+            this.btn_pktmonStart.Name = "btn_pktmonStart";
+            this.btn_pktmonStart.Size = new System.Drawing.Size(104, 23);
+            this.btn_pktmonStart.TabIndex = 17;
+            this.btn_pktmonStart.Text = "开始抓包(SNI)";
+            this.btn_pktmonStart.UseVisualStyleBackColor = true;
+            this.btn_pktmonStart.Click += new System.EventHandler(this.btn_pktmonStart_Click);
+            // 
+            // btn_pktmonStopAnalyze
+            // 
+            this.btn_pktmonStopAnalyze.Enabled = false;
+            this.btn_pktmonStopAnalyze.Location = new System.Drawing.Point(195, 85);
+            this.btn_pktmonStopAnalyze.Name = "btn_pktmonStopAnalyze";
+            this.btn_pktmonStopAnalyze.Size = new System.Drawing.Size(123, 23);
+            this.btn_pktmonStopAnalyze.TabIndex = 18;
+            this.btn_pktmonStopAnalyze.Text = "停止并分析SNI";
+            this.btn_pktmonStopAnalyze.UseVisualStyleBackColor = true;
+            this.btn_pktmonStopAnalyze.Click += new System.EventHandler(this.btn_pktmonStopAnalyze_Click);
             // 
             // txb_upstreamProxy
             // 
@@ -369,5 +394,7 @@
         private System.Windows.Forms.TextBox txb_wsaddr;
         private System.Windows.Forms.TabPage tabPage_Log;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel3;
+        private System.Windows.Forms.Button btn_pktmonStart;
+        private System.Windows.Forms.Button btn_pktmonStopAnalyze;
     }
 }

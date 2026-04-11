@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -13,6 +13,7 @@ using BarrageGrab.Forms;
 using BarrageGrab.Forms.Models;
 using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Proxy;
+using BarrageGrab.Utility;
 
 namespace BarrageGrab
 {
@@ -23,6 +24,8 @@ namespace BarrageGrab
         WsBarrageServer barServer = AppRuntime.WsServer;
         WssBarrageGrab grab = AppRuntime.WsServer.Grab;
         ISystemProxy proxy = AppRuntime.WsServer.Grab.Proxy;
+        readonly PktmonCaptureService pktCapture = new PktmonCaptureService();
+        bool pktCaptureBusy = false;
 
         public FormView()
         {
@@ -234,6 +237,72 @@ namespace BarrageGrab
             var checker = (CheckBox)sender;
             AppSetting.Current.BarrageLog = checker.Checked;
             AppSetting.Current.Save();
+        }
+
+        private async void btn_pktmonStart_Click(object sender, EventArgs e)
+        {
+            if (pktCaptureBusy) return;
+            pktCaptureBusy = true;
+            btn_pktmonStart.Enabled = false;
+            btn_pktmonStopAnalyze.Enabled = false;
+            try
+            {
+                var result = await Task.Run(() => pktCapture.StartCapture());
+                if (!result.Success)
+                {
+                    MessageBox.Show(result.Message, "开始抓包失败");
+                    return;
+                }
+                btn_pktmonStopAnalyze.Enabled = true;
+                label2.Text = "🚀 抓包中";
+                Logger.LogInfo($"[KS_PKT_CAPTURE_UI] start etl={result.EtlPath}");
+                MessageBox.Show($"抓包已开始。\n{result.EtlPath}\n\n请去快手伴侣执行：开播 5-8 秒 -> 下播 -> 等 2-3 秒，然后回本工具点“停止并分析SNI”。", "已开始抓包");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "开始抓包异常");
+            }
+            finally
+            {
+                pktCaptureBusy = false;
+                btn_pktmonStart.Enabled = !pktCapture.IsCapturing;
+            }
+        }
+
+        private async void btn_pktmonStopAnalyze_Click(object sender, EventArgs e)
+        {
+            if (pktCaptureBusy) return;
+            pktCaptureBusy = true;
+            btn_pktmonStart.Enabled = false;
+            btn_pktmonStopAnalyze.Enabled = false;
+            try
+            {
+                var result = await Task.Run(() => pktCapture.StopAndAnalyze());
+                if (!result.Success)
+                {
+                    MessageBox.Show(result.Message, "停止抓包/分析失败");
+                    label2.Text = "🚀 代理抓取中";
+                    return;
+                }
+
+                label2.Text = "🚀 代理抓取中";
+                var summary = result.TopSnis.Any()
+                    ? string.Join(Environment.NewLine, result.TopSnis.Take(10))
+                    : "未抓到 SNI（可能窗口太短或握手已复用连接）";
+                Logger.LogInfo($"[KS_PKT_CAPTURE_UI] stop etl={result.EtlPath} pcap={result.PcapPath} sni={result.SniPath}");
+                MessageBox.Show($"分析完成。\n\nTop SNI:\n{summary}\n\nSNI 文件:\n{result.SniPath}", "SNI结果");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "停止抓包/分析异常");
+                label2.Text = "🚀 代理抓取中";
+            }
+            finally
+            {
+                pktCaptureBusy = false;
+                btn_pktmonStart.Enabled = !pktCapture.IsCapturing;
+                btn_pktmonStopAnalyze.Enabled = pktCapture.IsCapturing;
+            }
         }
     }
 }

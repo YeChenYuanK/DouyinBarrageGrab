@@ -237,6 +237,7 @@
     </Compile>
     <Compile Include="JsEngine.cs" />
     <Compile Include="Utility\LiveCompanHelper.cs" />
+    <Compile Include="Utility\PktmonCaptureService.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Modles\BusinessExecption.cs" />
     <Compile Include="Modles\JsonEntity\BarrageMessages.cs" />
