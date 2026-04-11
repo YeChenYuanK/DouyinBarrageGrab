@@ -488,14 +488,14 @@ namespace BarrageGrab
             try
             {
                 if (inflated == null || inflated.Length == 0) return;
-                var text = Encoding.UTF8.GetString(inflated);
-                if (string.IsNullOrWhiteSpace(text)) return;
 
                 // 先尝试 protobuf 结构化提取（优先命中 token）。
                 if (TryCaptureKsRuntimeParamFromProtoBytes(inflated, sourceTag, processName))
                 {
                     return;
                 }
+
+                var text = Encoding.UTF8.GetString(inflated);
 
                 Func<string[], string> firstMatch = patterns =>
                 {
@@ -518,13 +518,15 @@ namespace BarrageGrab
                 });
                 if (string.IsNullOrWhiteSpace(liveStreamId))
                 {
-                    liveStreamId = firstMatch(new[]
+                    if (!string.IsNullOrWhiteSpace(text))
                     {
-                        @"roomId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})",
-                        @"room_id[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})"
-                    });
+                        liveStreamId = firstMatch(new[]
+                        {
+                            @"roomId[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})",
+                            @"room_id[=:\""\\s]{0,6}([A-Za-z0-9_\-]{4,64})"
+                        });
+                    }
                 }
-                if (string.IsNullOrWhiteSpace(liveStreamId)) return;
 
                 var token = firstMatch(new[]
                 {
@@ -534,14 +536,88 @@ namespace BarrageGrab
                     @"serviceToken[=:\""\\s]{0,6}([A-Za-z0-9_\-\.%+/=]{8,512})",
                     @"token[=:\""\\s]{0,6}([A-Za-z0-9_\-\.%+/=]{8,512})"
                 });
-                var wsUrl = Regex.Match(text, @"wss://[^\s\""']+", RegexOptions.IgnoreCase).Value;
 
-                AppRuntime.KsRuntimeParams?.Upsert(liveStreamId, token, wsUrl, sourceTag);
-                Logger.LogInfo($"[KS_RUNTIME_CAPTURE_TEXT] source={sourceTag} process={processName} liveStreamId={liveStreamId} tokenLen={(token?.Length ?? 0)}");
+                // 文本路径没有 token 时，走一次二进制候选提取（离线样本稳定出现 len=216 候选）。
+                string tokenSource = sourceTag;
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    var tokenCandidate = TryPickKsBinaryTokenCandidate(inflated);
+                    if (!string.IsNullOrWhiteSpace(tokenCandidate))
+                    {
+                        token = tokenCandidate;
+                        tokenSource = sourceTag + ".bin.candidate";
+                    }
+                }
+
+                // 如果 token 已有但 liveStreamId 暂时缺失，用稳定的进程维度 key 存储，供 GetLatest 回退路径使用。
+                if (string.IsNullOrWhiteSpace(liveStreamId) && !string.IsNullOrWhiteSpace(token))
+                {
+                    liveStreamId = BuildSyntheticKsLiveStreamId(processName);
+                }
+                if (string.IsNullOrWhiteSpace(liveStreamId)) return;
+
+                var wsUrl = Regex.Match(text ?? string.Empty, @"wss://[^\s\""']+", RegexOptions.IgnoreCase).Value;
+
+                AppRuntime.KsRuntimeParams?.Upsert(liveStreamId, token, wsUrl, tokenSource);
+                Logger.LogInfo($"[KS_RUNTIME_CAPTURE_TEXT] source={tokenSource} process={processName} liveStreamId={liveStreamId} tokenLen={(token?.Length ?? 0)}");
             }
             catch (Exception ex)
             {
                 Logger.LogWarn("[KS_RUNTIME_CAPTURE_TEXT_FAIL] " + ex.Message);
+            }
+        }
+
+        private string BuildSyntheticKsLiveStreamId(string processName)
+        {
+            var raw = string.IsNullOrWhiteSpace(processName) ? "unknown" : processName.Trim().ToLowerInvariant();
+            raw = Regex.Replace(raw, @"[^a-z0-9_\-]", "_");
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                raw = "unknown";
+            }
+            return "ks_runtime_" + raw;
+        }
+
+        private string TryPickKsBinaryTokenCandidate(byte[] data)
+        {
+            try
+            {
+                if (data == null || data.Length == 0) return string.Empty;
+
+                // 把可见 ASCII 连续段拼成文本，再做 token 形态匹配。
+                var ascii = Encoding.ASCII.GetString(data);
+                if (string.IsNullOrWhiteSpace(ascii)) return string.Empty;
+
+                var matches = Regex.Matches(ascii, @"[A-Za-z0-9_\-\.%+/=]{128,512}");
+                if (matches == null || matches.Count == 0) return string.Empty;
+
+                string best = string.Empty;
+                int bestScore = int.MinValue;
+                foreach (Match m in matches)
+                {
+                    var v = m.Value;
+                    if (string.IsNullOrWhiteSpace(v)) continue;
+                    var score = 0;
+                    if (v.Length >= 200) score += 3;
+                    else if (v.Length >= 160) score += 2;
+                    if (v.Contains("=")) score += 2;
+                    if (v.Contains("/") || v.Contains("+")) score += 2;
+                    if (v.Contains("_") || v.Contains("-") || v.Contains(".")) score += 1;
+
+                    if (score > bestScore || (score == bestScore && v.Length > (best?.Length ?? 0)))
+                    {
+                        best = v;
+                        bestScore = score;
+                    }
+                }
+
+                // 经验阈值：避免把普通业务文本误判为 token。
+                if (string.IsNullOrWhiteSpace(best) || bestScore < 6) return string.Empty;
+                return best;
+            }
+            catch
+            {
+                return string.Empty;
             }
         }
 
