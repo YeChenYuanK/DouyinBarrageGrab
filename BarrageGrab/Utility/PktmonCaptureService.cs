@@ -24,6 +24,15 @@ namespace BarrageGrab.Utility
             public List<string> TopSnis { get; set; } = new List<string>();
         }
 
+        private class LiveControlEval
+        {
+            public string Level { get; set; }
+            public int GifshowApiHits { get; set; }
+            public int KsapisrvApiHits { get; set; }
+            public int WsukwaiHits { get; set; }
+            public int MateHits { get; set; }
+        }
+
         private class ProcessResult
         {
             public int ExitCode { get; set; }
@@ -197,6 +206,7 @@ namespace BarrageGrab.Utility
             File.WriteAllText(sniPath, raw, Encoding.UTF8);
 
             var topSnis = BuildTopSnis(raw);
+            var liveControl = EvaluateLiveControl(raw);
             File.WriteAllLines(summaryPath, topSnis, Encoding.UTF8);
 
             lock (syncRoot)
@@ -208,6 +218,19 @@ namespace BarrageGrab.Utility
             var topText = topSnis.Any() ? string.Join("|", topSnis.Take(5)) : "EMPTY";
             Logger.LogInfo($"[KS_PKT_CAPTURE_STOP] etl={etlPath} pcap={pcapPath} sni={sniPath}");
             Logger.LogInfo($"[KS_TLS_SNI_TOP] {topText}");
+            var controlLine = $"level={liveControl.Level} gifshowApi={liveControl.GifshowApiHits} ksapisrvApi={liveControl.KsapisrvApiHits} wsukwai={liveControl.WsukwaiHits} mate={liveControl.MateHits}";
+            switch (liveControl.Level)
+            {
+                case "CONFIRMED":
+                    Logger.LogInfo($"[KS_LIVE_CONTROL_CONFIRMED] {controlLine}");
+                    break;
+                case "WEAK":
+                    Logger.LogInfo($"[KS_LIVE_CONTROL_WEAK] {controlLine}");
+                    break;
+                default:
+                    Logger.LogInfo($"[KS_LIVE_CONTROL_NO_HIT] {controlLine}");
+                    break;
+            }
 
             return new CaptureResult
             {
@@ -222,6 +245,18 @@ namespace BarrageGrab.Utility
 
         private List<string> BuildTopSnis(string raw)
         {
+            var snis = ExtractSnis(raw);
+            return snis.GroupBy(s => s, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new { Name = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .ThenBy(x => x.Name)
+                .Take(20)
+                .Select(x => $"{x.Name} {x.Count}")
+                .ToList();
+        }
+
+        private List<string> ExtractSnis(string raw)
+        {
             var lines = (raw ?? string.Empty)
                 .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
             var snis = new List<string>();
@@ -233,14 +268,40 @@ namespace BarrageGrab.Utility
                 if (string.IsNullOrWhiteSpace(sni)) continue;
                 snis.Add(sni);
             }
+            return snis;
+        }
 
-            return snis.GroupBy(s => s, StringComparer.OrdinalIgnoreCase)
-                .Select(g => new { Name = g.Key, Count = g.Count() })
-                .OrderByDescending(x => x.Count)
-                .ThenBy(x => x.Name)
-                .Take(20)
-                .Select(x => $"{x.Name} {x.Count}")
-                .ToList();
+        private LiveControlEval EvaluateLiveControl(string raw)
+        {
+            var snis = ExtractSnis(raw);
+            var eval = new LiveControlEval();
+            if (snis.Count == 0)
+            {
+                eval.Level = "NO_HIT";
+                return eval;
+            }
+
+            foreach (var s in snis)
+            {
+                var h = s.ToLowerInvariant();
+                if (h.Contains("apijs") && h.Contains("gifshow.com")) eval.GifshowApiHits++;
+                if (h.Contains("apijs") && h.Contains("ksapisrv.com")) eval.KsapisrvApiHits++;
+                if (h.Contains("wsukwai.com")) eval.WsukwaiHits++;
+                if (h == "mate.gifshow.com") eval.MateHits++;
+            }
+
+            if (eval.GifshowApiHits > 0 && eval.KsapisrvApiHits > 0)
+            {
+                eval.Level = "CONFIRMED";
+                return eval;
+            }
+            if (eval.GifshowApiHits > 0 || eval.KsapisrvApiHits > 0 || eval.WsukwaiHits > 0)
+            {
+                eval.Level = "WEAK";
+                return eval;
+            }
+            eval.Level = "NO_HIT";
+            return eval;
         }
 
         private string ResolveTsharkPath()
