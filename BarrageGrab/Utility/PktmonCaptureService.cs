@@ -41,6 +41,14 @@ namespace BarrageGrab.Utility
             public int HttpCandidateCount { get; set; }
         }
 
+        private class BlindClusterStat
+        {
+            public string Cluster { get; set; }
+            public int Hits { get; set; }
+            public int UniqueHostCount { get; set; }
+            public int Score { get; set; }
+        }
+
         private class ProcessResult
         {
             public int ExitCode { get; set; }
@@ -218,8 +226,11 @@ namespace BarrageGrab.Utility
             File.WriteAllText(sniPath, raw, Encoding.UTF8);
 
             var topSnis = BuildTopSnis(raw);
+            var snis = ExtractSnis(raw);
             var liveControl = EvaluateLiveControl(raw);
             var proxyEval = EvaluateProxyCallbacksInWindow(captureStartedAt.AddSeconds(-2), captureStoppedAt.AddSeconds(2));
+            var blindClusters = BuildBlindClusters(snis);
+            EmitBlindArtifacts(etlPath, captureStartedAt, captureStoppedAt, snis, blindClusters);
             File.WriteAllLines(summaryPath, topSnis, Encoding.UTF8);
 
             lock (syncRoot)
@@ -254,6 +265,11 @@ namespace BarrageGrab.Utility
             else
             {
                 Logger.LogInfo($"[KS_PREFLIGHT_HTTP_BYPASS_CHECK] bypass={bypass} knownControlReqIndex={proxyEval.KnownControlReqIndexCount} httpCandidate={proxyEval.HttpCandidateCount} liveControl={liveControl.Level}");
+            }
+            if (blindClusters.Count > 0)
+            {
+                var topBlind = string.Join("|", blindClusters.Take(5).Select(c => $"{c.Cluster}:{c.Hits}/{c.Score}"));
+                Logger.LogInfo($"[KS_BLIND_TOP] {topBlind}");
             }
 
             return new CaptureResult
@@ -329,6 +345,105 @@ namespace BarrageGrab.Utility
             }
             eval.Level = "NO_HIT";
             return eval;
+        }
+
+        private List<BlindClusterStat> BuildBlindClusters(List<string> snis)
+        {
+            var normalized = snis
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim().ToLowerInvariant())
+                .ToList();
+            var hostGroups = normalized
+                .GroupBy(h => h, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+
+            var clusterHits = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var clusterHosts = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in hostGroups)
+            {
+                var host = kv.Key;
+                var hits = kv.Value;
+                var cluster = ClusterFromHost(host);
+                if (!clusterHits.ContainsKey(cluster)) clusterHits[cluster] = 0;
+                clusterHits[cluster] += hits;
+                if (!clusterHosts.ContainsKey(cluster))
+                {
+                    clusterHosts[cluster] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                }
+                clusterHosts[cluster].Add(host);
+            }
+
+            return clusterHits
+                .Select(kv =>
+                {
+                    var unique = clusterHosts.TryGetValue(kv.Key, out var hs) ? hs.Count : 0;
+                    return new BlindClusterStat
+                    {
+                        Cluster = kv.Key,
+                        Hits = kv.Value,
+                        UniqueHostCount = unique,
+                        Score = kv.Value * 10 + unique * 3
+                    };
+                })
+                .OrderByDescending(c => c.Score)
+                .ThenByDescending(c => c.Hits)
+                .ThenBy(c => c.Cluster)
+                .ToList();
+        }
+
+        private string ClusterFromHost(string host)
+        {
+            var h = (host ?? string.Empty).ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(h)) return "unknown";
+            if (h.Contains("ksapisrv.com")) return "ksapisrv.com";
+            if (h.Contains("gifshow.com")) return "gifshow.com";
+            if (h.Contains("wsukwai.com")) return "wsukwai.com";
+            if (h.Contains("kuaishou.com")) return "kuaishou.com";
+
+            var parts = h.Split('.');
+            if (parts.Length >= 2)
+            {
+                return $"{parts[parts.Length - 2]}.{parts[parts.Length - 1]}";
+            }
+            return h;
+        }
+
+        private void EmitBlindArtifacts(
+            string etlPath,
+            DateTime startAt,
+            DateTime endAt,
+            List<string> snis,
+            List<BlindClusterStat> clusters)
+        {
+            try
+            {
+                var logsDir = Path.Combine(AppContext.BaseDirectory, "logs");
+                Directory.CreateDirectory(logsDir);
+                var traceId = Path.GetFileNameWithoutExtension(etlPath) ?? "unknown";
+
+                var jsonlPath = Path.Combine(logsDir, "blind_control_signal.jsonl");
+                var topClusterJson = string.Join(",", clusters.Take(8)
+                    .Select(c => $"{{\"cluster\":\"{JsonEscape(c.Cluster)}\",\"hits\":{c.Hits},\"uniqueHosts\":{c.UniqueHostCount},\"score\":{c.Score}}}"));
+                var line =
+                    $"{{\"schemaVersion\":\"1.0\",\"ts\":\"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\",\"traceId\":\"{JsonEscape(traceId)}\",\"windowStart\":\"{startAt:yyyy-MM-dd HH:mm:ss.fff}\",\"windowEnd\":\"{endAt:yyyy-MM-dd HH:mm:ss.fff}\",\"totalSni\":{snis.Count},\"uniqueSni\":{snis.Distinct(StringComparer.OrdinalIgnoreCase).Count()},\"topClusters\":[{topClusterJson}]}}";
+                File.AppendAllText(jsonlPath, line + Environment.NewLine, Encoding.UTF8);
+
+                var txtPath = Path.Combine(logsDir, "blind_candidates_latest.txt");
+                var sb = new StringBuilder();
+                sb.AppendLine($"traceId={traceId}");
+                sb.AppendLine($"window={startAt:yyyy-MM-dd HH:mm:ss.fff}~{endAt:yyyy-MM-dd HH:mm:ss.fff}");
+                sb.AppendLine($"totalSni={snis.Count} uniqueSni={snis.Distinct(StringComparer.OrdinalIgnoreCase).Count()}");
+                sb.AppendLine("topClusters:");
+                foreach (var c in clusters.Take(12))
+                {
+                    sb.AppendLine($"- {c.Cluster} hits={c.Hits} uniqueHosts={c.UniqueHostCount} score={c.Score}");
+                }
+                File.WriteAllText(txtPath, sb.ToString(), Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_BLIND_TOP] emit-failed: {ex.Message}");
+            }
         }
 
         private ProxyWindowEval EvaluateProxyCallbacksInWindow(DateTime startAt, DateTime endAt)
@@ -487,6 +602,17 @@ namespace BarrageGrab.Utility
             if (!string.IsNullOrWhiteSpace(first)) return first.Trim();
             if (!string.IsNullOrWhiteSpace(second)) return second.Trim();
             return "未知错误";
+        }
+
+        private string JsonEscape(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return string.Empty;
+            return s
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\r", "\\r")
+                .Replace("\n", "\\n")
+                .Replace("\t", "\\t");
         }
     }
 }
