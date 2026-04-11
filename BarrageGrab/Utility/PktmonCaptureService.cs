@@ -266,6 +266,23 @@ namespace BarrageGrab.Utility
             {
                 Logger.LogInfo($"[KS_PREFLIGHT_HTTP_BYPASS_CHECK] bypass={bypass} knownControlReqIndex={proxyEval.KnownControlReqIndexCount} httpCandidate={proxyEval.HttpCandidateCount} liveControl={liveControl.Level}");
             }
+            var signalOk = EmitLiveControlSignal(
+                etlPath,
+                captureStartedAt,
+                captureStoppedAt,
+                liveControl,
+                bypass,
+                snis,
+                blindClusters,
+                out var signalMsg);
+            if (signalOk)
+            {
+                Logger.LogInfo($"[KS_SIGNAL_EMIT_OK] {signalMsg}");
+            }
+            else
+            {
+                Logger.LogInfo($"[KS_SIGNAL_EMIT_FAIL] {signalMsg}");
+            }
             if (blindClusters.Count > 0)
             {
                 var topBlind = string.Join("|", blindClusters.Take(5).Select(c => $"{c.Cluster}:{c.Hits}/{c.Score}"));
@@ -482,6 +499,84 @@ namespace BarrageGrab.Utility
                 }
                 File.WriteAllText(txtPath, sb.ToString(), Encoding.UTF8);
                 message = $"traceId={traceId} jsonl={jsonlPath} txt={txtPath}";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                message = $"emit-failed: {ex.Message}";
+                return false;
+            }
+        }
+
+        private bool EmitLiveControlSignal(
+            string etlPath,
+            DateTime startAt,
+            DateTime endAt,
+            LiveControlEval liveControl,
+            bool bypassConfirmed,
+            List<string> snis,
+            List<BlindClusterStat> blindClusters,
+            out string message)
+        {
+            message = string.Empty;
+            try
+            {
+                var logsDir = Path.Combine(AppContext.BaseDirectory, "logs");
+                Directory.CreateDirectory(logsDir);
+                var traceId = Path.GetFileNameWithoutExtension(etlPath) ?? "unknown";
+                var jsonlPath = Path.Combine(logsDir, "live_control_signal.jsonl");
+                var fallbackPath = Path.Combine(logsDir, "live_control_signal.fallback.jsonl");
+
+                var topBlind = string.Join(",", blindClusters.Take(5)
+                    .Select(c => $"{{\"cluster\":\"{JsonEscape(c.Cluster)}\",\"hits\":{c.Hits},\"score\":{c.Score}}}"));
+                var uniqueSni = snis.Distinct(StringComparer.OrdinalIgnoreCase).Count();
+                var version = "unknown";
+                try
+                {
+                    version = FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion ?? "unknown";
+                }
+                catch
+                {
+                    // best-effort only
+                }
+
+                var line =
+                    $"{{\"schemaVersion\":\"1.0\",\"ts\":\"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\",\"traceId\":\"{JsonEscape(traceId)}\",\"windowStart\":\"{startAt:yyyy-MM-dd HH:mm:ss.fff}\",\"windowEnd\":\"{endAt:yyyy-MM-dd HH:mm:ss.fff}\",\"source\":\"pktmon+tshark\",\"buildVersion\":\"{JsonEscape(version)}\",\"level\":\"{liveControl.Level}\",\"gifshowApiHits\":{liveControl.GifshowApiHits},\"ksapisrvApiHits\":{liveControl.KsapisrvApiHits},\"wsukwaiHits\":{liveControl.WsukwaiHits},\"mateHits\":{liveControl.MateHits},\"bypassConfirmed\":{bypassConfirmed.ToString().ToLowerInvariant()},\"totalSni\":{snis.Count},\"uniqueSni\":{uniqueSni},\"topBlind\":[{topBlind}]}}";
+                var lineWithBreak = line + Environment.NewLine;
+
+                Exception appendEx = null;
+                var ok = false;
+                for (var i = 0; i < 2; i++)
+                {
+                    try
+                    {
+                        File.AppendAllText(jsonlPath, lineWithBreak, Encoding.UTF8);
+                        ok = true;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        appendEx = ex;
+                        System.Threading.Thread.Sleep(100);
+                    }
+                }
+
+                if (!ok)
+                {
+                    try
+                    {
+                        File.AppendAllText(fallbackPath, lineWithBreak, Encoding.UTF8);
+                        message = $"traceId={traceId} primary={jsonlPath} fallback={fallbackPath} err={appendEx?.Message}";
+                        return false;
+                    }
+                    catch (Exception fallbackEx)
+                    {
+                        message = $"traceId={traceId} primary={jsonlPath} fallback={fallbackPath} err={appendEx?.Message}; fallbackErr={fallbackEx.Message}";
+                        return false;
+                    }
+                }
+
+                message = $"traceId={traceId} level={liveControl.Level} bypass={bypassConfirmed} file={jsonlPath}";
                 return true;
             }
             catch (Exception ex)
