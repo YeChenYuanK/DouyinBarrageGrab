@@ -2,11 +2,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using BarrageGrab.Modles;
+using Newtonsoft.Json;
 
 namespace BarrageGrab
 {
@@ -200,6 +202,8 @@ namespace BarrageGrab
         {
             private readonly ConcurrentDictionary<string, KsRuntimeParam> _byLiveStreamId =
                 new ConcurrentDictionary<string, KsRuntimeParam>(StringComparer.OrdinalIgnoreCase);
+            private DateTime _lastFlushAt = DateTime.MinValue;
+            private readonly object _flushLock = new object();
 
             public void Upsert(string liveStreamId, string token, string wsUrl, string source)
             {
@@ -226,6 +230,8 @@ namespace BarrageGrab
                         old.LastSeenAt = now;
                         return old;
                     });
+
+                TryFlushSnapshot(now);
             }
 
             public KsRuntimeParam GetByLiveStreamId(string liveStreamId)
@@ -235,6 +241,44 @@ namespace BarrageGrab
                 var ok = _byLiveStreamId.TryGetValue(liveStreamId, out hit);
                 Logger.LogInfo($"[KS_RUNTIME_LOOKUP] liveStreamId={liveStreamId} hit={ok}");
                 return ok ? hit : null;
+            }
+
+            private void TryFlushSnapshot(DateTime now)
+            {
+                // Avoid excessive disk writes when network bursts happen.
+                if ((now - _lastFlushAt).TotalSeconds < 2) return;
+                lock (_flushLock)
+                {
+                    if ((DateTime.Now - _lastFlushAt).TotalSeconds < 2) return;
+                    try
+                    {
+                        var logsDir = Path.Combine(AppContext.BaseDirectory, "logs");
+                        Directory.CreateDirectory(logsDir);
+                        var outPath = Path.Combine(logsDir, "ks_runtime_params_latest.json");
+
+                        var snapshot = _byLiveStreamId.Values
+                            .OrderByDescending(v => v.LastSeenAt)
+                            .Take(50)
+                            .Select(v => new
+                            {
+                                liveStreamId = v.LiveStreamId,
+                                tokenLength = string.IsNullOrWhiteSpace(v.Token) ? 0 : v.Token.Length,
+                                wsUrl = v.LastWsUrl,
+                                source = v.Source,
+                                lastSeenAt = v.LastSeenAt.ToString("yyyy-MM-dd HH:mm:ss.fff")
+                            })
+                            .ToList();
+
+                        var json = JsonConvert.SerializeObject(snapshot, Formatting.Indented);
+                        File.WriteAllText(outPath, json, Encoding.UTF8);
+                        _lastFlushAt = DateTime.Now;
+                        Logger.LogInfo($"[KS_RUNTIME_SNAPSHOT] count={snapshot.Count} file={outPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarn("[KS_RUNTIME_SNAPSHOT_FAIL] " + ex.Message);
+                    }
+                }
             }
         }
 
