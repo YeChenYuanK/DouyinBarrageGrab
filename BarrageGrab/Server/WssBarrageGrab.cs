@@ -1849,6 +1849,7 @@ namespace BarrageGrab
             var u = (uri ?? string.Empty).ToLowerInvariant();
             var hostHit = h.Contains("kuaishou") || h.Contains("wsukwai") || h.Contains("gifshow");
             if (!hostHit) return false;
+            if (IsKnownKsControlHost(h)) return true;
             return u.Contains("/rest/") || u.Contains("/graphql") || u.Contains("live") || u.Contains("room") || u.Contains("stream") || u.Contains("webcast");
         }
 
@@ -1865,6 +1866,7 @@ namespace BarrageGrab
             var u = (uri ?? string.Empty).ToLowerInvariant();
             if (IsKuaishouWlogNoise(h, u)) return false;
             if (!(h.Contains("kuaishou") || h.Contains("wsukwai") || h.Contains("gifshow"))) return false;
+            if (IsKnownKsControlHost(h)) return true;
 
             return u.Contains("/graphql")
                 || u.Contains("/webcast")
@@ -1900,6 +1902,7 @@ namespace BarrageGrab
                         score += 18;
                         break;
                 }
+                if (IsKnownKsControlHost(host)) score += 18;
                 if (process.Contains("kwailive")) score += 10;
                 if (status >= 200 && status < 400) score += 6;
                 if (method.Equals("POST", StringComparison.OrdinalIgnoreCase)
@@ -1940,7 +1943,7 @@ namespace BarrageGrab
                 var clusterKey = $"{cluster}|{host}|{path}";
                 if (ShouldLogKsDomainCluster(clusterKey, 3))
                 {
-                    Logger.LogInfo($"[KS_DOMAIN_CLUSTER] cluster={cluster} host={host} method={method} status={status} score={score} path={path}");
+                    Logger.LogInfo($"[KS_DOMAIN_CLUSTER] cluster={cluster} host={host} method={method} status={status} score={score} knownControl={IsKnownKsControlHost(host)} path={path}");
                 }
 
                 EmitKsDomainClusterState();
@@ -1974,6 +1977,18 @@ namespace BarrageGrab
             if (h.EndsWith(".gifshow.com") || h.Contains("gifshow.com")) return "GIFSHOW_EDGE";
             if (h.EndsWith(".kuaishou.com") || h.Contains("kuaishou.com")) return "KUAISHOU_CORE";
             return "OTHER";
+        }
+
+        private bool IsKnownKsControlHost(string host)
+        {
+            var h = (host ?? string.Empty).ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(h)) return false;
+            return h.Contains("report-rtc-mainapp.kuaishou.com")
+                || h.Contains("apijs2.ksapisrv.com")
+                || h.Contains("apijsv6.ksapisrv.com")
+                || h.Contains("apijs2.gifshow.com")
+                || h.Contains("apijsv6.gifshow.com")
+                || h.Contains("api3.gifshow.com");
         }
 
         private void EmitKsDomainClusterState()

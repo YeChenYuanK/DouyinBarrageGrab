@@ -387,6 +387,7 @@ namespace BarrageGrab.Proxy
                 if (string.IsNullOrWhiteSpace(processName) || processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) < 0) return;
                 var host = (hostname ?? string.Empty).Trim().ToLowerInvariant();
                 if (string.IsNullOrWhiteSpace(host) || host.Contains("wlog.gifshow.com")) return;
+                var knownControlHost = IsKnownKsControlHostForIndex(host);
 
                 var reqUri = uri ?? string.Empty;
                 var path = "/";
@@ -402,11 +403,11 @@ namespace BarrageGrab.Proxy
 
                 var ext = Path.GetExtension(path ?? string.Empty)?.ToLowerInvariant() ?? string.Empty;
                 var isStaticAsset = ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".ico" || ext == ".css" || ext == ".woff" || ext == ".woff2" || ext == ".ttf" || ext == ".map";
-                if (isStaticAsset) return;
+                if (isStaticAsset && !knownControlHost) return;
 
                 var m = (method ?? "UNKNOWN").ToUpperInvariant();
                 var looksLikeApiPath = path.Contains("/api/") || path.Contains("/rest/") || path.Contains("/live/") || path.Contains("/room/") || path.Contains("author") || path.Contains("stream") || path.Contains("status") || path.Contains("token");
-                if (m == "GET" && !looksLikeApiPath)
+                if (m == "GET" && !looksLikeApiPath && !knownControlHost)
                 {
                     return;
                 }
@@ -422,13 +423,25 @@ namespace BarrageGrab.Proxy
                     ksHttpReqIndexLastAt[key] = now;
                 }
 
-                var priority = (m == "POST" || m == "PUT" || m == "PATCH" || m == "OPTIONS") ? "HIGH" : "NORMAL";
-                Logger.LogInfo($"[KS_HTTP_REQ_INDEX] priority={priority} method={method} host={host} path={path} uri={reqUri}");
+                var priority = (m == "POST" || m == "PUT" || m == "PATCH" || m == "OPTIONS" || knownControlHost) ? "HIGH" : "NORMAL";
+                Logger.LogInfo($"[KS_HTTP_REQ_INDEX] priority={priority} method={method} host={host} knownControl={knownControlHost} path={path} uri={reqUri}");
             }
             catch (Exception ex)
             {
                 Logger.LogInfo($"[KS_HTTP_REQ_INDEX] failed: {ex.Message}");
             }
+        }
+
+        private bool IsKnownKsControlHostForIndex(string host)
+        {
+            var h = (host ?? string.Empty).ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(h)) return false;
+            return h.Contains("report-rtc-mainapp.kuaishou.com")
+                || h.Contains("apijs2.ksapisrv.com")
+                || h.Contains("apijsv6.ksapisrv.com")
+                || h.Contains("apijs2.gifshow.com")
+                || h.Contains("apijsv6.gifshow.com")
+                || h.Contains("api3.gifshow.com");
         }
 
         private void TryLogKuaishouHttpRedirect(string processName, string hostname, string uri, int statusCode, string location)
