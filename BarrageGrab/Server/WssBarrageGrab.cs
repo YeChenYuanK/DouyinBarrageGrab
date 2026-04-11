@@ -34,6 +34,8 @@ namespace BarrageGrab
         private readonly Dictionary<string, DateTime> ksDecodedUrlLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DateTime> ksPushHitLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, KsHttpHostStat> ksHttpHostStats = new Dictionary<string, KsHttpHostStat>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, KsDomainClusterStat> ksDomainClusterStats = new Dictionary<string, KsDomainClusterStat>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DateTime> ksDomainClusterLastLogAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         private DateTime ksHttpHostLastEmitAt = DateTime.MinValue;
 
         /// <summary>
@@ -1722,6 +1724,7 @@ namespace BarrageGrab
                 }
                 Logger.LogInfo($"[KS_HTTP_REQ_CANDIDATE] method={method} host={e.HostName} process={e.ProcessName} uri={uri}");
                 Logger.LogInfo($"[KS_HTTP_RESP_CANDIDATE] status={status} host={e.HostName} process={e.ProcessName} uri={uri} location={decodedLocation} hits={hits}");
+                TryLogKsDomainClusterEvidence(e, method, status, uri);
                 if (isTextLike)
                 {
                     var preview = BuildKsHttpTextPreview(payload, 320);
@@ -1870,6 +1873,145 @@ namespace BarrageGrab
                 || u.Contains("/stream/")
                 || u.Contains("/feed/")
                 || u.Contains("/pull");
+        }
+
+        private void TryLogKsDomainClusterEvidence(HttpResponseEventArgs e, string method, int status, string uri)
+        {
+            if (e == null) return;
+            try
+            {
+                var host = NormalizeFlowHost(e.HostName);
+                var process = (e.ProcessName ?? string.Empty).ToLowerInvariant();
+                var path = NormalizeFlowPath(uri);
+                var cluster = ResolveKsDomainCluster(host);
+                if (cluster == "OTHER") return;
+
+                var score = 0;
+                switch (cluster)
+                {
+                    case "KSAPISRV_EDGE":
+                    case "GIFSHOW_EDGE":
+                        score += 30;
+                        break;
+                    case "RTC_REPORT":
+                        score += 22;
+                        break;
+                    case "KUAISHOU_CORE":
+                        score += 18;
+                        break;
+                }
+                if (process.Contains("kwailive")) score += 10;
+                if (status >= 200 && status < 400) score += 6;
+                if (method.Equals("POST", StringComparison.OrdinalIgnoreCase)
+                    || method.Equals("PUT", StringComparison.OrdinalIgnoreCase)
+                    || method.Equals("PATCH", StringComparison.OrdinalIgnoreCase))
+                {
+                    score += 8;
+                }
+                if (path.Contains("/api/") || path.Contains("/rest/") || path.Contains("/live/") || path.Contains("/room/") || path.Contains("/stream/"))
+                {
+                    score += 16;
+                }
+                if (path.Contains("/rest/kd/log/collect")) score -= 50;
+                if (score < 0) score = 0;
+
+                var now = DateTime.Now;
+                lock (ksFlowLock)
+                {
+                    if (!ksDomainClusterStats.TryGetValue(cluster, out var stat))
+                    {
+                        stat = new KsDomainClusterStat
+                        {
+                            Cluster = cluster,
+                            FirstSeen = now,
+                            LastSeen = now
+                        };
+                        ksDomainClusterStats[cluster] = stat;
+                    }
+
+                    stat.Hits++;
+                    stat.LastSeen = now;
+                    stat.AccScore += score;
+                    if (score > stat.MaxScore) stat.MaxScore = score;
+                    if (!string.IsNullOrWhiteSpace(host)) stat.LastHost = host;
+                    if (!string.IsNullOrWhiteSpace(path)) stat.LastPath = path;
+                }
+
+                var clusterKey = $"{cluster}|{host}|{path}";
+                if (ShouldLogKsDomainCluster(clusterKey, 3))
+                {
+                    Logger.LogInfo($"[KS_DOMAIN_CLUSTER] cluster={cluster} host={host} method={method} status={status} score={score} path={path}");
+                }
+
+                EmitKsDomainClusterState();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInfo($"[KS_DOMAIN_CLUSTER] failed: {ex.Message}");
+            }
+        }
+
+        private bool ShouldLogKsDomainCluster(string key, int minSeconds)
+        {
+            var now = DateTime.Now;
+            lock (ksFlowLock)
+            {
+                if (ksDomainClusterLastLogAt.TryGetValue(key, out var lastAt) && (now - lastAt).TotalSeconds < minSeconds)
+                {
+                    return false;
+                }
+                ksDomainClusterLastLogAt[key] = now;
+            }
+            return true;
+        }
+
+        private string ResolveKsDomainCluster(string host)
+        {
+            var h = (host ?? string.Empty).ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(h)) return "OTHER";
+            if (h.Contains("report-rtc-mainapp.kuaishou.com")) return "RTC_REPORT";
+            if (h.EndsWith(".ksapisrv.com") || h.Contains("ksapisrv.com")) return "KSAPISRV_EDGE";
+            if (h.EndsWith(".gifshow.com") || h.Contains("gifshow.com")) return "GIFSHOW_EDGE";
+            if (h.EndsWith(".kuaishou.com") || h.Contains("kuaishou.com")) return "KUAISHOU_CORE";
+            return "OTHER";
+        }
+
+        private void EmitKsDomainClusterState()
+        {
+            var now = DateTime.Now;
+            List<KsDomainClusterStat> active;
+            lock (ksFlowLock)
+            {
+                active = ksDomainClusterStats.Values
+                    .Where(s => (now - s.LastSeen).TotalMinutes <= 3)
+                    .OrderByDescending(s => s.AccScore)
+                    .Take(6)
+                    .Select(s => new KsDomainClusterStat
+                    {
+                        Cluster = s.Cluster,
+                        Hits = s.Hits,
+                        AccScore = s.AccScore,
+                        MaxScore = s.MaxScore,
+                        FirstSeen = s.FirstSeen,
+                        LastSeen = s.LastSeen,
+                        LastHost = s.LastHost,
+                        LastPath = s.LastPath
+                    })
+                    .ToList();
+            }
+            if (active.Count == 0) return;
+
+            var hasApiEdge = active.Any(s => s.Cluster == "KSAPISRV_EDGE" || s.Cluster == "GIFSHOW_EDGE");
+            var hasRtc = active.Any(s => s.Cluster == "RTC_REPORT");
+            var totalScore = active.Sum(s => s.AccScore);
+            var level = "PROBE";
+            if (totalScore >= 180 || hasApiEdge) level = "CANDIDATE";
+            if (hasApiEdge && hasRtc && totalScore >= 260) level = "CONFIRMED";
+
+            var top = active.Take(3)
+                .Select(s => $"{s.Cluster}:{s.Hits}/{s.AccScore}")
+                .ToArray();
+            Logger.LogInfo($"[KS_DOMAIN_CLUSTER_STATE] level={level} totalScore={totalScore} hasApiEdge={hasApiEdge} hasRtc={hasRtc} top={string.Join("|", top)}");
         }
 
         private string ExtractKuaishouPreflightHints(string text, string uri)
@@ -2134,6 +2276,18 @@ namespace BarrageGrab
             public long TotalBytes { get; set; }
             public DateTime FirstSeen { get; set; }
             public DateTime LastSeen { get; set; }
+        }
+
+        private class KsDomainClusterStat
+        {
+            public string Cluster { get; set; }
+            public int Hits { get; set; }
+            public int AccScore { get; set; }
+            public int MaxScore { get; set; }
+            public DateTime FirstSeen { get; set; }
+            public DateTime LastSeen { get; set; }
+            public string LastHost { get; set; }
+            public string LastPath { get; set; }
         }
 
         private void DumpKuaishouRawBytes(string channel, string hostOrTag, byte[] data)
