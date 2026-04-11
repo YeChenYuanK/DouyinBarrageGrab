@@ -35,6 +35,15 @@ namespace BarrageGrab.Utility
             public int MateHits { get; set; }
         }
 
+        private class DyControlEval
+        {
+            public string Level { get; set; }
+            public int ZijieapiHits { get; set; }
+            public int BytedanceHits { get; set; }
+            public int AmemvHits { get; set; }
+            public int DouyinCdnHits { get; set; }
+        }
+
         private class ProxyWindowEval
         {
             public int KnownControlReqIndexCount { get; set; }
@@ -228,6 +237,7 @@ namespace BarrageGrab.Utility
             var topSnis = BuildTopSnis(raw);
             var snis = ExtractSnis(raw);
             var liveControl = EvaluateLiveControl(raw);
+            var dyControl = EvaluateDyControl(snis);
             var proxyEval = EvaluateProxyCallbacksInWindow(captureStartedAt.AddSeconds(-2), captureStoppedAt.AddSeconds(2));
             var blindClusters = BuildBlindClusters(snis);
             var blindOk = EmitBlindArtifacts(etlPath, captureStartedAt, captureStoppedAt, snis, blindClusters, out var blindMsg);
@@ -256,6 +266,19 @@ namespace BarrageGrab.Utility
                     Logger.LogInfo($"[KS_LIVE_CONTROL_NO_HIT] {controlLine}");
                     break;
             }
+            var dyLine = $"level={dyControl.Level} zijieapi={dyControl.ZijieapiHits} bytedance={dyControl.BytedanceHits} amemv={dyControl.AmemvHits} douyinCdn={dyControl.DouyinCdnHits}";
+            switch (dyControl.Level)
+            {
+                case "CONFIRMED":
+                    Logger.LogInfo($"[KS_DY_CONTROL_CONFIRMED] {dyLine}");
+                    break;
+                case "WEAK":
+                    Logger.LogInfo($"[KS_DY_CONTROL_WEAK] {dyLine}");
+                    break;
+                default:
+                    Logger.LogInfo($"[KS_DY_CONTROL_NO_HIT] {dyLine}");
+                    break;
+            }
 
             var bypass = liveControl.Level == "CONFIRMED" && proxyEval.KnownControlReqIndexCount == 0 && proxyEval.HttpCandidateCount == 0;
             if (bypass)
@@ -282,6 +305,16 @@ namespace BarrageGrab.Utility
             else
             {
                 Logger.LogInfo($"[KS_SIGNAL_EMIT_FAIL] {signalMsg}");
+            }
+            var dyBypass = dyControl.Level == "CONFIRMED" && proxyEval.KnownControlReqIndexCount == 0 && proxyEval.HttpCandidateCount == 0;
+            var dySignalOk = EmitDyControlSignal(etlPath, captureStartedAt, captureStoppedAt, dyControl, dyBypass, snis, blindClusters, out var dySignalMsg);
+            if (dySignalOk)
+            {
+                Logger.LogInfo($"[KS_DY_SIGNAL_EMIT_OK] {dySignalMsg}");
+            }
+            else
+            {
+                Logger.LogInfo($"[KS_DY_SIGNAL_EMIT_FAIL] {dySignalMsg}");
             }
             if (blindClusters.Count > 0)
             {
@@ -364,6 +397,43 @@ namespace BarrageGrab.Utility
                 return eval;
             }
             if (eval.GifshowApiHits > 0 || eval.KsapisrvApiHits > 0 || eval.WsukwaiHits > 0)
+            {
+                eval.Level = "WEAK";
+                return eval;
+            }
+            eval.Level = "NO_HIT";
+            return eval;
+        }
+
+        private DyControlEval EvaluateDyControl(List<string> snis)
+        {
+            var eval = new DyControlEval();
+            if (snis == null || snis.Count == 0)
+            {
+                eval.Level = "NO_HIT";
+                return eval;
+            }
+
+            foreach (var s in snis)
+            {
+                var h = (s ?? string.Empty).ToLowerInvariant();
+                if (h.Contains("zijieapi.com")) eval.ZijieapiHits++;
+                if (h.Contains("bytedance.com")) eval.BytedanceHits++;
+                if (h.Contains("amemv.com")) eval.AmemvHits++;
+                if (h.Contains("douyincdn.com") || h.Contains("douyinpic.com")) eval.DouyinCdnHits++;
+            }
+
+            var major = 0;
+            if (eval.ZijieapiHits > 0) major++;
+            if (eval.BytedanceHits > 0) major++;
+            if (eval.AmemvHits > 0) major++;
+
+            if (major >= 3)
+            {
+                eval.Level = "CONFIRMED";
+                return eval;
+            }
+            if (major >= 2)
             {
                 eval.Level = "WEAK";
                 return eval;
@@ -577,6 +647,83 @@ namespace BarrageGrab.Utility
                 }
 
                 message = $"traceId={traceId} level={liveControl.Level} bypass={bypassConfirmed} file={jsonlPath}";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                message = $"emit-failed: {ex.Message}";
+                return false;
+            }
+        }
+
+        private bool EmitDyControlSignal(
+            string etlPath,
+            DateTime startAt,
+            DateTime endAt,
+            DyControlEval dyControl,
+            bool bypassConfirmed,
+            List<string> snis,
+            List<BlindClusterStat> blindClusters,
+            out string message)
+        {
+            message = string.Empty;
+            try
+            {
+                var logsDir = Path.Combine(AppContext.BaseDirectory, "logs");
+                Directory.CreateDirectory(logsDir);
+                var traceId = Path.GetFileNameWithoutExtension(etlPath) ?? "unknown";
+                var jsonlPath = Path.Combine(logsDir, "dy_control_signal.jsonl");
+                var fallbackPath = Path.Combine(logsDir, "dy_control_signal.fallback.jsonl");
+
+                var topBlind = string.Join(",", blindClusters.Take(5)
+                    .Select(c => $"{{\"cluster\":\"{JsonEscape(c.Cluster)}\",\"hits\":{c.Hits},\"score\":{c.Score}}}"));
+                var uniqueSni = snis.Distinct(StringComparer.OrdinalIgnoreCase).Count();
+                var version = "unknown";
+                try
+                {
+                    version = FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion ?? "unknown";
+                }
+                catch
+                {
+                    // best-effort
+                }
+
+                var line =
+                    $"{{\"schemaVersion\":\"1.0\",\"ts\":\"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\",\"traceId\":\"{JsonEscape(traceId)}\",\"windowStart\":\"{startAt:yyyy-MM-dd HH:mm:ss.fff}\",\"windowEnd\":\"{endAt:yyyy-MM-dd HH:mm:ss.fff}\",\"source\":\"pktmon+tshark\",\"buildVersion\":\"{JsonEscape(version)}\",\"level\":\"{dyControl.Level}\",\"zijieapiHits\":{dyControl.ZijieapiHits},\"bytedanceHits\":{dyControl.BytedanceHits},\"amemvHits\":{dyControl.AmemvHits},\"douyinCdnHits\":{dyControl.DouyinCdnHits},\"bypassConfirmed\":{bypassConfirmed.ToString().ToLowerInvariant()},\"totalSni\":{snis.Count},\"uniqueSni\":{uniqueSni},\"topBlind\":[{topBlind}]}}";
+                var lineWithBreak = line + Environment.NewLine;
+
+                Exception appendEx = null;
+                var ok = false;
+                for (var i = 0; i < 2; i++)
+                {
+                    try
+                    {
+                        File.AppendAllText(jsonlPath, lineWithBreak, Encoding.UTF8);
+                        ok = true;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        appendEx = ex;
+                        System.Threading.Thread.Sleep(100);
+                    }
+                }
+                if (!ok)
+                {
+                    try
+                    {
+                        File.AppendAllText(fallbackPath, lineWithBreak, Encoding.UTF8);
+                        message = $"traceId={traceId} primary={jsonlPath} fallback={fallbackPath} err={appendEx?.Message}";
+                        return false;
+                    }
+                    catch (Exception fallbackEx)
+                    {
+                        message = $"traceId={traceId} primary={jsonlPath} fallback={fallbackPath} err={appendEx?.Message}; fallbackErr={fallbackEx.Message}";
+                        return false;
+                    }
+                }
+
+                message = $"traceId={traceId} level={dyControl.Level} bypass={bypassConfirmed} file={jsonlPath}";
                 return true;
             }
             catch (Exception ex)
