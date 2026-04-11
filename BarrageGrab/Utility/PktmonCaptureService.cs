@@ -382,11 +382,13 @@ namespace BarrageGrab.Utility
             foreach (var s in snis)
             {
                 var h = s.ToLowerInvariant();
-                if ((h.Contains("apijs") && h.Contains("gifshow.com")) || h == "api3.gifshow.com")
+                var gifshowApiHost = h.StartsWith("api") && h.EndsWith(".gifshow.com");
+                var ksapiSrvHost = h.StartsWith("api") && h.EndsWith(".ksapisrv.com");
+                if (gifshowApiHost || h == "api3.gifshow.com")
                 {
                     eval.GifshowApiHits++;
                 }
-                if (h.Contains("apijs") && h.Contains("ksapisrv.com")) eval.KsapisrvApiHits++;
+                if (ksapiSrvHost) eval.KsapisrvApiHits++;
                 if (h.Contains("wsukwai.com")) eval.WsukwaiHits++;
                 if (h == "mate.gifshow.com") eval.MateHits++;
             }
