@@ -550,6 +550,9 @@ namespace BarrageGrab.Proxy
                 Logger.LogInfo($"[wsukwai调试] isWs={isWs} TunnelType={tunnelType} URI={uri} Process={processName}");
             }
 
+            // 在代理主链路上尝试提取快手运行时参数，避免仅依赖直连链路触发。
+            TryCaptureKsRuntimeParamFromRequest(hostname, uri, processName, isWs ? "proxy.ws.any" : "proxy.http.any");
+
             //ws 方式 - 抖音
             if (isWs && webcastBarrageReg.IsMatch(uri))
             {
@@ -658,6 +661,47 @@ namespace BarrageGrab.Proxy
                     ProcessName = base.GetProcessName(processid),
                     Payload = payload
                 });
+            }
+        }
+
+        private void TryCaptureKsRuntimeParamFromRequest(string hostname, string uri, string processName, string sourceTag)
+        {
+            try
+            {
+                if (!CheckKuaishouProcess(processName)) return;
+                var host = (hostname ?? string.Empty).ToLowerInvariant();
+                if (!(host.Contains("gifshow") || host.Contains("ksapisrv") || host.Contains("kuaishou") || host.Contains("wsukwai")))
+                    return;
+
+                var abs = uri.Contains("://") ? uri : $"https://{hostname}{uri}";
+                var u = new Uri(abs);
+                var liveStreamId =
+                    u.GetQueryParam("liveStreamId")
+                    ?? u.GetQueryParam("livestreamId")
+                    ?? u.GetQueryParam("live_stream_id")
+                    ?? u.GetQueryParam("streamId");
+                var token =
+                    u.GetQueryParam("token")
+                    ?? u.GetQueryParam("websocketToken")
+                    ?? u.GetQueryParam("wsToken");
+
+                // 某些接口只带 roomId，这里做弱映射兜底，便于后续关联观测。
+                if (string.IsNullOrWhiteSpace(liveStreamId))
+                {
+                    var roomId = u.GetQueryParam("roomId") ?? u.GetQueryParam("room_id");
+                    if (!string.IsNullOrWhiteSpace(roomId) && roomId.Length >= 8)
+                    {
+                        liveStreamId = roomId;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(liveStreamId)) return;
+                AppRuntime.KsRuntimeParams?.Upsert(liveStreamId, token, abs, sourceTag);
+                Logger.LogInfo($"[KS_RUNTIME_CAPTURE] source={sourceTag} host={hostname} liveStreamId={liveStreamId} tokenLen={(token?.Length ?? 0)}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarn("[KS_RUNTIME_CAPTURE_FAIL] " + ex.Message);
             }
         }
 
