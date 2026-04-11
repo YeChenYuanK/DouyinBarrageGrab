@@ -46,6 +46,17 @@ def main():
     parser.add_argument("--out-dir", default="E:/DouyinBarrageGrab/Output/logs")
     parser.add_argument("--max-files", type=int, default=2000)
     parser.add_argument("--max-sample-values", type=int, default=8)
+    parser.add_argument(
+        "--host-include",
+        default="",
+        help="Comma-separated host keywords to include (e.g. douyin,amemv,bytedance,zijieapi)",
+    )
+    parser.add_argument(
+        "--host-exclude",
+        default="",
+        help="Comma-separated host keywords to exclude",
+    )
+    parser.add_argument("--suffix", default="", help="Optional output filename suffix, e.g. _douyin")
     args = parser.parse_args()
 
     logs_dir = Path(args.logs_dir)
@@ -60,6 +71,8 @@ def main():
     for g in SCAN_GLOBS:
         files.extend(logs_dir.glob(g))
     files = sorted(set(files))[: args.max_files]
+    include_keywords = [x.strip().lower() for x in args.host_include.split(",") if x.strip()]
+    exclude_keywords = [x.strip().lower() for x in args.host_exclude.split(",") if x.strip()]
 
     total_urls = 0
     url_counter = Counter()
@@ -80,6 +93,10 @@ def main():
             url_counter[url] += 1
             p = urlparse(url)
             host = (p.hostname or "").lower()
+            if include_keywords and not any(k in host for k in include_keywords):
+                continue
+            if exclude_keywords and any(k in host for k in exclude_keywords):
+                continue
             path = p.path or "/"
             hp = f"{host}{path}"
             host_counter[host] += 1
@@ -99,6 +116,8 @@ def main():
             "logsDir": str(logs_dir),
             "filesScanned": len(files),
             "totalUrls": total_urls,
+            "hostInclude": include_keywords,
+            "hostExclude": exclude_keywords,
         },
         "topSchemes": [{"scheme": k, "count": c} for k, c in scheme_counter.most_common(10)],
         "topHosts": [{"host": k, "count": c} for k, c in host_counter.most_common(30)],
@@ -149,8 +168,11 @@ def main():
         "params": stability_items,
     }
 
-    dict_path = out_dir / "url_param_dictionary.json"
-    stability_path = out_dir / "url_param_stability_report.json"
+    suffix = args.suffix.strip()
+    dict_name = f"url_param_dictionary{suffix}.json" if suffix else "url_param_dictionary.json"
+    stability_name = f"url_param_stability_report{suffix}.json" if suffix else "url_param_stability_report.json"
+    dict_path = out_dir / dict_name
+    stability_path = out_dir / stability_name
     dict_path.write_text(json.dumps(dictionary, ensure_ascii=False, indent=2), encoding="utf-8")
     stability_path.write_text(json.dumps(stability_report, ensure_ascii=False, indent=2), encoding="utf-8")
 
