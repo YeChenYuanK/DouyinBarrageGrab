@@ -276,6 +276,11 @@ namespace BarrageGrab
             {
                 if (buff == null || buff.Length < 64) return false;
                 if (!IsKsHardWsHost(hostName)) return false;
+                
+                // 抖音级心跳包分离：忽略小包和特定模式
+                if (buff.Length < 40) return false; // 忽略太小的心跳包
+                if (IsKsHeartbeatPacket(buff)) return true; // 识别并忽略心跳
+                
                 if (buff[0] != 0x01) return false;
                 if (buff.Length <= 24 + 16) return false;
 
@@ -344,7 +349,11 @@ namespace BarrageGrab
             var h = (hostName ?? string.Empty).Trim();
             if (h.StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase)) h = h.Substring("ksrawtx:".Length);
             if (h.StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase)) h = h.Substring("ksraw:".Length);
-            return Regex.IsMatch(h, @"^103\.107\.218\.\d{1,3}$");
+            
+            // 抖音级硬路由：IP段 + 域名匹配
+            return Regex.IsMatch(h, @"^103\.107\.218\.\d{1,3}$") ||
+                   Regex.IsMatch(h, @"^livejs-ws\.kuaishou\.cn$") ||
+                   Regex.IsMatch(h, @"^livejs-ws\.kuaishou\.com$");
         }
 
         private string ExtractKsSessionId(byte[] inflated)
@@ -481,7 +490,10 @@ namespace BarrageGrab
                 if (!TryPushKuaishouFallbackText(chatCandidate)) continue;
 
                 var nickname = ResolveKuaishouNickname(expanded, chatCandidate);
-                Logger.LogInfo($"[快手][Fallback][BIZ_PACKET] 命中评论 strategy={probe.strategy}, score={score}, nickname={nickname}, content={chatCandidate}, len={probe.payload.Length}");
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    Logger.LogInfo($"[快手][Fallback][BIZ_PACKET] 命中评论 strategy={probe.strategy}, score={score}, nickname={nickname}, content={chatCandidate}, len={probe.payload.Length}");
+                }
                 FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
                 {
                     Content = chatCandidate,
@@ -590,7 +602,10 @@ namespace BarrageGrab
 
             var nickname = ResolveKuaishouNickname(tokens, best.text);
 
-            Logger.LogInfo($"[快手][Fallback][PROFILE] 命中评论 strategy={strategy}, nickname={nickname}, content={best.text}, fromBase64={best.fromBase64}, len={payload.Length}");
+            if (AppSetting.Current.KuaishouVerboseLog)
+            {
+                Logger.LogInfo($"[快手][Fallback][PROFILE] 命中评论 strategy={strategy}, nickname={nickname}, content={best.text}, fromBase64={best.fromBase64}, len={payload.Length}");
+            }
             FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
             {
                 Content = best.text,
@@ -642,7 +657,10 @@ namespace BarrageGrab
             var dedupKey = $"{nickname}|{giftName}|{giftCount}|{strategy}";
             if (!TryPushKuaishouFallbackGift(dedupKey)) return false;
 
-            Logger.LogInfo($"[快手][Fallback][PROFILE_GIFT] strategy={strategy}, nickname={nickname}, gift={giftName}, count={giftCount}, len={payloadLen}");
+            if (AppSetting.Current.KuaishouVerboseLog)
+            {
+                Logger.LogInfo($"[快手][Fallback][PROFILE_GIFT] strategy={strategy}, nickname={nickname}, gift={giftName}, count={giftCount}, len={payloadLen}");
+            }
             FireKuaishouGift(new Modles.ProtoEntity.KsGiftMessage
             {
                 User = new Modles.ProtoEntity.KsUser
@@ -1320,7 +1338,10 @@ namespace BarrageGrab
                                     ?? "快手用户";
                         if (string.IsNullOrWhiteSpace(nickname)) nickname = "快手用户";
 
-                        Logger.LogInfo($"[快手][Fallback][JSON] 命中评论 nickname={nickname}, content={content}");
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.LogInfo($"[快手][Fallback][JSON] 命中评论 nickname={nickname}, content={content}");
+                        }
                         FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
                         {
                             Content = content,
@@ -1503,7 +1524,10 @@ namespace BarrageGrab
                 if (!IsLikelyKuaishouChatText(hint)) continue;
                 if (!TryPushHintEmitDedup(hint)) continue;
 
-                Logger.LogInfo($"[快手][Fallback] 从会话hints触发评论: {hint}");
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    Logger.LogInfo($"[快手][Fallback] 从会话hints触发评论: {hint}");
+                }
                 var msg = new Modles.ProtoEntity.KsChatMessage
                 {
                     Content = hint,
@@ -1564,7 +1588,10 @@ namespace BarrageGrab
                     HeadUrl = ""
                 }
             };
-            Logger.LogInfo($"[快手][Fallback] 通用文本提取命中: {selected}");
+            if (AppSetting.Current.KuaishouVerboseLog)
+            {
+                Logger.LogInfo($"[快手][Fallback] 通用文本提取命中: {selected}");
+            }
             FireKuaishouChat(msg);
             return true;
         }
@@ -3359,6 +3386,39 @@ namespace BarrageGrab
                 this.Process = process;
                 this.Message = data;
             }
+        }
+
+        private bool IsKsHeartbeatPacket(byte[] buff)
+        {
+            if (buff == null || buff.Length < 8) return false;
+            
+            // 基于真实样本分析：快手心跳包特征为27字节固定长度
+            // 样本数据："CKwCEAEaCgjoBxCIJxignAEg7oHm9tcz" → 27字节解码后
+            if (buff.Length == 27)
+            {
+                // 27字节是标准心跳包长度
+                return true;
+            }
+            
+            // 兼容其他常见心跳包长度范围
+            if (buff.Length >= 25 && buff.Length <= 35)
+            {
+                // 常见心跳包长度范围
+                return true;
+            }
+            
+            // 特定字节模式检测（备用方案）
+            if (buff.Length >= 16)
+            {
+                // 检查前几个字节的常见心跳模式
+                if (buff[0] == 0x02 && buff[1] == 0x00 && buff[2] == 0x00)
+                    return true;
+                
+                if (buff[0] == 0x03 && buff[1] == 0x00 && buff[4] == 0x00)
+                    return true;
+            }
+            
+            return false;
         }
     }
 }

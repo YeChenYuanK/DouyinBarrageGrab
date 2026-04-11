@@ -504,6 +504,7 @@ namespace BarrageGrab.Kuaishou
 
         /// <summary>
         /// 处理 Binary(Protobuf) 格式的消息帧（快手直播伴侣/新版接口）
+        /// 基于真实样本分析：WebSocket二进制帧 → Base64解码 → Protobuf反序列化
         /// </summary>
         private void ProcessBinaryMessage(byte[] payload)
         {
@@ -520,7 +521,7 @@ namespace BarrageGrab.Kuaishou
                 var ksPayload = Serializer.Deserialize<KsPayload>(new ReadOnlyMemory<byte>(envelope.Payload));
                 if (ksPayload?.SendMessages == null) return;
 
-                if (ksPayload.SendMessages.Count > 0)
+                if (ksPayload.SendMessages.Count > 0 && AppSetting.Current.KuaishouVerboseLog)
                     Logger.LogInfo($"[KS] 收到Protobuf消息包: payloadType={envelope.PayloadType}, msgCount={ksPayload.SendMessages.Count}, types=[{string.Join(",", ksPayload.SendMessages.Select(m => m.MsgType))}]");
 
                 foreach (var sendMsg in ksPayload.SendMessages)
@@ -533,7 +534,10 @@ namespace BarrageGrab.Kuaishou
             {
                 // Protobuf 帧可能不是标准结构，降级尝试 JSON 解析
                 try { ProcessJsonMessage(data); }
-                catch { Logger.LogWarn("[KS] Binary 消息解析失败: " + ex.Message); }
+                catch { 
+                    if (AppSetting.Current.KuaishouVerboseLog)
+                        Logger.LogWarn("[KS] Binary 消息解析失败: " + ex.Message); 
+                }
             }
         }
 
@@ -647,12 +651,13 @@ namespace BarrageGrab.Kuaishou
 
         /// <summary>
         /// 尝试对数据进行 gzip/zlib 解压，失败则返回原始数据
+        /// 基于真实样本分析：快手使用标准GZIP压缩（魔数1F 8B），无需特殊offset
         /// </summary>
         private static byte[] TryDecompress(byte[] data)
         {
             if (data == null || data.Length < 2) return data;
 
-            // gzip 魔数：1f 8b
+            // gzip 魔数：1f 8b（快手标准GZIP压缩）
             if (data[0] == 0x1f && data[1] == 0x8b)
             {
                 try
@@ -665,11 +670,15 @@ namespace BarrageGrab.Kuaishou
                         return out_.ToArray();
                     }
                 }
-                catch { }
+                catch 
+                {
+                    if (AppSetting.Current.KuaishouVerboseLog)
+                        Logger.LogWarn("[KS] GZIP解压失败，返回原始数据");
+                }
             }
 
-            // zlib 魔数：78 9c / 78 01 / 78 da
-            if (data[0] == 0x78)
+            // zlib 魔数：78 9c / 78 01 / 78 da（备用压缩格式）
+            if (data[0] == 0x78 && (data[1] == 0x9c || data[1] == 0x01 || data[1] == 0xda))
             {
                 try
                 {
@@ -681,7 +690,11 @@ namespace BarrageGrab.Kuaishou
                         return out_.ToArray();
                     }
                 }
-                catch { }
+                catch 
+                {
+                    if (AppSetting.Current.KuaishouVerboseLog)
+                        Logger.LogWarn("[KS] ZLIB解压失败，返回原始数据");
+                }
             }
 
             return data;
