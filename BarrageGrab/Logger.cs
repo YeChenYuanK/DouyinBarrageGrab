@@ -15,6 +15,22 @@ namespace BarrageGrab
         private static NLog.Config.ISetupBuilder builder;
 
         private static NLog.Logger logger;
+        private static readonly string[] ksNoisyTags =
+        [
+            "[KS_RAW_DUMP]",
+            "[KS_RAW_ALL]",
+            "[KS_RAW_ALL_TOKENS]",
+            "[KS_FLOW_LEDGER]",
+            "[KS_FLOW_SCORE]",
+            "[KS_HTTP_HOST_TOP]",
+            "[KS_HTTP_PREFLIGHT_ROUTE]",
+            "[RAW_MIRROR_HTTP_FORWARD]",
+            "[KS_STATE_TEXT_PROBE]",
+            "[KS_ROOM_JSON]",
+            "[KS_URL_DECODED]",
+            "[KS_REVERSE]",
+            "[KS_DEBUG]"
+        ];
 
         static Logger()
         {
@@ -51,7 +67,40 @@ namespace BarrageGrab
 
         public static void LogInfo(string message)
         {
+            if (ShouldSkipInfo(message))
+            {
+                return;
+            }
             logger.Info(message);
+        }
+
+        private static bool ShouldSkipInfo(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (!message.Contains("KS_", StringComparison.OrdinalIgnoreCase) &&
+                !message.Contains("[快手]", StringComparison.OrdinalIgnoreCase) &&
+                !message.Contains("wlog.gifshow.com", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return ksNoisyTags.Any(tag => message.IndexOf(tag, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         public static void LogWarn(string message)

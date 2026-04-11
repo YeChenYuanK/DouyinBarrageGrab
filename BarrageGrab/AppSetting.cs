@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Drawing;
@@ -55,6 +55,8 @@ namespace BarrageGrab
                 var ksReconnect = AppSettings["kuaishouMaxReconnect"]?.Trim() ?? "-1";
                 KuaishouMaxReconnect = int.TryParse(ksReconnect, out var recon) ? recon : -1;
                 KuaishouLiveCompanPath = AppSettings["kuaishouLiveCompanPath"]?.Trim() ?? "";
+                var ksVerboseLog = AppSettings["kuaishouVerboseLog"]?.Trim() ?? "false";
+                KuaishouVerboseLog = ksVerboseLog.Equals("true", StringComparison.OrdinalIgnoreCase);
 
                 ConfigComPort();
                 ConfigFilter();
@@ -165,6 +167,7 @@ namespace BarrageGrab
                 KuaishouCookie = kuaishou?["cookie"]?.Value<string>() ?? string.Empty;
                 KuaishouHeartbeatInterval = kuaishou?["heartbeatInterval"]?.Value<int>() ?? 20000;
                 KuaishouMaxReconnect = kuaishou?["maxReconnect"]?.Value<int>() ?? -1;
+                KuaishouVerboseLog = kuaishou?["verboseLog"]?.Value<bool>() ?? false;
 
                 // COM端口配置
                 var comPort = app["comPort"];
@@ -355,6 +358,13 @@ namespace BarrageGrab
                                 if (switchDef) break;
                                 ShowWindow = ParseBool(paramValue);
                                 Logger.PrintColor($"显示窗体设置为: {ShowWindow}");
+                                break;
+
+                            case "ks-verbose":
+                            case "kuaishou-verbose":
+                                if (switchDef) break;
+                                KuaishouVerboseLog = ParseBool(paramValue);
+                                Logger.PrintColor($"快手详细日志设置为: {KuaishouVerboseLog}");
                                 break;
 
                             // 轮询相关配置
@@ -705,5 +715,7 @@ namespace BarrageGrab
         /// 快手直播伴侣 exe 文件位置（留空则自动查找）
         /// </summary>
         public string KuaishouLiveCompanPath { get; set; } = string.Empty;
+
+        public bool KuaishouVerboseLog { get; set; } = false;
     }
 }

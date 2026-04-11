@@ -1148,15 +1148,19 @@ namespace BarrageGrab
                     Logger.LogInfo($"[KS_STATE_PROBE] noise={isActivityNoise} title={title ?? "N/A"} anchor={anchor ?? "N/A"} liveStatus={liveStatus ?? "N/A"} start={start ?? "N/A"} online={online ?? "N/A"} keys={string.Join("|", hitKeys)} preview={probePreview}");
                     if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(anchor))
                     {
-                        // 原始候选日志：用于人工核对 title/nickname 是否真实出现，不参与状态判定
                         Logger.LogInfo($"[KS_ROOM_JSON_RAW] noise={isActivityNoise} anchor={anchor ?? "N/A"}, title={title ?? "N/A"}");
-                        Logger.PrintColor($"[快手房间原始候选] noise={isActivityNoise} | 主播: {anchor ?? "N/A"} | 标题: {title ?? "N/A"}", ConsoleColor.DarkGray);
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.PrintColor($"[快手房间原始候选] noise={isActivityNoise} | 主播: {anchor ?? "N/A"} | 标题: {title ?? "N/A"}", ConsoleColor.DarkGray);
+                        }
                     }
                     if (!isActivityNoise && (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(anchor)))
                     {
                         Logger.LogInfo($"[KS_ROOM_JSON] anchor={anchor ?? "N/A"}, title={title ?? "N/A"}");
-                        // 恢复窗口提示：用于开播阶段快速观察，注意这里是 JSON 片段候选信息
-                        Logger.PrintColor($"[快手房间候选] 主播: {anchor ?? "N/A"} | 标题: {title ?? "N/A"}", ConsoleColor.Cyan);
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.PrintColor($"[快手房间候选] 主播: {anchor ?? "N/A"} | 标题: {title ?? "N/A"}", ConsoleColor.Cyan);
+                        }
                     }
 
                     var hasExplicitStateField = jsonFlat.IndexOf("\"liveStatus\":", StringComparison.OrdinalIgnoreCase) >= 0
@@ -1167,7 +1171,10 @@ namespace BarrageGrab
                         var stateTitle = title ?? jobj.SelectToken("$..liveTitle")?.Value<string>() ?? "N/A";
                         var stateAnchor = anchor ?? jobj.SelectToken("$..userName")?.Value<string>() ?? "N/A";
                         Logger.LogInfo($"[KS_STATE_CONFIRMED] anchor={stateAnchor}, title={stateTitle}, liveStatus={liveStatus ?? "N/A"}, start={start ?? "N/A"}, online={online ?? "N/A"}");
-                        Logger.PrintColor($"[快手状态确认] 主播: {stateAnchor} | 标题: {stateTitle} | liveStatus={liveStatus ?? "N/A"}", ConsoleColor.Green);
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.PrintColor($"[快手状态确认] 主播: {stateAnchor} | 标题: {stateTitle} | liveStatus={liveStatus ?? "N/A"}", ConsoleColor.Green);
+                        }
                     }
                     else if (!isActivityNoise && IsKuaishouStateCallbackJobj(jobj))
                     {
@@ -1175,7 +1182,10 @@ namespace BarrageGrab
                         var stateTitle = title ?? jobj.SelectToken("$..liveTitle")?.Value<string>() ?? "N/A";
                         var stateAnchor = anchor ?? jobj.SelectToken("$..userName")?.Value<string>() ?? "N/A";
                         Logger.LogInfo($"[KS_STATE_CANDIDATE] anchor={stateAnchor}, title={stateTitle}, liveStatus={liveStatus ?? "N/A"}, start={start ?? "N/A"}, online={online ?? "N/A"}, keys={string.Join("|", hitKeys)}");
-                        Logger.PrintColor($"[快手状态候选] 主播: {stateAnchor} | 标题: {stateTitle}", ConsoleColor.DarkCyan);
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.PrintColor($"[快手状态候选] 主播: {stateAnchor} | 标题: {stateTitle}", ConsoleColor.DarkCyan);
+                        }
                     }
 
                     foreach (var obj in jobj.DescendantsAndSelf().OfType<JObject>())

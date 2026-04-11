@@ -77,7 +77,8 @@
       // WebSocket 心跳间隔（毫秒，默认 20000）
       "heartbeatInterval": 20000,
       // 自动重连次数（-1=无限重连，0=不重连）
-      "maxReconnect": -1
+      "maxReconnect": -1,
+      "verboseLog": false
     },
     
     "comPort": {
