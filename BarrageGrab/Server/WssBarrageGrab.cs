@@ -271,7 +271,10 @@ namespace BarrageGrab
             }
             catch (Exception ex2)
             {
-                Logger.LogWarn($"[快手] WebSocket 数据解析失败: Protobuf({protobufErr ?? "no-hit"}), JSON({ex2.Message})");
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    Logger.LogWarn($"[快手] WebSocket 数据解析失败: Protobuf({protobufErr ?? "no-hit"}), JSON({ex2.Message})");
+                }
             }
         }
 
@@ -294,7 +297,10 @@ namespace BarrageGrab
                 if (inflated == null || inflated.Length == 0) return false;
 
                 var sessionId = ExtractKsSessionId(inflated);
-                if (string.IsNullOrWhiteSpace(sessionId)) return false;
+                var dedupKey = string.IsNullOrWhiteSpace(sessionId)
+                    ? ("sha1:" + ComputeSha1Hex(inflated).Substring(0, 12))
+                    : ("sid:" + sessionId);
+                if (!TryPushKsHardDedup(dedupKey)) return true;
 
                 var tokens = ExtractProtoStringTokens(inflated, maxTokens: 192);
                 var expanded = ExpandKuaishouTokensWithBase64(tokens, maxTokens: 240);
@@ -328,12 +334,25 @@ namespace BarrageGrab
             }
         }
 
+        private readonly List<string> _ksHardDedup = new List<string>();
+        private readonly object _ksHardDedupLock = new object();
+        private bool TryPushKsHardDedup(string key)
+        {
+            lock (_ksHardDedupLock)
+            {
+                if (_ksHardDedup.Contains(key)) return false;
+                _ksHardDedup.Add(key);
+                while (_ksHardDedup.Count > 200) _ksHardDedup.RemoveAt(0);
+                return true;
+            }
+        }
+
         private bool IsKsHardWsHost(string hostName)
         {
             var h = (hostName ?? string.Empty).Trim();
             if (h.StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase)) h = h.Substring("ksrawtx:".Length);
             if (h.StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase)) h = h.Substring("ksraw:".Length);
-            return string.Equals(h, "103.107.218.222", StringComparison.OrdinalIgnoreCase);
+            return Regex.IsMatch(h, @"^103\.107\.218\.\d{1,3}$");
         }
 
         private string ExtractKsSessionId(byte[] inflated)

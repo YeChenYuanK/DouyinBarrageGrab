@@ -108,6 +108,29 @@ namespace BarrageGrab
                 return false;
             }
 
+            if (!AppSetting.Current.KuaishouVerboseLog)
+            {
+                if (message.StartsWith("[快手][弹幕]", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+                if (message.StartsWith("[快手][礼物]", StringComparison.OrdinalIgnoreCase)
+                    || message.StartsWith("[快手][点赞]", StringComparison.OrdinalIgnoreCase)
+                    || message.StartsWith("[快手][进直播间]", StringComparison.OrdinalIgnoreCase)
+                    || message.StartsWith("[快手][关注]", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                if (message.StartsWith("[KS", StringComparison.OrdinalIgnoreCase)) return true;
+                if (message.StartsWith("[WS入口]", StringComparison.OrdinalIgnoreCase)
+                    && message.IndexOf("ksraw:", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+                if (message.StartsWith("[WS]", StringComparison.OrdinalIgnoreCase)
+                    && message.IndexOf("快手", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+                if (message.StartsWith("[RAW_MIRROR_HTTP_FORWARD]", StringComparison.OrdinalIgnoreCase)
+                    && message.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            }
+
             if (message.IndexOf("KS_", StringComparison.OrdinalIgnoreCase) < 0 &&
                 message.IndexOf("[快手]", StringComparison.OrdinalIgnoreCase) < 0 &&
                 message.IndexOf("wlog.gifshow.com", StringComparison.OrdinalIgnoreCase) < 0)

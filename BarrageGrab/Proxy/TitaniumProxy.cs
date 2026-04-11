@@ -277,12 +277,14 @@ namespace BarrageGrab.Proxy
         }
 
         /// <summary>
-        /// 检测是否为快手弹幕相关请求（硬路由：只认固定 IP）
+        /// 检测是否为快手弹幕相关请求（硬路由：只认固定 IP 段）
         /// </summary>
         private bool IsKuaishouBarrageRequest(string hostname, string uri)
         {
-            // 硬规则：只认 103.107.218.222，其余全部拒绝
-            return hostname == "103.107.218.222";
+            // 硬规则：只认 103.107.218.*（实测官方客户端为 IP 直连，且会轮换尾段）
+            if (string.IsNullOrWhiteSpace(hostname)) return false;
+            hostname = hostname.Trim();
+            return Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$");
         }
 
         private Task ProxyServer_BeforeRequest(object sender, SessionEventArgs e)
