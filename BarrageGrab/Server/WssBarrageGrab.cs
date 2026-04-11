@@ -491,6 +491,12 @@ namespace BarrageGrab
                 var text = Encoding.UTF8.GetString(inflated);
                 if (string.IsNullOrWhiteSpace(text)) return;
 
+                // 先尝试 protobuf 结构化提取（优先命中 token）。
+                if (TryCaptureKsRuntimeParamFromProtoBytes(inflated, sourceTag, processName))
+                {
+                    return;
+                }
+
                 Func<string[], string> firstMatch = patterns =>
                 {
                     foreach (var p in patterns)
@@ -537,6 +543,62 @@ namespace BarrageGrab
             {
                 Logger.LogWarn("[KS_RUNTIME_CAPTURE_TEXT_FAIL] " + ex.Message);
             }
+        }
+
+        private bool TryCaptureKsRuntimeParamFromProtoBytes(byte[] data, string sourceTag, string processName)
+        {
+            try
+            {
+                // A) 直接把当前 bytes 当作 KsAuthRequest 试解
+                try
+                {
+                    var directAuth = Serializer.Deserialize<Modles.ProtoEntity.KsAuthRequest>(new ReadOnlyMemory<byte>(data));
+                    if (!string.IsNullOrWhiteSpace(directAuth?.LiveStreamId))
+                    {
+                        AppRuntime.KsRuntimeParams?.Upsert(directAuth.LiveStreamId, directAuth.Token, "", sourceTag + ".proto.directAuth");
+                        Logger.LogInfo($"[KS_RUNTIME_CAPTURE_PROTO] source={sourceTag}.proto.directAuth process={processName} liveStreamId={directAuth.LiveStreamId} tokenLen={(directAuth.Token?.Length ?? 0)}");
+                        return true;
+                    }
+                }
+                catch
+                {
+                    // ignore direct-auth failures
+                }
+
+                // B) 当作 KsSocketMessage 信封试解，再按 payloadType 判断
+                foreach (var c in BuildKuaishouDecodeCandidates(data).Take(32))
+                {
+                    try
+                    {
+                        var span = new ReadOnlyMemory<byte>(c.Data, c.Offset, c.Data.Length - c.Offset);
+                        var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(span);
+                        if (envelope?.Payload == null || envelope.Payload.Length == 0) continue;
+                        var payloadType = (envelope.PayloadType ?? string.Empty).Trim();
+
+                        // 200 = auth request
+                        if (payloadType == "200" || payloadType.Equals("AUTH", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var auth = Serializer.Deserialize<Modles.ProtoEntity.KsAuthRequest>(new ReadOnlyMemory<byte>(envelope.Payload));
+                            if (!string.IsNullOrWhiteSpace(auth?.LiveStreamId))
+                            {
+                                AppRuntime.KsRuntimeParams?.Upsert(auth.LiveStreamId, auth.Token, "", sourceTag + ".proto.envelopeAuth");
+                                Logger.LogInfo($"[KS_RUNTIME_CAPTURE_PROTO] source={sourceTag}.proto.envelopeAuth process={processName} liveStreamId={auth.LiveStreamId} tokenLen={(auth.Token?.Length ?? 0)}");
+                                return true;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // keep trying
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarn("[KS_RUNTIME_CAPTURE_PROTO_FAIL] " + ex.Message);
+            }
+
+            return false;
         }
 
         private void LogKuaishouStateTextProbe(byte[] inflated, string wireSummary)
