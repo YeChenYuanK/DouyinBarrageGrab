@@ -157,7 +157,8 @@ namespace BarrageGrab.Proxy
             string hostname = e.HttpClient.Request.RequestUri.Host;
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
-            bool isKsIpDirect = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(hostname, @"^116\.153\.82\.\d{1,3}$");
+            // 只要是 IP 格式且进程是快手，就认为它是直连弹幕 IP
+            bool isKsIpDirect = Regex.IsMatch(hostname, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$");
             
             // 只对已知直播客户端进程做 SSL 解密，其他进程（游戏App、浏览器等）直接透传
             var knownLiveProcesses = new[] { "直播伴侣", "kwailive", "webcast_mate", "douyin" };
@@ -311,8 +312,8 @@ namespace BarrageGrab.Proxy
             if (string.IsNullOrWhiteSpace(hostname)) return false;
             hostname = hostname.Trim();
             
-            // 硬规则1：IP段 103.107.218.*（官方客户端直连） 或 116.153.82.* (刚才抓到的IP)
-            bool isKsIp = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(hostname, @"^116\.153\.82\.\d{1,3}$");
+            // 硬规则1：IP段 (任何 IP 格式都当做直连)
+            bool isKsIp = Regex.IsMatch(hostname, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$");
             
             // 硬规则2：域名精确匹配 livejs-ws.kuaishou.cn（浏览器WebSocket连接）
             bool isKsDomain = Regex.IsMatch(hostname, @"^(livejs-ws\.kuaishou\.cn|livejs-ws\.kuaishou\.com|p3-live\.wsukwai\.com)$");
@@ -345,7 +346,7 @@ namespace BarrageGrab.Proxy
             bool isWsUpgrade = upgradeHeader.IndexOf("websocket", StringComparison.OrdinalIgnoreCase) >= 0;
 
             // 快手直播伴侣的直连IP往往会被识别为普通的HTTPS请求，我们需要强制把它按 WebSocket/TLS 处理
-            bool isKsIpDirect = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(hostname, @"^116\.153\.82\.\d{1,3}$");
+            bool isKsIpDirect = Regex.IsMatch(hostname, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$");
             
             // 快手抓包模式只跟随官方客户端进程，避免浏览器流量干扰鉴权链路
             // 如果是快手进程，且是快手域名(WS)或者是快手直连IP(任意)，强制订阅数据
@@ -1216,7 +1217,7 @@ namespace BarrageGrab.Proxy
             }
 
             // --- 拦截快手直连 IP 的 TCP 粘包/半包处理 ---
-            bool isKsIpDirect = Regex.IsMatch(host, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(host, @"^116\.153\.82\.\d{1,3}$");
+            bool isKsIpDirect = Regex.IsMatch(host, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$");
             if (isKsIpDirect && CheckKuaishouProcess(processName))
             {
                 var buf = _ksTunnelBuffers.GetOrAdd(args, _ => new List<byte>());
