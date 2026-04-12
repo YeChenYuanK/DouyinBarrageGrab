@@ -237,16 +237,10 @@ namespace BarrageGrab
             }
 
             // 快手网页端常见资料包：评论正文常在外层帧切片后的 payload 中
-            if (TryProcessKuaishouProfileChatPacketWithCandidates(buff))
-            {
-                return;
-            }
+            // 已废弃猜谜逻辑
 
             // 基于实战样本：大量评论事件包在 raw/candidate 层可抽出文本 token，但未命中标准 envelope。
-            if (TryProcessKuaishouBusinessPacketWithCandidates(buff, e.ProcessName))
-            {
-                return;
-            }
+            // 已废弃猜谜逻辑
 
             // 二层协议：外层二进制头 + 内层 GZIP（日志已确认存在 1F 8B 08）
             if (TryProcessKuaishouEmbeddedGzip(buff, e.ProcessName)) return;
@@ -294,47 +288,7 @@ namespace BarrageGrab
             }
         }
 
-        private bool TryProcessKuaishouProfileChatPacketWithCandidates(byte[] buff)
-        {
-            return false;
-        }
-
-        private readonly List<string> _ksBizPacketDedup = new List<string>();
-        private readonly object _ksBizPacketDedupLock = new object();
-
-        private bool TryPushKuaishouBizPacketDedup(string key)
-        {
-            lock (_ksBizPacketDedupLock)
-            {
-                if (_ksBizPacketDedup.Contains(key)) return false;
-                _ksBizPacketDedup.Add(key);
-                while (_ksBizPacketDedup.Count > 240) _ksBizPacketDedup.RemoveAt(0);
-                return true;
-            }
-        }
-
-        private bool TryProcessKuaishouBusinessPacketWithCandidates(byte[] buff, string processName)
-        {
-            // 已废弃猜谜逻辑
-            return false;
-        }
-
-        private bool TryProcessKuaishouProfileGiftPacket(List<string> tokens, string strategy, int payloadLen)
-        {
-            // 已废弃猜谜逻辑
-            return false;
-        }
-
-        private bool TryPushKuaishouFallbackGift(string dedupKey)
-        {
-            lock (_ksFallbackGiftDedupLock)
-            {
-                if (_ksFallbackGiftDedup.Contains(dedupKey)) return false;
-                _ksFallbackGiftDedup.Add(dedupKey);
-                while (_ksFallbackGiftDedup.Count > 120) _ksFallbackGiftDedup.RemoveAt(0);
-                return true;
-            }
-        }
+        // 已废弃旧版猜谜函数
 
         private bool TryProcessKuaishouEmbeddedGzip(byte[] buff, string processName)
         {
@@ -970,9 +924,7 @@ namespace BarrageGrab
                                    ?? obj["text"]?.Value<string>()
                                    ?? obj["message"]?.Value<string>()
                                    ?? obj["msg"]?.Value<string>();
-                        if (!allowChatEmit) continue;
-                        if (!IsLikelyKuaishouChatText(content)) continue;
-                        if (!TryPushKuaishouFallbackText(content)) continue;
+                        if (!allowChatEmit || string.IsNullOrWhiteSpace(content)) continue;
 
                         var nickname = obj["nickname"]?.Value<string>()
                                     ?? obj["userName"]?.Value<string>()
@@ -980,21 +932,21 @@ namespace BarrageGrab
                                     ?? "快手用户";
                         if (string.IsNullOrWhiteSpace(nickname)) nickname = "快手用户";
 
-                        if (AppSetting.Current.KuaishouVerboseLog)
+                        // 防止过度泛滥，只对内容合理的进行推送
+                        if (content.Length < 100 && !content.Contains("http"))
                         {
-                            Logger.LogInfo($"[快手][Fallback][JSON] 命中评论 nickname={nickname}, content={content}");
-                        }
-                        FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
-                        {
-                            Content = content,
-                            User = new Modles.ProtoEntity.KsUser
+                            FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
                             {
-                                Nickname = nickname,
-                                UserId = "",
-                                HeadUrl = ""
-                            }
-                        });
-                        return true;
+                                Content = content,
+                                User = new Modles.ProtoEntity.KsUser
+                                {
+                                    Nickname = nickname,
+                                    UserId = "",
+                                    HeadUrl = ""
+                                }
+                            });
+                            return true;
+                        }
                     }
                 }
 
@@ -1149,40 +1101,12 @@ namespace BarrageGrab
                 Logger.LogInfo($"[KS_ROLE] anchor={anchor}, audience={audience}, commentCandidate={comment}");
                 return;
             }
-
-            // 兜底：记录可疑昵称与可疑评论片段
-            var commentLike = withoutStatus.FirstOrDefault(IsLikelyKuaishouChatText) ?? "";
-            Logger.LogInfo($"[KS_ROLE] tokens={string.Join("|", tokens)}, commentLike={commentLike}");
         }
 
-        private readonly List<string> _ksHintEmitDedup = new List<string>();
-        private readonly object _ksHintEmitDedupLock = new object();
+        // 兜底：记录可疑昵称与可疑评论片段
         private void TryEmitFallbackChatFromHints(List<string> hints)
         {
-            if (hints == null || hints.Count == 0) return;
-            foreach (var raw in hints)
-            {
-                var hint = (raw ?? string.Empty).Trim();
-                if (!IsLikelyKuaishouChatText(hint)) continue;
-                if (!TryPushHintEmitDedup(hint)) continue;
-
-                if (AppSetting.Current.KuaishouVerboseLog)
-                {
-                    Logger.LogInfo($"[快手][Fallback] 从会话hints触发评论: {hint}");
-                }
-                var msg = new Modles.ProtoEntity.KsChatMessage
-                {
-                    Content = hint,
-                    User = new Modles.ProtoEntity.KsUser
-                    {
-                        Nickname = "快手用户",
-                        UserId = "",
-                        HeadUrl = ""
-                    }
-                };
-                FireKuaishouChat(msg);
-                return;
-            }
+            // 已废弃
         }
 
         private bool TryPushHintEmitDedup(string text)
@@ -2590,34 +2514,7 @@ namespace BarrageGrab
 
         private void LogKuaishouRawAllText(string channel, string fileBase, string text)
         {
-            if (string.IsNullOrWhiteSpace(text)) return;
-            if (!AppSetting.Current.KuaishouVerboseLog) return;
-            try
-            {
-                var preview = new string(text.Take(2000).Select(c => char.IsControl(c) ? '.' : c).ToArray());
-                Logger.LogInfo($"[KS_RAW_ALL] channel={channel} file={fileBase} preview={preview}");
-
-                var tokens = Regex.Matches(text, @"[\u4e00-\u9fa5A-Za-z0-9_/\-:=?&%.]{2,80}")
-                    .Cast<Match>()
-                    .Select(m => m.Value)
-                    .Distinct()
-                    .Take(400)
-                    .ToList();
-                if (tokens.Count == 0) return;
-
-                for (int i = 0; i < tokens.Count; i += 40)
-                {
-                    var part = tokens.Skip(i).Take(40);
-                    Logger.LogInfo($"[KS_RAW_ALL_TOKENS] channel={channel} file={fileBase} part={i / 40 + 1} tokens={string.Join(" | ", part)}");
-                }
-
-                TryLogDecodedKuaishouUrls(channel, fileBase, text);
-                TryLogKuaishouPushConfigSignals(channel, fileBase, text);
-            }
-            catch
-            {
-                // ignore
-            }
+            // 已废弃干扰日志
         }
 
         private void TryLogKuaishouPushConfigSignals(string channel, string fileBase, string text)
