@@ -53,7 +53,7 @@ namespace BarrageGrab.Proxy
         private readonly Regex webcastBarrageReg = new Regex(@"webcast\d+-ws-web-\w+\.(douyin|amemv)\.com");
 
         // 快手弹幕 WebSocket 地址正则（用于识别和拦截快手弹幕流）
-        private readonly Regex ksBarrageReg = new Regex(@"(live-ws.*\.kuaishou\.com|livejs-ws\.kuaishou\.cn|.*ws.*kuaishou.*|.*kuaishou.*ws.*|.*wsukwai\.com.*|w[0-9]\.kskwai\.com|api[0-9]\.gifshow\.com|apijs2\.ksapisrv\.com|/websocket|/group\d+)");
+        private readonly Regex ksBarrageReg = new Regex(@"(live-ws.*\.kuaishou\.com|livejs-ws\.kuaishou\.cn|.*ws.*kuaishou.*|.*kuaishou.*ws.*|.*wsukwai\.com.*|w[0-9]\.kskwai\.com|api[0-9]?\.gifshow\.com|apijs[0-9]?\.gifshow\.com|apijs2\.ksapisrv\.com|/websocket|/group\d+)");
         private readonly object ksHttpReqIndexLock = new object();
         private readonly Dictionary<string, DateTime> ksHttpReqIndexLastAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 
