@@ -159,11 +159,18 @@ namespace BarrageGrab.Proxy
             var processName = base.GetProcessName(processid);
             bool isKsIpDirect = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(hostname, @"^116\.153\.82\.\d{1,3}$");
             
+            // 只对已知直播客户端进程做 SSL 解密，其他进程（游戏App、浏览器等）直接透传
+            var knownLiveProcesses = new[] { "直播伴侣", "kwailive", "webcast_mate", "douyin" };
+            bool isLiveProcess = knownLiveProcesses.Any(p => processName != null && processName.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0);
+
+            e.DecryptSsl = isLiveProcess && CheckHost(hostname);
+
             if (isKsIpDirect && CheckKuaishouProcess(processName))
             {
-                // 快手直连 IP 强制解密 (把 HTTPS/WSS 隧道强行解开，变成明文 WebSocket)
-                e.DecryptSsl = true;
-                Logger.LogInfo($"[KS_TUNNEL] 强制解密快手直连 IP: {hostname}");
+                // 快手直连 IP: 因为它不是 TLS/HTTPS 协议，而是直接裸奔的 TCP 协议 (01 1A 2B 3C...)，
+                // 所以绝对不能强制解密，否则 TitaniumProxy 的 TLS 握手会失败断开。
+                e.DecryptSsl = false;
+                Logger.LogInfo($"[KS_TUNNEL] 快手直连 TCP 协议 IP，关闭解密: {hostname}");
             }
             
             return Task.CompletedTask;
@@ -971,30 +978,7 @@ namespace BarrageGrab.Proxy
             return Task.CompletedTask;
         }
 
-        // 恢复 ExplicitEndPoint_BeforeTunnelConnectRequest
-        private Task ExplicitEndPoint_BeforeTunnelConnectRequest(object sender, TunnelConnectSessionEventArgs e)
-        {
-            string hostname = e.HttpClient.Request.RequestUri.Host;
-            var processid = e.HttpClient.ProcessId.Value;
-            var processName = base.GetProcessName(processid);
-
-            // 只对已知直播客户端进程做 SSL 解密，其他进程（游戏App、浏览器等）直接透传
-            var knownLiveProcesses = new[] { "直播伴侣", "kwailive", "webcast_mate", "douyin" };
-            bool isLiveProcess = knownLiveProcesses.Any(p => processName != null && processName.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0);
-
-            e.DecryptSsl = isLiveProcess && CheckHost(hostname);
-            
-            // 快手直连 IP: 因为它不是 TLS/HTTPS 协议，而是直接裸奔的 TCP 协议 (01 1A 2B 3C...)，
-            // 所以绝对不能强制解密，否则 TitaniumProxy 的 TLS 握手会失败断开。
-            bool isKsIpDirect = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(hostname, @"^116\.153\.82\.\d{1,3}$");
-            if (isKsIpDirect && CheckKuaishouProcess(processName))
-            {
-                e.DecryptSsl = false;
-                Logger.LogInfo($"[KS_TUNNEL] 快手直连 TCP 协议 IP，关闭解密: {hostname}");
-            }
-
-            return Task.CompletedTask;
-        }
+        // 移除重复定义的 ExplicitEndPoint_BeforeTunnelConnectRequest
 
         // 隧道建立后，对 kwailive 进程订阅 DecryptedDataReceived（含IP直连的弹幕WS）
         private Task ExplicitEndPoint_BeforeTunnelConnectResponse(object sender, TunnelConnectSessionEventArgs e)
