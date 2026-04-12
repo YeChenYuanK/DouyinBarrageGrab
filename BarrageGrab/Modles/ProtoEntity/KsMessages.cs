@@ -114,6 +114,74 @@ namespace BarrageGrab.Modles.ProtoEntity
     }
 
     /// <summary>
+    /// 快手 PC 直播伴侣端特有的 Payload 结构（基于二进制抓包推断）
+    /// 与网页版的 KsPayload 不同，它不是把类型作为字符串放在 SendMessage 里，
+    /// 而是直接把不同类型的消息放在了不同的数字 Tag 数组中。
+    /// </summary>
+    [ProtoContract]
+    public class KsPcPayload
+    {
+        // 假设 Tag 7 是聊天消息数组 (基于二进制分析)
+        [ProtoMember(7, IsRequired = false)]
+        public List<KsPcChatMessage> ChatMessages { get; } = new List<KsPcChatMessage>();
+        
+        // 假设 Tag 8 是礼物消息数组
+        [ProtoMember(8, IsRequired = false)]
+        public List<KsPcGiftMessage> GiftMessages { get; } = new List<KsPcGiftMessage>();
+        
+        // 假设 Tag 9 是点赞消息数组
+        [ProtoMember(9, IsRequired = false)]
+        public List<KsPcLikeMessage> LikeMessages { get; } = new List<KsPcLikeMessage>();
+
+        // 假设 Tag 10 是进房消息数组
+        [ProtoMember(10, IsRequired = false)]
+        public List<KsPcEnterMessage> EnterMessages { get; } = new List<KsPcEnterMessage>();
+    }
+
+    [ProtoContract]
+    public class KsPcChatMessage
+    {
+        [ProtoMember(1)]
+        public KsUser User { get; set; }
+
+        [ProtoMember(2)]
+        public string Content { get; set; }
+    }
+
+    [ProtoContract]
+    public class KsPcGiftMessage
+    {
+        [ProtoMember(1)]
+        public KsUser User { get; set; }
+
+        [ProtoMember(2)]
+        public long GiftId { get; set; }
+
+        [ProtoMember(3)]
+        public string GiftName { get; set; }
+
+        [ProtoMember(4)]
+        public long Count { get; set; }
+    }
+
+    [ProtoContract]
+    public class KsPcLikeMessage
+    {
+        [ProtoMember(1)]
+        public KsUser User { get; set; }
+
+        [ProtoMember(2)]
+        public long Count { get; set; }
+    }
+
+    [ProtoContract]
+    public class KsPcEnterMessage
+    {
+        [ProtoMember(1)]
+        public KsUser User { get; set; }
+    }
+
+    /// <summary>
     /// 快手单条下行消息（消息信封）
     /// </summary>
     [ProtoContract]

@@ -1500,6 +1500,76 @@ namespace BarrageGrab
 
                     // ====== 严格 Protobuf 解析 ======
                     
+                    var ksPcPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPcPayload>(new ReadOnlyMemory<byte>(innerPayload));
+                    
+                    bool hasPcData = false;
+
+                    if (ksPcPayload != null)
+                    {
+                        if (ksPcPayload.ChatMessages != null && ksPcPayload.ChatMessages.Count > 0)
+                        {
+                            hasPcData = true;
+                            foreach(var chat in ksPcPayload.ChatMessages)
+                            {
+                                FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
+                                {
+                                    Content = chat.Content,
+                                    User = chat.User
+                                });
+                            }
+                        }
+                        
+                        if (ksPcPayload.GiftMessages != null && ksPcPayload.GiftMessages.Count > 0)
+                        {
+                            hasPcData = true;
+                            foreach(var gift in ksPcPayload.GiftMessages)
+                            {
+                                FireKuaishouGift(new Modles.ProtoEntity.KsGiftMessage
+                                {
+                                    User = gift.User,
+                                    GiftId = gift.GiftId,
+                                    GiftName = gift.GiftName,
+                                    Count = gift.Count
+                                });
+                            }
+                        }
+
+                        if (ksPcPayload.LikeMessages != null && ksPcPayload.LikeMessages.Count > 0)
+                        {
+                            hasPcData = true;
+                            foreach(var like in ksPcPayload.LikeMessages)
+                            {
+                                FireKuaishouLike(new Modles.ProtoEntity.KsLikeMessage
+                                {
+                                    User = like.User,
+                                    Count = like.Count
+                                });
+                            }
+                        }
+
+                        if (ksPcPayload.EnterMessages != null && ksPcPayload.EnterMessages.Count > 0)
+                        {
+                            hasPcData = true;
+                            foreach(var enter in ksPcPayload.EnterMessages)
+                            {
+                                FireKuaishouEnter(new Modles.ProtoEntity.KsEnterMessage
+                                {
+                                    User = enter.User
+                                });
+                            }
+                        }
+                    }
+
+                    if (hasPcData)
+                    {
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.LogInfo($"[快手] PC 专属 Protobuf 解析成功！");
+                        }
+                        return true;
+                    }
+
+                    // 如果不是 PC 专属格式，尝试 Web 格式
                     var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(innerPayload));
                     
                     if (ksPayload?.SendMessages == null || ksPayload.SendMessages.Count == 0)
