@@ -1099,74 +1099,27 @@ namespace BarrageGrab.Proxy
 
             // --- 拦截快手直连 IP 的 TCP 粘包/半包处理 ---
             bool isKsIpDirect = Regex.IsMatch(host, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$");
-            if (isKsIpDirect && CheckKuaishouProcess(processName))
+            if (isKsIpDirect && isKwaiProcess)
             {
                 var buf = _ksTunnelBuffers.GetOrAdd(args, _ => new List<byte>());
                 buf.AddRange(new ArraySegment<byte>(e.Buffer, e.Offset, e.Count));
 
-                while (buf.Count >= 16)
+                while (buf.Count >= 4)
                 {
                     var data = buf.ToArray();
+                    
+                    // 快手 PC 客户端的二进制包可能带有特殊的 4 字节头部 01 1A 2B 3C，但有的时候也会是标准的 WS 帧！
+                    // 所以我们在这里不能仅仅通过 01 1A 2B 3C 去找头，如果找不到，它可能就是一个明文包或者是普通的未知帧。
+                    // 为了避免截断正常的包，这里先把这种强行寻找并截断 01 1A 2B 3C 逻辑注释掉，
+                    // 改为直接把所有的原始 payload 透传上去，因为在 WssBarrageGrab.cs 里我们已经实现了无视包头暴搜 GZIP 的逻辑！
+                    
+                    /* 屏蔽这段会导致数据被错误丢弃的强匹配粘包逻辑
                     if (data[0] == 0x01 && data[1] == 0x1A && data[2] == 0x2B && data[3] == 0x3C)
                     {
-                        // 读取包体长度 (Big Endian)
-                        int payloadLen = (data[12] << 24) | (data[13] << 16) | (data[14] << 8) | data[15];
-                        if (payloadLen < 0 || payloadLen > 10 * 1024 * 1024) 
-                        {
-                            Logger.LogInfo($"[KS_TCP_FRAME] 异常长度 {payloadLen}，清空缓冲区");
-                            buf.Clear();
-                            break;
-                        }
-                        if (buf.Count < 16 + payloadLen)
-                        {
-                            break; // 等待更多数据
-                        }
-
-                        byte[] packet = new byte[payloadLen];
-                        Array.Copy(data, 16, packet, 0, payloadLen);
-                        buf.RemoveRange(0, 16 + payloadLen);
-
-                        if (AppSetting.Current.KuaishouVerboseLog)
-                        {
-                            Logger.LogInfo($"[KS_TCP_FRAME] 提取完整业务包 size:{payloadLen} host:{host}");
-                        }
-
-                        base.FireWsEvent(new WsMessageEventArgs()
-                        {
-                            ProcessID = processId,
-                            HostName = "ksraw:" + host,
-                            Payload = packet,
-                            ProcessName = processName
-                        });
-                    }
-                    else
-                    {
-                        // 寻找下一个包头
-                        int nextHeader = -1;
-                        for (int i = 1; i <= data.Length - 4; i++)
-                        {
-                            if (data[i] == 0x01 && data[i+1] == 0x1A && data[i+2] == 0x2B && data[i+3] == 0x3C)
-                            {
-                                nextHeader = i;
-                                break;
-                            }
-                        }
-                        if (nextHeader != -1)
-                        {
-                            buf.RemoveRange(0, nextHeader);
-                        }
-                        else
-                        {
-                            // 没找到头，保留最后3个字节以防截断
-                            if (buf.Count > 3)
-                            {
-                                buf.RemoveRange(0, buf.Count - 3);
-                            }
-                            break;
-                        }
-                    }
+                    */
+                    break;
                 }
-                return; // 处理完毕，不走下面的透传逻辑
+                // 暂时放行，由下面的透传逻辑处理
             }
             // ------------------------------------------
 
