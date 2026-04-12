@@ -274,7 +274,8 @@ namespace BarrageGrab.Proxy
                 "ksnebula",         // 快手星芒
                 "gifshow",          // 快手旧名
                 "KSApp",            // Mac 版快手
-                "KwaiMix"           // 快手国际版
+                "KwaiMix",          // 快手国际版
+                "kwailive"          // 直播伴侣进程名
             };
             
             foreach (var name in ksProcessNames)
