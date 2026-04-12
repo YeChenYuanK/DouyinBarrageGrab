@@ -1,0 +1,8 @@
+{
+  "apiKey": "sk-nVcTJNQPYoMEQQRaY06a0vtrJPZQ3p6eLNxv4jYTw0X7IvGA",
+  "model": "gemini-2.5-pro-exp-03-25",
+  "maxOutputTokens": 8192,
+  "temperature": 0.7,
+  "topP": 0.95,
+  "topK": 40
+}

@@ -82,7 +82,7 @@ namespace BarrageGrab.Kuaishou
         const string KS_PC_LIVE_URL = "https://live.kuaishou.com/u/{0}";
 
         // 快手直播伴侣 WebSocket 弹幕服务器 Host（用于 TitaniumProxy 白名单）
-        public const string KS_DANMU_WS_HOST = "live-ws-group.kuaishou.com";
+        public const string KS_DANMU_WS_HOST = "w2.kskwai.com"; // 快手直播伴侣WebSocket域名
 
         // 快手弹幕 WebSocket 路径（新版本使用 /websocket）
         public const string KS_DANMU_WS_PATH = "/websocket";
@@ -417,7 +417,10 @@ namespace BarrageGrab.Kuaishou
                 "live-ws.kuaishou.com",
                 "live-ws-pg-group1.kuaishou.com",
                 "live-ws-pg-group2.kuaishou.com",
-                "live-ws-pg-group3.kuaishou.com"
+                "live-ws-pg-group3.kuaishou.com",
+                "w2.kskwai.com",           // 快手直播伴侣WebSocket域名
+                "api3.gifshow.com",         // 快手API主域名
+                "apijs2.ksapisrv.com"       // 快手API服务域名
             };
             foreach (var host in hosts)
             {
