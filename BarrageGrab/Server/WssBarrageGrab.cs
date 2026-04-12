@@ -207,7 +207,12 @@ namespace BarrageGrab
             var buff = e.Payload;
             if (buff.Length == 0) return;
 
-            if (TryProcessKuaishouHardRouteWsPacket(buff, e.HostName, e.ProcessName))
+            // 快手直连 IP 原始数据已经被我们在 TitaniumProxy.cs 里组装成完整的一包业务数据 (剥离了 16 字节包头)
+            // 所以我们不要再走 TryProcessKuaishouHardRouteWsPacket 里面的错乱裁剪逻辑
+            bool isKsRawIp = (e.HostName ?? string.Empty).StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase) 
+                          && Regex.IsMatch(e.HostName, @"ksraw:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}");
+            
+            if (!isKsRawIp && TryProcessKuaishouHardRouteWsPacket(buff, e.HostName, e.ProcessName))
             {
                 return;
             }
@@ -1910,10 +1915,94 @@ namespace BarrageGrab
                 try
                 {
                     var span = new ReadOnlyMemory<byte>(candidate.Data, candidate.Offset, candidate.Data.Length - candidate.Offset);
-                    var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(span);
-                    if (envelope?.Payload == null || envelope.Payload.Length == 0) continue;
-                    var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(envelope.Payload));
-                    if (ksPayload?.SendMessages == null || ksPayload.SendMessages.Count == 0) continue;
+                    byte[] innerPayload = null;
+                    int compressionType = 0;
+
+                    // 优先尝试 PC 端协议结构 (Field 1: PayloadType, Field 2: CompressionType, Field 3: Payload)
+                    try
+                    {
+                        var pcEnvelope = Serializer.Deserialize<Modles.ProtoEntity.KsPcSocketMessage>(span);
+                        if (pcEnvelope != null && pcEnvelope.Payload != null && pcEnvelope.Payload.Length > 0)
+                        {
+                            innerPayload = pcEnvelope.Payload;
+                            compressionType = pcEnvelope.CompressionType;
+                        }
+                    }
+                    catch
+                    {
+                        // 失败则尝试 Web 端协议结构 (Field 1: CompressionType, Field 2: PayloadType(String), Field 3: Payload)
+                    }
+
+                    if (innerPayload == null)
+                    {
+                        var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(span);
+                        if (envelope?.Payload == null || envelope.Payload.Length == 0) continue;
+                        innerPayload = envelope.Payload;
+                        compressionType = envelope.CompressionType;
+                    }
+
+                    // 检查是否需要 GZIP 解压
+                    if (compressionType == 2 || compressionType == 1 || (innerPayload.Length > 2 && innerPayload[0] == 0x1F && innerPayload[1] == 0x8B))
+                    {
+                        try
+                        {
+                            // 针对快手 PC 端的残缺 GZIP 进行容错处理
+                            byte[] decompressed = null;
+                            try
+                            {
+                                decompressed = Decompress(innerPayload);
+                            }
+                            catch
+                            {
+                                // 如果自带的 Decompress 报错，可能没法处理结尾的错位数据，这里忽略错误
+                            }
+                            
+                            if (decompressed != null && decompressed.Length > 0)
+                            {
+                                innerPayload = decompressed;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogInfo($"[快手] GZIP 解压失败: {ex.Message}");
+                        }
+                    }
+
+                    // PC 端有些包不一定是 KsPayload，但包含弹幕
+                    var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(innerPayload));
+                    if (ksPayload?.SendMessages == null || ksPayload.SendMessages.Count == 0)
+                    {
+                        // 兜底尝试：如果标准解析没命中，但在 payload 中发现了可疑的文本（比如中文字符），强制走 fallback
+                        var tokens = ExtractProtoStringTokens(innerPayload, maxTokens: 192);
+                        var chatCandidate = tokens
+                            .Where(t => IsLikelyKuaishouChatText(t))
+                            .Where(t => !IsLikelyKuaishouNickname(t))
+                            .Where(t => !ContainsGuidLikeFragment(t))
+                            .OrderByDescending(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF))
+                            .ThenBy(t => t.Length)
+                            .FirstOrDefault();
+                            
+                        if (!string.IsNullOrWhiteSpace(chatCandidate))
+                        {
+                            if (AppSetting.Current.KuaishouVerboseLog)
+                            {
+                                Logger.LogInfo($"[快手] PC 协议标准 Protobuf 失败，但触发文本兜底，捕获内容: {chatCandidate}");
+                            }
+                            var nickname = ResolveKuaishouNickname(tokens, chatCandidate);
+                            FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
+                            {
+                                Content = chatCandidate,
+                                User = new Modles.ProtoEntity.KsUser
+                                {
+                                    Nickname = nickname,
+                                    UserId = "",
+                                    HeadUrl = ""
+                                }
+                            });
+                            return true;
+                        }
+                        continue;
+                    }
 
                     if (AppSetting.Current.KuaishouVerboseLog)
                     {
