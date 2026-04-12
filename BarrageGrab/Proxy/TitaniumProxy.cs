@@ -870,6 +870,8 @@ namespace BarrageGrab.Proxy
         // 记录隧道最后活跃时间，用于回收长期不活跃连接，防止缓存增长
         private readonly System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, DateTime> _ksTunnelLastSeenUtc
             = new System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, DateTime>();
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, List<byte>> _ksTunnelMessageBuffers
+            = new System.Collections.Concurrent.ConcurrentDictionary<TunnelConnectSessionEventArgs, List<byte>>();
         // 快手流量画像（用于定位真实评论主通道）
         private sealed class KsFlowProfile
         {
@@ -967,6 +969,7 @@ namespace BarrageGrab.Proxy
                     byte b0 = data[idx++];
                     byte b1 = data[idx++];
                     bool masked = (b1 & 0x80) != 0;
+                    bool fin = (b0 & 0x80) != 0;
                     int opcode = b0 & 0x0F;
                     long payloadLen = b1 & 0x7F;
 
@@ -1003,19 +1006,48 @@ namespace BarrageGrab.Proxy
 
                     buf.RemoveRange(0, (int)totalLen);
 
-                    // opcode: 0=continuation, 1=text, 2=binary, 8=close, 9=ping, 10=pong
-                    if (opcode == 1 || opcode == 2)
+                    if (opcode == 0) // Continuation
                     {
-                        if (payload.Length > 0)
+                        var msgBuf = _ksTunnelMessageBuffers.GetOrAdd(args, _ => new List<byte>());
+                        msgBuf.AddRange(payload);
+                        if (fin)
                         {
-                            Logger.LogInfo($"[KS_TUNNEL] 收到WS帧 hostname:{hostname} opcode:{opcode} size:{payload.Length}");
-                            base.FireWsEvent(new WsMessageEventArgs()
+                            var fullPayload = msgBuf.ToArray();
+                            _ksTunnelMessageBuffers.TryRemove(args, out _);
+                            if (fullPayload.Length > 0)
                             {
-                                ProcessID = processid,
-                                HostName = hostname,
-                                Payload = payload,
-                                ProcessName = base.GetProcessName(processid)
-                            });
+                                Logger.LogInfo($"[KS_TUNNEL] 收到组合WS帧 hostname:{hostname} size:{fullPayload.Length}");
+                                base.FireWsEvent(new WsMessageEventArgs()
+                                {
+                                    ProcessID = processid,
+                                    HostName = hostname,
+                                    Payload = fullPayload,
+                                    ProcessName = base.GetProcessName(processid)
+                                });
+                            }
+                        }
+                    }
+                    else if (opcode == 1 || opcode == 2)
+                    {
+                        if (!fin)
+                        {
+                            var msgBuf = new List<byte>();
+                            msgBuf.AddRange(payload);
+                            _ksTunnelMessageBuffers[args] = msgBuf;
+                        }
+                        else
+                        {
+                            if (payload.Length > 0)
+                            {
+                                Logger.LogInfo($"[KS_TUNNEL] 收到WS帧 hostname:{hostname} opcode:{opcode} size:{payload.Length}");
+                                base.FireWsEvent(new WsMessageEventArgs()
+                                {
+                                    ProcessID = processid,
+                                    HostName = hostname,
+                                    Payload = payload,
+                                    ProcessName = base.GetProcessName(processid)
+                                });
+                            }
                         }
                     }
                 }
@@ -1359,6 +1391,9 @@ namespace BarrageGrab.Proxy
             return base.CheckHost(hostname);
         }
 
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<SessionEventArgs, List<byte>> _ksWsMessageBuffers
+            = new System.Collections.Concurrent.ConcurrentDictionary<SessionEventArgs, List<byte>>();
+
         //WebSocket 流读取
         private async void WebSocket_DataReceived(object sender, DataEventArgs e)
         {
@@ -1369,45 +1404,62 @@ namespace BarrageGrab.Proxy
 
             var processid = args.HttpClient.ProcessId.Value;
 
-            List<byte> messageData = new List<byte>();
-
             try
             {
                 foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))
                 {
                     if (frame.OpCode == WebsocketOpCode.Continuation)
                     {
+                        var messageData = _ksWsMessageBuffers.GetOrAdd(args, _ => new List<byte>());
                         messageData.AddRange(frame.Data.ToArray());
-                        continue;
-                    }
-                    else
-                    {
-                        //读取完毕
-                        byte[] payload;
-                        if (messageData.Count > 0)
+                        
+                        if (frame.IsFin)
                         {
+                            byte[] payload = messageData.ToArray();
+                            _ksWsMessageBuffers.TryRemove(args, out _);
+                            
+                            // 快手WebSocket消息处理
+                            if (IsKuaishouBarrageRequest(hostname, args.HttpClient.Request.RequestUri.ToString()))
+                            {
+                                ProcessKsWebSocketMessage(payload, hostname, processid);
+                            }
+                            
+                            base.FireWsEvent(new WsMessageEventArgs()
+                            {
+                                ProcessID = processid,
+                                HostName = hostname,
+                                Payload = payload,
+                                ProcessName = base.GetProcessName(processid)
+                            });
+                        }
+                    }
+                    else if (frame.OpCode == WebsocketOpCode.Text || frame.OpCode == WebsocketOpCode.Binary)
+                    {
+                        if (!frame.IsFin)
+                        {
+                            var messageData = new List<byte>();
                             messageData.AddRange(frame.Data.ToArray());
-                            payload = messageData.ToArray();
-                            messageData.Clear();
+                            _ksWsMessageBuffers[args] = messageData;
                         }
                         else
                         {
-                            payload = frame.Data.ToArray();
-                        }
+                            //读取完毕
+                            byte[] payload = frame.Data.ToArray();
 
-                        // 快手WebSocket消息处理
-                        if (IsKuaishouBarrageRequest(hostname, args.HttpClient.Request.RequestUri.ToString()))
-                        {
-                            ProcessKsWebSocketMessage(payload, hostname, processid);
+                            // 快手WebSocket消息处理
+                            if (IsKuaishouBarrageRequest(hostname, args.HttpClient.Request.RequestUri.ToString()))
+                            {
+                                ProcessKsWebSocketMessage(payload, hostname, processid);
+                            }
+                            
+                            base.FireWsEvent(new WsMessageEventArgs()
+                            {
+                                ProcessID = processid,
+                                HostName = hostname,
+                                Payload = payload,
+                                ProcessName = base.GetProcessName(processid)
+                            });
                         }
-                        
-                        base.FireWsEvent(new WsMessageEventArgs()
-                        {
-                            ProcessID = processid,
-                            HostName = hostname,
-                            Payload = payload,
-                            ProcessName = base.GetProcessName(processid)
-                        });
                     }
                 }
             }
@@ -1415,12 +1467,6 @@ namespace BarrageGrab.Proxy
             {
                 Logger.PrintColor("解析某个WebSocket包出错：" + ex.Message);
             }
-
-            if (messageData.Count > 0)
-            {
-                // 没有收到 WebSocket 帧的结束帧，抛出异常或者进行处理
-            }
-
         }
 
         /// <summary>
