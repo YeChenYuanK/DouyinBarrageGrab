@@ -2084,7 +2084,12 @@ namespace BarrageGrab
             {
                 if (AppSetting.Current.KuaishouVerboseLog)
                 {
-                    Logger.LogInfo($"[快手] KsSocketMessage 解析失败或Payload为空");
+                    Logger.LogInfo($"[快手] KsSocketMessage 解析失败或Payload为空。尝试保存样本...");
+                    try {
+                        string dumpPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", $"ks_failed_payload_{DateTime.Now.Ticks}.bin");
+                        System.IO.File.WriteAllBytes(dumpPath, buff);
+                        Logger.LogInfo($"[快手] 失败样本已保存至: {dumpPath}");
+                    } catch {}
                 }
                 return;
             }
