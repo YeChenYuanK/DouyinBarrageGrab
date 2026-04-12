@@ -78,7 +78,7 @@ namespace BarrageGrab.Kuaishou
 
             return new JObject
             {
-                ["Nickname"] = ksUser.Nickname ?? "快手用户",
+                ["Nickname"] = ksUser.Nickname,
                 ["HeadImgUrl"] = ksUser.HeadUrl ?? "",
                 ["SecUid"] = ksUser.UserId ?? "",
                 ["Gender"] = ksUser.Gender,

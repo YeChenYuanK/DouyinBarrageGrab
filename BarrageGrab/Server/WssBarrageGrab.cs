@@ -647,7 +647,7 @@ namespace BarrageGrab
             }
 
             var nickname = ResolveKuaishouNickname(expanded, "");
-            if (string.IsNullOrWhiteSpace(nickname)) nickname = "快手用户";
+            if (string.IsNullOrWhiteSpace(nickname)) return false; // 用户名为空，解析失败
 
             string giftName = expanded.FirstOrDefault(t =>
                 t.IndexOf("礼物", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -2225,16 +2225,29 @@ namespace BarrageGrab
         // 触发快手弹幕事件（转发给游戏）
         private void FireKuaishouChat(Modles.ProtoEntity.KsChatMessage msg)
         {
-            Logger.LogInfo($"[快手][弹幕] {msg.User?.Nickname ?? "快手用户"}: {msg.Content ?? ""}");
+            // 如果用户信息为空，说明协议解析失败，直接返回不处理
+            if (msg.User == null || string.IsNullOrEmpty(msg.User.Nickname))
+            {
+                Logger.LogWarn($"[快手][弹幕解析失败] 用户信息为空，Content: {msg.Content ?? ""}");
+                return;
+            }
+            
+            if (string.IsNullOrEmpty(msg.Content))
+            {
+                Logger.LogWarn($"[快手][弹幕解析失败] 内容为空，User: {msg.User.Nickname}");
+                return;
+            }
+
+            Logger.LogInfo($"[快手][弹幕] {msg.User.Nickname}: {msg.Content}");
             var data = new JObject
             {
                 ["Timestamp"] = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-                ["Content"] = msg.Content ?? "",
+                ["Content"] = msg.Content,
                 ["User"] = new JObject
                 {
-                    ["Nickname"] = msg.User?.Nickname ?? "快手用户",
-                    ["HeadImgUrl"] = msg.User?.HeadUrl ?? "",
-                    ["SecUid"] = msg.User?.UserId ?? ""
+                    ["Nickname"] = msg.User.Nickname,
+                    ["HeadImgUrl"] = msg.User.HeadUrl ?? "",
+                    ["SecUid"] = msg.User.UserId ?? ""
                 }
             };
             var pack = JsonEntity.BarrageMsgPack.Kuaishou(data.ToString(Formatting.None), JsonEntity.PackMsgType.弹幕消息);
