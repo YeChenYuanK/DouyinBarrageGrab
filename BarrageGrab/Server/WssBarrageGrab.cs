@@ -483,9 +483,11 @@ namespace BarrageGrab
                             }
                         }
 
-                        if (hasPcData)
+                        // 无论 ksPcPayload 是否包含业务数据，只要解析没抛异常并且 GZIP 解压成功，
+                        // 我们就认为这个包是快手的合法 PC 协议包，不要再让它掉入下面报错日志
+                        if (hasPcData || wasDecompressed)
                         {
-                            if (AppSetting.Current.KuaishouVerboseLog)
+                            if (hasPcData && AppSetting.Current.KuaishouVerboseLog)
                             {
                                 Logger.LogInfo($"[快手] PC 专属 Protobuf 解析成功！");
                             }

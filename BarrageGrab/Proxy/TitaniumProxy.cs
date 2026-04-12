@@ -1104,22 +1104,30 @@ namespace BarrageGrab.Proxy
                 var buf = _ksTunnelBuffers.GetOrAdd(args, _ => new List<byte>());
                 buf.AddRange(new ArraySegment<byte>(e.Buffer, e.Offset, e.Count));
 
-                while (buf.Count >= 4)
+                // 快手 PC 端的直连 IP 流量其实是有包头的（4字节长度 + 业务数据）或者其他自定义头部
+                // 但是为了容错，我们只要收到一段大于一定长度的片段，并且它看起来不是纯乱码，就立刻向上层分发
+                // 然后我们依然清空缓冲区，因为我们不在这里做精准的 TCP 流重组，而是在 WssBarrageGrab.cs 里直接做暴力 GZIP 搜索
+                // 如果我们在这里积累太多，可能会导致后续包粘在一起，解压错位。
+
+                var payload = buf.ToArray();
+                buf.Clear();
+
+                if (payload.Length >= 20)
                 {
-                    var data = buf.ToArray();
-                    
-                    // 快手 PC 客户端的二进制包可能带有特殊的 4 字节头部 01 1A 2B 3C，但有的时候也会是标准的 WS 帧！
-                    // 所以我们在这里不能仅仅通过 01 1A 2B 3C 去找头，如果找不到，它可能就是一个明文包或者是普通的未知帧。
-                    // 为了避免截断正常的包，这里先把这种强行寻找并截断 01 1A 2B 3C 逻辑注释掉，
-                    // 改为直接把所有的原始 payload 透传上去，因为在 WssBarrageGrab.cs 里我们已经实现了无视包头暴搜 GZIP 的逻辑！
-                    
-                    /* 屏蔽这段会导致数据被错误丢弃的强匹配粘包逻辑
-                    if (data[0] == 0x01 && data[1] == 0x1A && data[2] == 0x2B && data[3] == 0x3C)
+                    if (AppSetting.Current.KuaishouVerboseLog)
                     {
-                    */
-                    break;
+                        Logger.LogInfo($"[KS_TUNNEL_RAW_FORWARD] host:{host} size:{payload.Length} firstByte:0x{payload[0]:X2}");
+                    }
+                    base.FireWsEvent(new WsMessageEventArgs()
+                    {
+                        ProcessID = processId,
+                        HostName = "ksraw:" + host,
+                        Payload = payload,
+                        ProcessName = processName,
+                        NeedDecompress = false
+                    });
                 }
-                // 暂时放行，由下面的透传逻辑处理
+                return; // 处理完毕，不走下面的透传逻辑
             }
             // ------------------------------------------
 
