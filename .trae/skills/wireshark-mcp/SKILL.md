@@ -1,6 +1,6 @@
 ---
-name: "wireshark-mcp"
-description: "通过 Wireshark (TShark) 解析 pcapng 抓包文件并通过 MCP 暴露给 LLM。在用户需要深入分析网络数据包内容（如快手/抖音加密流量的二进制协议）时调用。"
+name: wireshark-mcp
+description: 通过 Wireshark (TShark) 解析 pcapng 抓包文件并通过 MCP 暴露给 LLM。在用户需要深入分析网络数据包内容（如快手/抖音加密流量的二进制协议）时调用。
 ---
 
 # Wireshark MCP 网络分析助手

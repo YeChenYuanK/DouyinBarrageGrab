@@ -114,7 +114,7 @@ namespace BarrageGrab.Modles.ProtoEntity
     }
 
     /// <summary>
-    /// 快手 PC 直播伴侣端特有的 Payload 结构（基于二进制抓包推断）
+    /// 快手 PC 直播伴侣端特有的 Payload 结构
     /// 与网页版的 KsPayload 不同，它不是把类型作为字符串放在 SendMessage 里，
     /// 而是直接把不同类型的消息放在了不同的数字 Tag 数组中。
     /// </summary>

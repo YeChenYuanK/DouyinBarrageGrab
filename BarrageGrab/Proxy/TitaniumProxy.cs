@@ -1173,7 +1173,7 @@ namespace BarrageGrab.Proxy
             // 对快手直播伴侣的“非标准WS帧”通道做透传，交给上层做协议探测解析
             // 0x16/0x17 多为 TLS 握手/应用层密文，跳过避免噪音；其余字节流尝试上送
             bool looksTlsRecord = first == 0x16 || first == 0x17 || first == 0x14;
-            if (isKwaiProcess && !looksTlsRecord && e.Count >= 20)
+            if (isKwaiProcess && !isWlogHost && !looksTlsRecord && e.Count >= 20)
             {
                 var payload = new byte[e.Count];
                 Buffer.BlockCopy(e.Buffer, e.Offset, payload, 0, e.Count);
@@ -1226,7 +1226,7 @@ namespace BarrageGrab.Proxy
 
             // 上行原始帧透传到上层，便于提取首个 send 认证参数（token/liveStreamId）
             bool looksTlsRecord = first == 0x16 || first == 0x17 || first == 0x14;
-            if (isKwaiProcess && !looksTlsRecord && e.Count >= 20)
+            if (isKwaiProcess && !isWlogHost && !looksTlsRecord && e.Count >= 20)
             {
                 var payload = new byte[e.Count];
                 Buffer.BlockCopy(e.Buffer, e.Offset, payload, 0, e.Count);

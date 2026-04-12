@@ -304,6 +304,8 @@ namespace BarrageGrab
                         }
                     }
 
+                    bool wasDecompressed = false;
+
                     if (compressionType == 2 || compressionType == 1 || gzipOffset != -1)
                     {
                         try
@@ -343,6 +345,7 @@ namespace BarrageGrab
                             if (decompressed != null && decompressed.Length > 0)
                             {
                                 innerPayload = decompressed;
+                                wasDecompressed = true;
                             }
                         }
                         catch (Exception ex)
@@ -355,11 +358,15 @@ namespace BarrageGrab
                     try
                     {
                         int bytesRead;
-                        if (TryReadVarint32(innerPayload, 0, out _, out bytesRead) && bytesRead > 0 && bytesRead <= 5)
+                        if (TryReadVarint32(innerPayload, 0, out int varLen, out bytesRead) && bytesRead > 0 && bytesRead <= 5)
                         {
-                            byte[] stripHeader = new byte[innerPayload.Length - bytesRead];
-                            Buffer.BlockCopy(innerPayload, bytesRead, stripHeader, 0, stripHeader.Length);
-                            innerPayload = stripHeader;
+                            // 只有当读取到的 Varint 恰好等于剩余 payload 的长度时，才说明它真的是一个长度头，否则它只是 protobuf 的第一个 Field 标识！
+                            if (varLen == innerPayload.Length - bytesRead)
+                            {
+                                byte[] stripHeader = new byte[innerPayload.Length - bytesRead];
+                                Buffer.BlockCopy(innerPayload, bytesRead, stripHeader, 0, stripHeader.Length);
+                                innerPayload = stripHeader;
+                            }
                         }
                     }
                     catch { }
@@ -483,6 +490,14 @@ namespace BarrageGrab
                     catch
                     {
                         // 失败则忽略
+                    }
+
+                    // 如果成功解压出了 GZIP，说明这肯定是一个有效的数据包，
+                    // 即便里面没有 ChatMessage（例如它是房间状态心跳，只有在线人数更新），
+                    // 我们也返回 true，代表“成功处理”，以避免控制台无意义的报错刷屏。
+                    if (wasDecompressed)
+                    {
+                        return true;
                     }
                 }
                 catch
