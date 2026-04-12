@@ -334,8 +334,7 @@ namespace BarrageGrab.Proxy
             string uri = e.HttpClient.Request.RequestUri.ToString();
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
-            TryLogKuaishouHttpRequestIndex(hostname, uri, processName, e.HttpClient.Request.Method?.ToString() ?? "UNKNOWN");
-
+            
             // 只对 WS 升级请求订阅 DataReceived（防止普通HTTP请求误订阅导致解析错误）
             // WS 升级请求特征：Upgrade: websocket 头，或 ConnectRequest.TunnelType == Websocket
             bool isKwaiProcess = CheckKuaishouProcess(processName);
@@ -351,15 +350,12 @@ namespace BarrageGrab.Proxy
             // 如果是快手进程，且是快手域名(WS)或者是快手直连IP(任意)，强制订阅数据
             if (isKwaiProcess && (isKuaishouDomain || isKsIpDirect))
             {
-                // 对于直连IP，我们强制解密（DecryptSsl）并把它当作 WebSocket 隧道处理
-                if (isKsIpDirect && !isTunnelWs && !isWsUpgrade)
-                {
-                    Logger.LogInfo($"[KS_REQ] 发现快手直连 IP 流量，强制订阅数据 hostname:{hostname} Process:{processName}");
-                }
-                
                 e.DataReceived -= WebSocket_DataReceived;
                 e.DataReceived += WebSocket_DataReceived;
-                Logger.LogInfo($"[KS_REQ] 官方客户端握手捕获 hostname:{hostname} Process:{processName} isTunnelWs={isTunnelWs} isWsUpgrade={isWsUpgrade} isIpDirect={isKsIpDirect}");
+                if (AppSetting.Current.KuaishouVerboseLog)
+                {
+                    Logger.LogInfo($"[KS_REQ] 官方客户端握手捕获 hostname:{hostname} Process:{processName} isTunnelWs={isTunnelWs} isWsUpgrade={isWsUpgrade} isIpDirect={isKsIpDirect}");
+                }
             }
 
             return Task.CompletedTask;
@@ -367,53 +363,6 @@ namespace BarrageGrab.Proxy
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
         {
-            string uri = e.HttpClient.Request.RequestUri.ToString();
-            string hostname = e.HttpClient.Request.RequestUri.Host;
-            var processid = e.HttpClient.ProcessId.Value;
-            var processName = base.GetProcessName(processid);
-            var contentType = e.HttpClient.Response.ContentType ?? "";
-
-            // ===== 快手进程 DEBUG 日志（找 roomId/liveStreamId 用，稳定后可删除）=====
-            try
-            {
-                bool isKwaiProcess = processName != null && (
-                    processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    processName.IndexOf("kscloudtv", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    processName.IndexOf("kuaishou", StringComparison.OrdinalIgnoreCase) >= 0
-                );
-                if (isKwaiProcess)
-                {
-                    var statusCode = e.HttpClient.Response.StatusCode;
-                    var ct = contentType?.Split(';')[0]?.Trim() ?? "";
-                    // 只记录 JSON/文本响应，跳过图片/视频等二进制
-                    bool isTextLike = ct.Contains("json") || ct.Contains("text") || ct.Contains("javascript") || ct.Contains("xml");
-                    if (isTextLike)
-                    {
-                        try
-                        {
-                            var body = await e.GetResponseBodyAsString();
-                            var snippet = body?.Length > 800 ? body.Substring(0, 800) + "..." : body;
-                            Logger.LogInfo($"[KS_DEBUG] Process={processName} Status={statusCode} URL={uri}\nBody={snippet}");
-                        }
-                        catch
-                        {
-                            Logger.LogInfo($"[KS_DEBUG] Process={processName} Status={statusCode} URL={uri} (body read failed)");
-                        }
-                    }
-                    else
-                    {
-                        Logger.LogInfo($"[KS_DEBUG] Process={processName} Status={statusCode} ContentType={ct} URL={uri}");
-                    }
-
-                    TryLogKuaishouHttpRedirect(processName, hostname, uri, statusCode, e.HttpClient.Response.Headers.GetFirstHeader("Location")?.Value);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogInfo($"[KS_DEBUG] 日志异常: {ex.Message}");
-            }
-            // ===== END DEBUG =====
-
             //处理直播伴侣开播更新
             await HookSelfLive(e);
 
@@ -425,105 +374,6 @@ namespace BarrageGrab.Proxy
 
             //处理脚本拦截修改
             await HookScriptAsync(e);
-        }
-
-        private void TryLogKuaishouHttpRequestIndex(string hostname, string uri, string processName, string method)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(processName) || processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) < 0) return;
-                var host = (hostname ?? string.Empty).Trim().ToLowerInvariant();
-                if (string.IsNullOrWhiteSpace(host) || host.Contains("wlog.gifshow.com")) return;
-                var knownControlHost = IsKnownKsControlHostForIndex(host);
-
-                var reqUri = uri ?? string.Empty;
-                var path = "/";
-                try
-                {
-                    var parsed = new Uri(reqUri);
-                    path = string.IsNullOrWhiteSpace(parsed.AbsolutePath) ? "/" : parsed.AbsolutePath.ToLowerInvariant();
-                }
-                catch
-                {
-                    // ignore
-                }
-
-                var ext = Path.GetExtension(path ?? string.Empty)?.ToLowerInvariant() ?? string.Empty;
-                var isStaticAsset = ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".ico" || ext == ".css" || ext == ".woff" || ext == ".woff2" || ext == ".ttf" || ext == ".map";
-                if (isStaticAsset && !knownControlHost) return;
-
-                var m = (method ?? "UNKNOWN").ToUpperInvariant();
-                var looksLikeApiPath = path.Contains("/api/") || path.Contains("/rest/") || path.Contains("/live/") || path.Contains("/room/") || path.Contains("author") || path.Contains("stream") || path.Contains("status") || path.Contains("token");
-                if (m == "GET" && !looksLikeApiPath && !knownControlHost)
-                {
-                    return;
-                }
-
-                var key = $"{method}|{host}|{path}";
-                var now = DateTime.Now;
-                lock (ksHttpReqIndexLock)
-                {
-                    if (ksHttpReqIndexLastAt.TryGetValue(key, out var lastAt) && (now - lastAt).TotalSeconds < 2)
-                    {
-                        return;
-                    }
-                    ksHttpReqIndexLastAt[key] = now;
-                }
-
-                var priority = (m == "POST" || m == "PUT" || m == "PATCH" || m == "OPTIONS" || knownControlHost) ? "HIGH" : "NORMAL";
-                Logger.LogInfo($"[KS_HTTP_REQ_INDEX] priority={priority} method={method} host={host} knownControl={knownControlHost} path={path} uri={reqUri}");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogInfo($"[KS_HTTP_REQ_INDEX] failed: {ex.Message}");
-            }
-        }
-
-        private bool IsKnownKsControlHostForIndex(string host)
-        {
-            var h = (host ?? string.Empty).ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(h)) return false;
-            return h.Contains("report-rtc-mainapp.kuaishou.com")
-                || h.Contains("apijs2.ksapisrv.com")
-                || h.Contains("apijsv6.ksapisrv.com")
-                || h.Contains("apijs2.gifshow.com")
-                || h.Contains("apijsv6.gifshow.com")
-                || h.Contains("api3.gifshow.com");
-        }
-
-        private void TryLogKuaishouHttpRedirect(string processName, string hostname, string uri, int statusCode, string location)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(processName) || processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) < 0) return;
-                if (!(statusCode == 301 || statusCode == 302 || statusCode == 307 || statusCode == 308)) return;
-                var host = (hostname ?? string.Empty).Trim().ToLowerInvariant();
-                if (host.Contains("wlog.gifshow.com")) return;
-
-                var decoded = DecodeUrlOnce(location ?? string.Empty);
-                Logger.LogInfo($"[KS_HTTP_REDIRECT] status={statusCode} host={host} uri={uri} location={decoded}");
-                if (!string.IsNullOrWhiteSpace(decoded) && decoded.IndexOf("live.kuaishou.com/u/", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    Logger.LogInfo($"[KS_URL_U_HIT] channel=http_redirect host={host} process={processName} url={decoded}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogInfo($"[KS_HTTP_REDIRECT] failed: {ex.Message}");
-            }
-        }
-
-        private string DecodeUrlOnce(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input)) return input ?? string.Empty;
-            try
-            {
-                return Uri.UnescapeDataString(input.Replace("+", "%20"));
-            }
-            catch
-            {
-                return input;
-            }
         }
 
         // Hook 直播伴侣开播信息并更新
