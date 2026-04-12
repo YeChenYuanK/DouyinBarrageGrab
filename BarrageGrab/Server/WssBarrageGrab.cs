@@ -1942,7 +1942,18 @@ namespace BarrageGrab
                     }
 
                     // 检查是否需要 GZIP 解压
-                    if (compressionType == 2 || compressionType == 1 || (innerPayload.Length > 2 && innerPayload[0] == 0x1F && innerPayload[1] == 0x8B))
+                    // GZIP 头特征：1F 8B
+                    int gzipOffset = -1;
+                    for (int i = 0; i < innerPayload.Length - 1; i++)
+                    {
+                        if (innerPayload[i] == 0x1F && innerPayload[i+1] == 0x8B)
+                        {
+                            gzipOffset = i;
+                            break;
+                        }
+                    }
+
+                    if (compressionType == 2 || compressionType == 1 || gzipOffset != -1)
                     {
                         try
                         {
@@ -1950,7 +1961,13 @@ namespace BarrageGrab
                             byte[] decompressed = null;
                             try
                             {
-                                decompressed = Decompress(innerPayload);
+                                byte[] toDecompress = innerPayload;
+                                if (gzipOffset > 0)
+                                {
+                                    toDecompress = new byte[innerPayload.Length - gzipOffset];
+                                    Buffer.BlockCopy(innerPayload, gzipOffset, toDecompress, 0, toDecompress.Length);
+                                }
+                                decompressed = Decompress(toDecompress);
                             }
                             catch
                             {
@@ -1968,12 +1985,12 @@ namespace BarrageGrab
                         }
                     }
 
-                    // PC 端有些包不一定是 KsPayload，但包含弹幕
                     var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(innerPayload));
+                    
+                    // 兜底文本提取逻辑：如果标准解析没命中（或反序列化失败），但是在解压后的 payload 中发现了大量中文字符，走 fallback
                     if (ksPayload?.SendMessages == null || ksPayload.SendMessages.Count == 0)
                     {
-                        // 兜底尝试：如果标准解析没命中，但在 payload 中发现了可疑的文本（比如中文字符），强制走 fallback
-                        var tokens = ExtractProtoStringTokens(innerPayload, maxTokens: 192);
+                        var tokens = ExtractProtoStringTokens(innerPayload, maxTokens: 256);
                         var chatCandidate = tokens
                             .Where(t => IsLikelyKuaishouChatText(t))
                             .Where(t => !IsLikelyKuaishouNickname(t))
@@ -2106,7 +2123,7 @@ namespace BarrageGrab
             }
 
             // 3) 固定帧头裁剪尝试
-            foreach (var headerLen in new[] { 1, 2, 4, 8, 12, 16, 20, 24, 28, 32 })
+            foreach (var headerLen in new[] { 1, 2, 4, 8, 12, 16, 20, 24, 28, 32, 40, 48 })
             {
                 if (buff.Length > headerLen + 8)
                 {
@@ -2143,12 +2160,15 @@ namespace BarrageGrab
             {
                 if (!AppSetting.Current.KuaishouVerboseLog) return;
                 if (buff == null || buff.Length < 16) return;
-                var text = Encoding.UTF8.GetString(buff);
-                var cleaned = new string(text.Where(c => !char.IsControl(c) || c == '\n' || c == '\r' || c == '\t').ToArray());
-                if (cleaned.Contains("正在看") || cleaned.Contains("评论") || cleaned.Contains("送出") || cleaned.Contains("进入直播间"))
+                var tokens = ExtractProtoStringTokens(buff, 256);
+                var chatCandidate = tokens
+                    .Where(t => IsLikelyKuaishouChatText(t))
+                    .OrderByDescending(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF))
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(chatCandidate))
                 {
-                    var preview = cleaned.Length > 120 ? cleaned.Substring(0, 120) : cleaned;
-                    Logger.LogInfo($"[快手][可读片段] {preview}");
+                    Logger.LogInfo($"[快手][可读片段] 文本扫描: {chatCandidate}");
                 }
             }
             catch

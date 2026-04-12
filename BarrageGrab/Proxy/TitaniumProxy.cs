@@ -93,8 +93,7 @@ namespace BarrageGrab.Proxy
             // 移除 103.* 和 116.* 等外网IP的 bypass，确保代理能够抓取直连 IP
             string[] bypassList = { "localhost", "127.*", "10.*", "172.16.*", "172.17.*", "172.18.*", "172.19.*",
                                 "172.20.*", "172.21.*", "172.22.*", "172.23.*", "172.24.*", "172.25.*",
-                                "172.26.*", "172.27.*", "172.28.*", "172.29.*", "172.30.*", "172.31.*",
-                                "192.168.*" };
+                                "172.26.*", "172.27.*", "172.28.*", "172.29.*", "172.30.*", "172.31.*" };
 
             // 创建WebProxy对象，并设置代理过滤规则
             WebProxy proxy = new WebProxy
@@ -1609,15 +1608,13 @@ namespace BarrageGrab.Proxy
                 // 3. 弹幕消息检测
                 if (IsKsDanmakuPacket(payload))
                 {
-                    Logger.LogInfo($"[快手] 弹幕消息 received, length: {payload.Length}");
-                    
-                    // 这里可以添加弹幕解析逻辑
-                    // 基于实证数据进一步分析消息结构
+                    // Logger.LogInfo($"[快手] 弹幕消息 received, length: {payload.Length}");
+                    // 交由外层的 ProcessKuaishouProtobuf 处理
                     return;
                 }
 
                 // 4. 其他消息
-                Logger.LogInfo($"[快手] 未知消息类型, length: {payload.Length}, hex: {BitConverter.ToString(payload, 0, Math.Min(16, payload.Length))}");
+                // Logger.LogInfo($"[快手] 未知消息类型, length: {payload.Length}, hex: {BitConverter.ToString(payload, 0, Math.Min(16, payload.Length))}");
 
             }
             catch (Exception ex)
