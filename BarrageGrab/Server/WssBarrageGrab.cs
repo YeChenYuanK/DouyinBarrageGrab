@@ -347,6 +347,39 @@ namespace BarrageGrab
                                 innerPayload = decompressed;
                                 wasDecompressed = true;
                             }
+                            else if (gzipOffset == -1)
+                            {
+                                // 如果按照外层信封说有压缩，但直接解压失败了，我们就去里面暴搜 gzip 头
+                                for (int i = 0; i < innerPayload.Length - 1; i++)
+                                {
+                                    if (innerPayload[i] == 0x1F && innerPayload[i+1] == 0x8B)
+                                    {
+                                        byte[] toDecompress2 = new byte[innerPayload.Length - i];
+                                        Buffer.BlockCopy(innerPayload, i, toDecompress2, 0, toDecompress2.Length);
+                                        for(int truncate = 0; truncate < 10; truncate++)
+                                        {
+                                            try
+                                            {
+                                                int len = toDecompress2.Length - truncate;
+                                                if (len <= 0) break;
+                                                byte[] truncData = new byte[len];
+                                                Buffer.BlockCopy(toDecompress2, 0, truncData, 0, len);
+                                                decompressed = Decompress(truncData);
+                                                break; // 解压成功
+                                            }
+                                            catch
+                                            {
+                                            }
+                                        }
+                                        if (decompressed != null && decompressed.Length > 0)
+                                        {
+                                            innerPayload = decompressed;
+                                            wasDecompressed = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -361,10 +394,13 @@ namespace BarrageGrab
                         if (TryReadVarint32(innerPayload, 0, out int varLen, out bytesRead) && bytesRead > 0 && bytesRead <= 5)
                         {
                             // 只有当读取到的 Varint 恰好等于剩余 payload 的长度时，才说明它真的是一个长度头，否则它只是 protobuf 的第一个 Field 标识！
-                            if (varLen == innerPayload.Length - bytesRead)
+                            // 但是有些变态的情况下，它的长度头并不严格等于剩余长度，我们放宽要求：
+                            // 只要这个长度 > 0，并且 bytesRead + varLen <= innerPayload.Length
+                            // 并且 varLen 超过了总长度的 90%，我们就大胆地剥除它！
+                            if (varLen == innerPayload.Length - bytesRead || (varLen > 0 && varLen <= innerPayload.Length - bytesRead && varLen > innerPayload.Length * 0.9))
                             {
-                                byte[] stripHeader = new byte[innerPayload.Length - bytesRead];
-                                Buffer.BlockCopy(innerPayload, bytesRead, stripHeader, 0, stripHeader.Length);
+                                byte[] stripHeader = new byte[varLen];
+                                Buffer.BlockCopy(innerPayload, bytesRead, stripHeader, 0, varLen);
                                 innerPayload = stripHeader;
                             }
                         }
