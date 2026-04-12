@@ -198,14 +198,9 @@ namespace BarrageGrab
                 Logger.LogInfo($"[快手] ProcessKuaishouWsData 收到数据 Len={buff.Length}");
             }
 
-            // 专门针对上行原始帧（send）做认证参数抽取，优先解决 token 抓不到的问题。
-            if ((e.HostName ?? string.Empty).StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase))
-            {
-                TryCaptureKsRuntimeParamFromRawWsPacket(buff, e.HostName, e.ProcessName, "ws.raw.tx");
-            }
-
             bool protobufParsed = false;
             string protobufErr = null;
+
             try
             {
                 // 尝试 Protobuf 解析（支持偏移探测、去头探测，兼容自定义二进制头）
@@ -217,49 +212,11 @@ namespace BarrageGrab
                 protobufErr = ex.Message;
             }
 
-            // 二层协议：外层二进制头 + 内层 GZIP（日志已确认存在 1F 8B 08）
-            if (TryProcessKuaishouEmbeddedGzip(buff, e.ProcessName)) return;
-            
-            // 如果都没有命中，交到底层的 Protobuf 去解析（对于 103.* 直连 IP，由于前面可能没有 GZIP 或者已经是纯明文，走这里）
+            // 如果都没有命中，交到底层的 Protobuf 去解析
             ProcessKuaishouProtobuf(buff, e.ProcessName);
         }
 
-        private void TryCaptureKsRuntimeParamFromRawWsPacket(byte[] buff, string hostName, string processName, string sourceTag)
-        {
-            try
-            {
-                if (buff == null || buff.Length == 0) return;
-
-                // 先尝试结构化 proto 命中
-                if (TryCaptureKsRuntimeParamFromProtoBytes(buff, sourceTag, processName))
-                {
-                    return;
-                }
-
-                // send 帧常见为 token 长串，先提取 token，再使用 synthetic id 兜底存储
-                var token = TryPickKsBinaryTokenCandidate(buff);
-                if (string.IsNullOrWhiteSpace(token)) return;
-
-                var syntheticLiveStreamId = BuildSyntheticKsLiveStreamId(processName);
-                var rawHost = (hostName ?? string.Empty).Trim();
-                if (rawHost.StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase))
-                {
-                    rawHost = rawHost.Substring("ksrawtx:".Length);
-                }
-                else if (rawHost.StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase))
-                {
-                    rawHost = rawHost.Substring("ksraw:".Length);
-                }
-
-                var wsUrl = string.IsNullOrWhiteSpace(rawHost) ? string.Empty : ("wss://" + rawHost);
-                AppRuntime.KsRuntimeParams?.Upsert(syntheticLiveStreamId, token, wsUrl, sourceTag + ".candidate");
-                Logger.LogInfo($"[KS_RUNTIME_CAPTURE_WS_SEND] source={sourceTag}.candidate process={processName} liveStreamId={syntheticLiveStreamId} tokenLen={(token?.Length ?? 0)} host={rawHost}");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarn("[KS_RUNTIME_CAPTURE_WS_SEND_FAIL] " + ex.Message);
-            }
-        }
+        // 移除 TryCaptureKsRuntimeParamFromRawWsPacket 及其相关依赖函数
 
         private bool TryProcessKuaishouProtobufWithOffsets(byte[] buff, string processName)
         {
