@@ -207,16 +207,6 @@ namespace BarrageGrab
             var buff = e.Payload;
             if (buff.Length == 0) return;
 
-            // 快手直连 IP 原始数据已经被我们在 TitaniumProxy.cs 里组装成完整的一包业务数据 (剥离了 16 字节包头)
-            // 所以我们不要再走 TryProcessKuaishouHardRouteWsPacket 里面的错乱裁剪逻辑
-            bool isKsRawIp = (e.HostName ?? string.Empty).StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase) 
-                          && Regex.IsMatch(e.HostName, @"ksraw:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}");
-            
-            if (!isKsRawIp && TryProcessKuaishouHardRouteWsPacket(buff, e.HostName, e.ProcessName))
-            {
-                return;
-            }
-
             if (AppSetting.Current.KuaishouVerboseLog)
             {
                 DumpKuaishouRawBytes("ws_raw", e.HostName, buff);
@@ -275,105 +265,7 @@ namespace BarrageGrab
             }
         }
 
-        private bool TryProcessKuaishouHardRouteWsPacket(byte[] buff, string hostName, string processName)
-        {
-            try
-            {
-                if (buff == null || buff.Length < 64) return false;
-                if (!IsKsHardWsHost(hostName)) return false;
-                
-                // 抖音级心跳包分离：忽略小包和特定模式
-                if (buff.Length < 40) return false; // 忽略太小的心跳包
-                if (IsKsHeartbeatPacket(buff)) return true; // 识别并忽略心跳
-                
-                if (buff[0] != 0x01) return false;
-                if (buff.Length <= 24 + 16) return false;
-
-                var gzipLen = buff.Length - 24;
-                if (gzipLen <= 0) return false;
-                if (buff[24] != 0x1F || buff[25] != 0x8B || buff[26] != 0x08) return false;
-
-                var gzip = new byte[gzipLen];
-                Buffer.BlockCopy(buff, 24, gzip, 0, gzipLen);
-                var inflated = Decompress(gzip);
-                if (inflated == null || inflated.Length == 0) return false;
-
-                var sessionId = ExtractKsSessionId(inflated);
-                var dedupKey = string.IsNullOrWhiteSpace(sessionId)
-                    ? ("sha1:" + ComputeSha1Hex(inflated).Substring(0, 12))
-                    : ("sid:" + sessionId);
-                if (!TryPushKsHardDedup(dedupKey)) return true;
-
-                var tokens = ExtractProtoStringTokens(inflated, maxTokens: 192);
-                var expanded = ExpandKuaishouTokensWithBase64(tokens, maxTokens: 240);
-                var chatCandidate = expanded
-                    .Where(t => IsLikelyKuaishouChatText(t))
-                    .Where(t => !IsLikelyKuaishouNickname(t))
-                    .Where(t => !ContainsGuidLikeFragment(t))
-                    .OrderByDescending(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF))
-                    .ThenBy(t => t.Length)
-                    .FirstOrDefault();
-
-                if (string.IsNullOrWhiteSpace(chatCandidate)) return true;
-                if (!TryPushKuaishouFallbackText(chatCandidate)) return true;
-
-                var nickname = ResolveKuaishouNickname(expanded, chatCandidate);
-                FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
-                {
-                    Content = chatCandidate,
-                    User = new Modles.ProtoEntity.KsUser
-                    {
-                        Nickname = nickname,
-                        UserId = "",
-                        HeadUrl = ""
-                    }
-                });
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private readonly List<string> _ksHardDedup = new List<string>();
-        private readonly object _ksHardDedupLock = new object();
-        private bool TryPushKsHardDedup(string key)
-        {
-            lock (_ksHardDedupLock)
-            {
-                if (_ksHardDedup.Contains(key)) return false;
-                _ksHardDedup.Add(key);
-                while (_ksHardDedup.Count > 200) _ksHardDedup.RemoveAt(0);
-                return true;
-            }
-        }
-
-        private bool IsKsHardWsHost(string hostName)
-        {
-            var h = (hostName ?? string.Empty).Trim();
-            if (h.StartsWith("ksrawtx:", StringComparison.OrdinalIgnoreCase)) h = h.Substring("ksrawtx:".Length);
-            if (h.StartsWith("ksraw:", StringComparison.OrdinalIgnoreCase)) h = h.Substring("ksraw:".Length);
-            
-            // 抖音级硬路由：IP段 + 域名匹配
-            return Regex.IsMatch(h, @"^103\.107\.218\.\d{1,3}$") ||
-                   Regex.IsMatch(h, @"^livejs-ws\.kuaishou\.cn$") ||
-                   Regex.IsMatch(h, @"^livejs-ws\.kuaishou\.com$");
-        }
-
-        private string ExtractKsSessionId(byte[] inflated)
-        {
-            try
-            {
-                var text = Encoding.UTF8.GetString(inflated);
-                var m = Regex.Match(text, @"[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}");
-                return m.Success ? m.Value : string.Empty;
-            }
-            catch
-            {
-                return string.Empty;
-            }
-        }
+        // 已废弃冗余探测函数
 
         private void TryCaptureKsRuntimeParamFromRawWsPacket(byte[] buff, string hostName, string processName, string sourceTag)
         {
@@ -414,28 +306,6 @@ namespace BarrageGrab
 
         private bool TryProcessKuaishouProfileChatPacketWithCandidates(byte[] buff)
         {
-            if (buff == null || buff.Length < 60) return false;
-
-            // 先尝试原始包
-            if (TryProcessKuaishouProfileChatPacketCore(buff, "raw"))
-            {
-                return true;
-            }
-
-            // 再尝试外层帧切片候选（针对 Win 侧 433B/444B 这类包）
-            foreach (var candidate in BuildKuaishouDecodeCandidates(buff))
-            {
-                var len = candidate.Data.Length - candidate.Offset;
-                if (len < 60) continue;
-
-                var payload = new byte[len];
-                Buffer.BlockCopy(candidate.Data, candidate.Offset, payload, 0, len);
-                if (TryProcessKuaishouProfileChatPacketCore(payload, candidate.Strategy))
-                {
-                    return true;
-                }
-            }
-
             return false;
         }
 
@@ -455,173 +325,8 @@ namespace BarrageGrab
 
         private bool TryProcessKuaishouBusinessPacketWithCandidates(byte[] buff, string processName)
         {
-            if (buff == null || buff.Length < 64) return false;
-
-            var probes = new List<(byte[] payload, string strategy)>();
-            probes.Add((buff, "raw"));
-            foreach (var c in BuildKuaishouDecodeCandidates(buff).Take(24))
-            {
-                var len = c.Data.Length - c.Offset;
-                if (len < 64) continue;
-                var payload = new byte[len];
-                Buffer.BlockCopy(c.Data, c.Offset, payload, 0, len);
-                probes.Add((payload, c.Strategy));
-            }
-
-            foreach (var probe in probes)
-            {
-                var tokens = ExtractProtoStringTokens(probe.payload, maxTokens: 128);
-                if (tokens.Count == 0) continue;
-                var expanded = ExpandKuaishouTokensWithBase64(tokens, maxTokens: 192);
-                var score = ScoreKuaishouBusinessPacket(expanded, probe.payload.Length);
-                if (score <= 0) continue;
-
-                var chatCandidate = expanded
-                    .Where(t => IsLikelyKuaishouChatText(t))
-                    .Where(t => !IsLikelyKuaishouNickname(t))
-                    .Where(t => !ContainsGuidLikeFragment(t))
-                    .OrderByDescending(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF))
-                    .ThenBy(t => t.Length)
-                    .FirstOrDefault();
-
-                var sigTop = string.Join("|", expanded.Take(4)).Replace("\r", "").Replace("\n", " ");
-                var dedupKey = $"{probe.strategy}:{probe.payload.Length}:{sigTop}";
-                if (!TryPushKuaishouBizPacketDedup(dedupKey)) continue;
-
-                Logger.LogInfo($"[KS_BIZ_PACKET] strategy={probe.strategy} len={probe.payload.Length} score={score} process={processName} top={sigTop}");
-
-                if (string.IsNullOrWhiteSpace(chatCandidate)) continue;
-                if (score < 38) continue;
-                if (!TryPushKuaishouFallbackText(chatCandidate)) continue;
-
-                var nickname = ResolveKuaishouNickname(expanded, chatCandidate);
-                if (AppSetting.Current.KuaishouVerboseLog)
-                {
-                    Logger.LogInfo($"[快手][Fallback][BIZ_PACKET] 命中评论 strategy={probe.strategy}, score={score}, nickname={nickname}, content={chatCandidate}, len={probe.payload.Length}");
-                }
-                FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
-                {
-                    Content = chatCandidate,
-                    User = new Modles.ProtoEntity.KsUser
-                    {
-                        Nickname = nickname,
-                        UserId = "",
-                        HeadUrl = ""
-                    }
-                });
-                return true;
-            }
-
+            // 已废弃猜谜逻辑
             return false;
-        }
-
-        private List<string> ExpandKuaishouTokensWithBase64(List<string> tokens, int maxTokens)
-        {
-            var output = new List<string>();
-            foreach (var raw in tokens ?? new List<string>())
-            {
-                var t = (raw ?? string.Empty).Trim();
-                if (string.IsNullOrWhiteSpace(t)) continue;
-                output.Add(t);
-                if (output.Count >= maxTokens) break;
-                if (TryDecodeBase64Utf8(t, out var decoded) && !string.IsNullOrWhiteSpace(decoded))
-                {
-                    output.Add(decoded.Trim());
-                    if (output.Count >= maxTokens) break;
-                }
-            }
-            return output
-                .Select(s => (s ?? string.Empty).Trim())
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .Distinct()
-                .Take(maxTokens)
-                .ToList();
-        }
-
-        private int ScoreKuaishouBusinessPacket(List<string> tokens, int payloadLen)
-        {
-            if (tokens == null || tokens.Count == 0) return 0;
-            var score = 0;
-            if (payloadLen >= 600 && payloadLen <= 7000) score += 8;
-            if (tokens.Any(t => t.IndexOf("uhead", StringComparison.OrdinalIgnoreCase) >= 0)) score += 6;
-            if (tokens.Any(t => t.IndexOf("yximgs.com", StringComparison.OrdinalIgnoreCase) >= 0)) score += 6;
-            if (tokens.Any(t => t.IndexOf("comment", StringComparison.OrdinalIgnoreCase) >= 0)) score += 18;
-            if (tokens.Any(t => t.IndexOf("fans_group_comment_bg", StringComparison.OrdinalIgnoreCase) >= 0)) score += 16;
-
-            var chatLike = tokens.Where(IsLikelyKuaishouChatText).ToList();
-            if (chatLike.Count > 0) score += 26;
-            if (chatLike.Any(t => t.IndexOf("主播", StringComparison.OrdinalIgnoreCase) >= 0)) score += 8;
-            if (chatLike.Any(t => t.IndexOf("你好", StringComparison.OrdinalIgnoreCase) >= 0)) score += 6;
-
-            // 礼物事件通常和评论混在一起，轻微降权防止误把纯礼物提示当评论。
-            if (tokens.Any(IsLikelyGiftTriggerToken)) score -= 6;
-            return score;
-        }
-
-        private bool TryProcessKuaishouProfileChatPacketCore(byte[] payload, string strategy)
-        {
-            if (payload == null || payload.Length < 60) return false;
-
-            var tokens = ExtractProtoStringTokens(payload, maxTokens: 96);
-            if (tokens.Count == 0) return false;
-
-            // 该簇在样本中稳定包含资料字段：level/rank/audience
-            var hasProfileMeta = tokens.Any(t =>
-                t.IndexOf("level_label", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                t.IndexOf("rank_top", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                t.IndexOf("audienceRank", StringComparison.OrdinalIgnoreCase) >= 0);
-            if (!hasProfileMeta) return false;
-
-            // 多用户名批量包（名册/榜单）噪音高，先跳过避免误报
-            var cjkLikeCount = tokens.Count(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF) >= 2);
-            if (cjkLikeCount > 8) return false;
-
-            if (TryProcessKuaishouProfileGiftPacket(tokens, strategy, payload.Length))
-            {
-                return true;
-            }
-
-            var candidates = new List<(string text, bool fromBase64)>();
-            foreach (var token in tokens)
-            {
-                var t = (token ?? string.Empty).Trim();
-                if (string.IsNullOrWhiteSpace(t)) continue;
-                candidates.Add((t, false));
-
-                // 部分评论正文在该簇中以 base64 文本存储，例如 "DOS4u+aSreS9oOWlvQ==" => "主播你好"
-                if (TryDecodeBase64Utf8(t, out var decoded) && !string.IsNullOrWhiteSpace(decoded))
-                {
-                    candidates.Add((decoded.Trim(), true));
-                }
-            }
-
-            var best = candidates
-                .Select(c => new { c.text, c.fromBase64, score = ScoreKuaishouProfileChatCandidate(c.text, c.fromBase64) })
-                .Where(x => x.score > 0)
-                .OrderByDescending(x => x.score)
-                .ThenBy(x => x.text.Length)
-                .FirstOrDefault();
-            if (best == null) return false;
-            if (ContainsGuidLikeFragment(best.text)) return false;
-            if (!TryPushKuaishouFallbackText(best.text)) return false;
-
-            var nickname = ResolveKuaishouNickname(tokens, best.text);
-
-            if (AppSetting.Current.KuaishouVerboseLog)
-            {
-                Logger.LogInfo($"[快手][Fallback][PROFILE] 命中评论 strategy={strategy}, nickname={nickname}, content={best.text}, fromBase64={best.fromBase64}, len={payload.Length}");
-            }
-            FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
-            {
-                Content = best.text,
-                User = new Modles.ProtoEntity.KsUser
-                {
-                    Nickname = nickname,
-                    UserId = "",
-                    HeadUrl = ""
-                }
-            });
-            return true;
         }
 
         private bool TryProcessKuaishouProfileGiftPacket(List<string> tokens, string strategy, int payloadLen)
@@ -768,7 +473,7 @@ namespace BarrageGrab
                         {
                             Logger.LogInfo($"[快手] GZIP解包后 通用文本提取命中 at={i}");
                         }
-                        return true;
+                        // return true;
                     }
                 }
                 catch (Exception ex)
@@ -1961,71 +1666,19 @@ namespace BarrageGrab
         // 处理快手 Protobuf 数据
         private void ProcessKuaishouProtobuf(byte[] buff, string processName)
         {
-            int offset = 0;
-            if (buff.Length > 16 && buff[0] == 0x01 && buff[1] == 0x1A && buff[2] == 0x2B && buff[3] == 0x3C)
+            if (TryProcessKuaishouProtobufWithOffsets(buff, processName))
             {
-                offset = 16;
-            }
-
-            var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(new ReadOnlyMemory<byte>(buff, offset, buff.Length - offset));
-            if (envelope?.Payload == null)
-            {
-                if (AppSetting.Current.KuaishouVerboseLog)
-                {
-                    Logger.LogInfo($"[快手] KsSocketMessage 解析失败或Payload为空。尝试保存样本...");
-                    try {
-                        string dumpPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", $"ks_failed_payload_{DateTime.Now.Ticks}.bin");
-                        System.IO.File.WriteAllBytes(dumpPath, buff);
-                        Logger.LogInfo($"[快手] 失败样本已保存至: {dumpPath}");
-                    } catch {}
-                }
-                return;
-            }
-
-            var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(envelope.Payload));
-            if (ksPayload?.SendMessages == null)
-            {
-                if (AppSetting.Current.KuaishouVerboseLog)
-                {
-                    Logger.LogInfo($"[快手] KsPayload.SendMessages 为空");
-                }
                 return;
             }
 
             if (AppSetting.Current.KuaishouVerboseLog)
             {
-                Logger.LogInfo($"[快手] Protobuf解析成功，消息数={ksPayload.SendMessages.Count}");
-            }
-
-            foreach (var sendMsg in ksPayload.SendMessages)
-            {
-                var msgType = (sendMsg.MsgType ?? "").ToUpper();
-                var payload = sendMsg.Payload;
-                if (payload == null) continue;
-
-                switch (msgType)
-                {
-                    case "CHAT":
-                        var chatMsg = Serializer.Deserialize<Modles.ProtoEntity.KsChatMessage>(new ReadOnlyMemory<byte>(payload));
-                        FireKuaishouChat(chatMsg);
-                        break;
-                    case "GIFT":
-                        var giftMsg = Serializer.Deserialize<Modles.ProtoEntity.KsGiftMessage>(new ReadOnlyMemory<byte>(payload));
-                        FireKuaishouGift(giftMsg);
-                        break;
-                    case "LIKE":
-                        var likeMsg = Serializer.Deserialize<Modles.ProtoEntity.KsLikeMessage>(new ReadOnlyMemory<byte>(payload));
-                        FireKuaishouLike(likeMsg);
-                        break;
-                    case "ENTER":
-                        var enterMsg = Serializer.Deserialize<Modles.ProtoEntity.KsEnterMessage>(new ReadOnlyMemory<byte>(payload));
-                        FireKuaishouEnter(enterMsg);
-                        break;
-                    case "FOLLOW":
-                        var followMsg = Serializer.Deserialize<Modles.ProtoEntity.KsFollowMessage>(new ReadOnlyMemory<byte>(payload));
-                        FireKuaishouFollow(followMsg);
-                        break;
-                }
+                Logger.LogInfo($"[快手] Protobuf 所有候选解析失败。尝试保存样本...");
+                try {
+                    string dumpPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", $"ks_failed_payload_{DateTime.Now.Ticks}.bin");
+                    System.IO.File.WriteAllBytes(dumpPath, buff);
+                    Logger.LogInfo($"[快手] 失败样本已保存至: {dumpPath}");
+                } catch {}
             }
         }
 
