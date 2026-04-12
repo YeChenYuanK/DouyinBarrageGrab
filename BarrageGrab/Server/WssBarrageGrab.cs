@@ -274,7 +274,24 @@ namespace BarrageGrab
                                 Buffer.BlockCopy(buff, i, toDecompress, 0, toDecompress.Length);
                                 try
                                 {
-                                    byte[] decomp = Decompress(toDecompress);
+                                    // 容错解压：如果尾部数据损坏，尝试逐步截断解压
+                                    byte[] decomp = null;
+                                    for(int truncate = 0; truncate < 10; truncate++)
+                                    {
+                                        try
+                                        {
+                                            int len = toDecompress.Length - truncate;
+                                            if (len <= 0) break;
+                                            byte[] truncData = new byte[len];
+                                            Buffer.BlockCopy(toDecompress, 0, truncData, 0, len);
+                                            decomp = Decompress(truncData);
+                                            break; // 解压成功
+                                        }
+                                        catch
+                                        {
+                                        }
+                                    }
+                                    
                                     if (decomp != null && decomp.Length > 0)
                                     {
                                         innerPayload = decomp;
@@ -301,7 +318,22 @@ namespace BarrageGrab
                                     toDecompress = new byte[innerPayload.Length - gzipOffset];
                                     Buffer.BlockCopy(innerPayload, gzipOffset, toDecompress, 0, toDecompress.Length);
                                 }
-                                decompressed = Decompress(toDecompress);
+                                
+                                for(int truncate = 0; truncate < 10; truncate++)
+                                {
+                                    try
+                                    {
+                                        int len = toDecompress.Length - truncate;
+                                        if (len <= 0) break;
+                                        byte[] truncData = new byte[len];
+                                        Buffer.BlockCopy(toDecompress, 0, truncData, 0, len);
+                                        decompressed = Decompress(truncData);
+                                        break; // 解压成功
+                                    }
+                                    catch
+                                    {
+                                    }
+                                }
                             }
                             catch
                             {
@@ -318,6 +350,19 @@ namespace BarrageGrab
                             Logger.LogInfo($"[快手] GZIP 解压失败: {ex.Message}");
                         }
                     }
+
+                    // 剥除可能的冗余长度头 (Varint)
+                    try
+                    {
+                        int bytesRead;
+                        if (TryReadVarint32(innerPayload, 0, out _, out bytesRead) && bytesRead > 0 && bytesRead <= 5)
+                        {
+                            byte[] stripHeader = new byte[innerPayload.Length - bytesRead];
+                            Buffer.BlockCopy(innerPayload, bytesRead, stripHeader, 0, stripHeader.Length);
+                            innerPayload = stripHeader;
+                        }
+                    }
+                    catch { }
 
                     // ====== 严格 Protobuf 解析 ======
                     
