@@ -971,7 +971,7 @@ namespace BarrageGrab.Proxy
         }
 
         //控制要解密SSL的域名
-        private async Task ExplicitEndPoint_BeforeTunnelConnectRequest(object sender, TunnelConnectSessionEventArgs e)
+        private Task ExplicitEndPoint_BeforeTunnelConnectRequest(object sender, TunnelConnectSessionEventArgs e)
         {
             string url = e.HttpClient.Request.RequestUri.ToString();
             string hostname = e.HttpClient.Request.RequestUri.Host;
@@ -985,7 +985,16 @@ namespace BarrageGrab.Proxy
             // DEBUG：kwailive 进程解密所有 HTTPS（包括 IP 直连），方便找到开播 API（稳定后改回 CheckHost）
             bool isKwaiDebug = processName != null && processName.IndexOf("kwailive", StringComparison.OrdinalIgnoreCase) >= 0;
             e.DecryptSsl = isKwaiDebug ? true : (isLiveProcess && CheckHost(hostname));
+            
+            // 快手直连 IP 强制解密 (把 HTTPS/WSS 隧道强行解开，变成明文 WebSocket)
+            bool isKsIpDirect = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(hostname, @"^116\.153\.82\.\d{1,3}$");
+            if (isKsIpDirect && CheckKuaishouProcess(processName))
+            {
+                e.DecryptSsl = true;
+                Logger.LogInfo($"[KS_TUNNEL] 强制解密快手直连 IP: {hostname}");
+            }
 
+            return Task.CompletedTask;
             // Logger.LogInfo($"[CONNECT] Host={hostname} DecryptSsl={e.DecryptSsl} Process={processName}");
         }
 
