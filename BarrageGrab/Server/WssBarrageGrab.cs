@@ -1109,16 +1109,7 @@ namespace BarrageGrab
             // 已废弃
         }
 
-        private bool TryPushHintEmitDedup(string text)
-        {
-            lock (_ksHintEmitDedupLock)
-            {
-                if (_ksHintEmitDedup.Contains(text)) return false;
-                _ksHintEmitDedup.Add(text);
-                while (_ksHintEmitDedup.Count > 120) _ksHintEmitDedup.RemoveAt(0);
-                return true;
-            }
-        }
+        // 已废弃 TryPushHintEmitDedup 和相关变量
 
         private readonly List<string> _ksFallbackTextDedup = new List<string>();
         private readonly object _ksFallbackTextDedupLock = new object();
