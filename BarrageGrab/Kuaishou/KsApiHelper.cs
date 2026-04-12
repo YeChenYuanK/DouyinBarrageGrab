@@ -419,8 +419,7 @@ namespace BarrageGrab.Kuaishou
                 "live-ws-pg-group2.kuaishou.com",
                 "live-ws-pg-group3.kuaishou.com",
                 "w2.kskwai.com",           // 快手直播伴侣WebSocket域名
-                "api3.gifshow.com",         // 快手API主域名
-                "apijs2.ksapisrv.com"       // 快手API服务域名
+                "apijs2.ksapisrv.com"     // 快手API服务域名
             };
             foreach (var host in hosts)
             {

@@ -149,9 +149,9 @@ namespace BarrageGrab
                 processName.IndexOf("kscloud", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 processName.IndexOf("kuaishou", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 processName.IndexOf("gifshow", StringComparison.OrdinalIgnoreCase) >= 0;
-            var isKuaishouHost = hostName.Contains("kuaishou") || hostName.Contains("wsukwai") || hostName.Contains("gifshow") || hostName.Contains("ksapis") || hostName.StartsWith("ksraw:") || hostName.StartsWith("ksrawtx:");
+            var isKuaishouHost = isLikelyKuaishouProcess || hostName.Contains("kuaishou") || hostName.Contains("wsukwai") || hostName.Contains("gifshow") || hostName.Contains("ksapis") || hostName.StartsWith("ksraw:") || hostName.StartsWith("ksrawtx:");
             // 快手官方客户端抓包场景允许按域名放行，但仍要求进程特征，避免浏览器/其他应用噪音误触发
-            var allowKuaishouBypass = isKuaishouHost && (isLikelyKuaishouProcess || hostName.StartsWith("ksraw:") || hostName.StartsWith("ksrawtx:"));
+            var allowKuaishouBypass = isKuaishouHost;
             if (!allowByProcessFilter && !allowKuaishouBypass)
             {
                 return;
@@ -2092,7 +2092,13 @@ namespace BarrageGrab
         // 处理快手 Protobuf 数据
         private void ProcessKuaishouProtobuf(byte[] buff, string processName)
         {
-            var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(new ReadOnlyMemory<byte>(buff));
+            int offset = 0;
+            if (buff.Length > 16 && buff[0] == 0x01 && buff[1] == 0x1A && buff[2] == 0x2B && buff[3] == 0x3C)
+            {
+                offset = 16;
+            }
+
+            var envelope = Serializer.Deserialize<Modles.ProtoEntity.KsSocketMessage>(new ReadOnlyMemory<byte>(buff, offset, buff.Length - offset));
             if (envelope?.Payload == null)
             {
                 if (AppSetting.Current.KuaishouVerboseLog)
