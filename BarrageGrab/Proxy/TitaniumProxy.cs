@@ -1413,7 +1413,7 @@ namespace BarrageGrab.Proxy
                         var messageData = _ksWsMessageBuffers.GetOrAdd(args, _ => new List<byte>());
                         messageData.AddRange(frame.Data.ToArray());
                         
-                        if (frame.IsFin)
+                        if (frame.IsFinal)
                         {
                             byte[] payload = messageData.ToArray();
                             _ksWsMessageBuffers.TryRemove(args, out _);
@@ -1435,7 +1435,7 @@ namespace BarrageGrab.Proxy
                     }
                     else if (frame.OpCode == WebsocketOpCode.Text || frame.OpCode == WebsocketOpCode.Binary)
                     {
-                        if (!frame.IsFin)
+                        if (!frame.IsFinal)
                         {
                             var messageData = new List<byte>();
                             messageData.AddRange(frame.Data.ToArray());
