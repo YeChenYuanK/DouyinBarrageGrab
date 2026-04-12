@@ -90,6 +90,7 @@ namespace BarrageGrab.Proxy
         static TitaniumProxy()
         {
             // 设置代理过滤规则
+            // 移除 103.* 和 116.* 等外网IP的 bypass，确保代理能够抓取直连 IP
             string[] bypassList = { "localhost", "127.*", "10.*", "172.16.*", "172.17.*", "172.18.*", "172.19.*",
                                 "172.20.*", "172.21.*", "172.22.*", "172.23.*", "172.24.*", "172.25.*",
                                 "172.26.*", "172.27.*", "172.28.*", "172.29.*", "172.30.*", "172.31.*",
@@ -149,6 +150,23 @@ namespace BarrageGrab.Proxy
             explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
             explicitEndPoint.BeforeTunnelConnectResponse += ExplicitEndPoint_BeforeTunnelConnectResponse;
             proxyServer.AddEndPoint(explicitEndPoint);
+        }
+
+        private Task ExplicitEndPoint_BeforeTunnelConnectRequest(object sender, TunnelConnectSessionEventArgs e)
+        {
+            string hostname = e.HttpClient.Request.RequestUri.Host;
+            var processid = e.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processid);
+            bool isKsIpDirect = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(hostname, @"^116\.153\.82\.\d{1,3}$");
+            
+            if (isKsIpDirect && CheckKuaishouProcess(processName))
+            {
+                // 快手直连 IP 强制解密 (把 HTTPS/WSS 隧道强行解开，变成明文 WebSocket)
+                e.DecryptSsl = true;
+                Logger.LogInfo($"[KS_TUNNEL] 强制解密快手直连 IP: {hostname}");
+            }
+            
+            return Task.CompletedTask;
         }
 
         private X509Certificate2 GetCert()
@@ -285,21 +303,21 @@ namespace BarrageGrab.Proxy
             if (string.IsNullOrWhiteSpace(hostname)) return false;
             hostname = hostname.Trim();
             
-            // 硬规则1：IP段 103.107.218.*（官方客户端直连）
-            bool isKsIp = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$");
+            // 硬规则1：IP段 103.107.218.*（官方客户端直连） 或 116.153.82.* (刚才抓到的IP)
+            bool isKsIp = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(hostname, @"^116\.153\.82\.\d{1,3}$");
             
             // 硬规则2：域名精确匹配 livejs-ws.kuaishou.cn（浏览器WebSocket连接）
-            bool isKsDomain = Regex.IsMatch(hostname, @"^(livejs-ws\.kuaishou\.cn|livejs-ws\.kuaishou\.com)$");
+            bool isKsDomain = Regex.IsMatch(hostname, @"^(livejs-ws\.kuaishou\.cn|livejs-ws\.kuaishou\.com|p3-live\.wsukwai\.com)$");
             
             // 硬规则3：URI路径精确匹配 /group2, /group5（实测分组连接）
             bool isKsUri = !string.IsNullOrEmpty(uri) && 
                           (uri.Contains("/group2") || uri.Contains("/group5") || 
-                           uri.Contains("/websocket") || uri.Contains("/wss"));
+                           uri.Contains("/websocket") || uri.Contains("/wss") || uri.Contains("ws"));
             
             // 基于实证数据：参数可能在请求头或消息体中，不在URL中
             // 样本数据显示 queryString: []，所以移除URL参数验证
             
-            return isKsIp || (isKsDomain && isKsUri);
+            return isKsIp || (isKsDomain && isKsUri) || ksBarrageReg.IsMatch(hostname);
         }
 
         private Task ProxyServer_BeforeRequest(object sender, SessionEventArgs e)
@@ -318,12 +336,22 @@ namespace BarrageGrab.Proxy
             var upgradeHeader = e.HttpClient.Request.Headers.GetFirstHeader("Upgrade")?.Value ?? "";
             bool isWsUpgrade = upgradeHeader.IndexOf("websocket", StringComparison.OrdinalIgnoreCase) >= 0;
 
+            // 快手直播伴侣的直连IP往往会被识别为普通的HTTPS请求，我们需要强制把它按 WebSocket/TLS 处理
+            bool isKsIpDirect = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(hostname, @"^116\.153\.82\.\d{1,3}$");
+            
             // 快手抓包模式只跟随官方客户端进程，避免浏览器流量干扰鉴权链路
-            if (isKwaiProcess && isKuaishouDomain && (isTunnelWs || isWsUpgrade))
+            // 如果是快手进程，且是快手域名(WS)或者是快手直连IP(任意)，强制订阅数据
+            if (isKwaiProcess && (isKuaishouDomain || isKsIpDirect))
             {
+                // 对于直连IP，我们强制解密（DecryptSsl）并把它当作 WebSocket 隧道处理
+                if (isKsIpDirect && !isTunnelWs && !isWsUpgrade)
+                {
+                    Logger.LogInfo($"[KS_REQ] 发现快手直连 IP 流量，强制订阅数据 hostname:{hostname} Process:{processName}");
+                }
+                
                 e.DataReceived -= WebSocket_DataReceived;
                 e.DataReceived += WebSocket_DataReceived;
-                Logger.LogInfo($"[KS_REQ] 官方客户端握手捕获 hostname:{hostname} Process:{processName} isTunnelWs={isTunnelWs} isWsUpgrade={isWsUpgrade}");
+                Logger.LogInfo($"[KS_REQ] 官方客户端握手捕获 hostname:{hostname} Process:{processName} isTunnelWs={isTunnelWs} isWsUpgrade={isWsUpgrade} isIpDirect={isKsIpDirect}");
             }
 
             return Task.CompletedTask;
