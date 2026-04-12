@@ -250,19 +250,9 @@ namespace BarrageGrab
 
             // 二层协议：外层二进制头 + 内层 GZIP（日志已确认存在 1F 8B 08）
             if (TryProcessKuaishouEmbeddedGzip(buff, e.ProcessName)) return;
-
-            // 最后兜底 JSON
-            try
-            {
-                ProcessKuaishouJson(buff, e.ProcessName);
-            }
-            catch (Exception ex2)
-            {
-                if (AppSetting.Current.KuaishouVerboseLog)
-                {
-                    Logger.LogWarn($"[快手] WebSocket 数据解析失败: Protobuf({protobufErr ?? "no-hit"}), JSON({ex2.Message})");
-                }
-            }
+            
+            // 如果都没有命中，交到底层的 Protobuf 去解析（对于 103.* 直连 IP，由于前面可能没有 GZIP 或者已经是纯明文，走这里）
+            ProcessKuaishouProtobuf(buff, e.ProcessName);
         }
 
         // 已废弃冗余探测函数
@@ -331,58 +321,8 @@ namespace BarrageGrab
 
         private bool TryProcessKuaishouProfileGiftPacket(List<string> tokens, string strategy, int payloadLen)
         {
-            if (tokens == null || tokens.Count == 0) return false;
-
-            var expanded = new List<string>();
-            foreach (var raw in tokens)
-            {
-                var t = (raw ?? string.Empty).Trim();
-                if (string.IsNullOrWhiteSpace(t)) continue;
-                expanded.Add(t);
-                if (TryDecodeBase64Utf8(t, out var decoded) && !string.IsNullOrWhiteSpace(decoded))
-                {
-                    expanded.Add(decoded.Trim());
-                }
-            }
-
-            bool hasGiftVerb = expanded.Any(IsLikelyGiftTriggerToken);
-            if (!hasGiftVerb) return false;
-
-            long giftCount = 1;
-            var countToken = expanded.FirstOrDefault(IsLikelyGiftCountToken);
-            if (!string.IsNullOrWhiteSpace(countToken))
-            {
-                giftCount = ParseGiftCount(countToken);
-                if (giftCount <= 0) giftCount = 1;
-            }
-
-            var nickname = ResolveKuaishouNickname(expanded, "");
-            if (string.IsNullOrWhiteSpace(nickname)) return false; // 用户名为空，解析失败
-
-            string giftName = expanded.FirstOrDefault(t =>
-                t.IndexOf("礼物", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                t.IndexOf("赠送", StringComparison.OrdinalIgnoreCase) >= 0);
-            if (string.IsNullOrWhiteSpace(giftName)) giftName = "礼物";
-
-            var dedupKey = $"{nickname}|{giftName}|{giftCount}|{strategy}";
-            if (!TryPushKuaishouFallbackGift(dedupKey)) return false;
-
-            if (AppSetting.Current.KuaishouVerboseLog)
-            {
-                Logger.LogInfo($"[快手][Fallback][PROFILE_GIFT] strategy={strategy}, nickname={nickname}, gift={giftName}, count={giftCount}, len={payloadLen}");
-            }
-            FireKuaishouGift(new Modles.ProtoEntity.KsGiftMessage
-            {
-                User = new Modles.ProtoEntity.KsUser
-                {
-                    Nickname = nickname,
-                    UserId = "",
-                    HeadUrl = ""
-                },
-                GiftName = giftName,
-                Count = giftCount
-            });
-            return true;
+            // 已废弃猜谜逻辑
+            return false;
         }
 
         private bool TryPushKuaishouFallbackGift(string dedupKey)
@@ -466,15 +406,7 @@ namespace BarrageGrab
                         // ignore, continue scan
                     }
 
-                    // 最终兜底：做无 schema 的 protobuf 文本提取，先把评论文本打通
-                    if (!isBroadcastCandidate && TryProcessKuaishouGenericProtoText(inflated))
-                    {
-                        if (AppSetting.Current.KuaishouVerboseLog)
-                        {
-                            Logger.LogInfo($"[快手] GZIP解包后 通用文本提取命中 at={i}");
-                        }
-                        // return true;
-                    }
+                    // 移除 TryProcessKuaishouGenericProtoText 兜底调用
                 }
                 catch (Exception ex)
                 {
@@ -1744,11 +1676,6 @@ namespace BarrageGrab
             if (AppSetting.Current.KuaishouVerboseLog)
             {
                 Logger.LogInfo($"[快手] Protobuf 所有候选解析失败。尝试保存样本...");
-                try {
-                    string dumpPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", $"ks_failed_payload_{DateTime.Now.Ticks}.bin");
-                    System.IO.File.WriteAllBytes(dumpPath, buff);
-                    Logger.LogInfo($"[快手] 失败样本已保存至: {dumpPath}");
-                } catch {}
             }
         }
 
