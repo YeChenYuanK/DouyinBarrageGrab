@@ -114,37 +114,53 @@ namespace BarrageGrab.Modles.ProtoEntity
     }
 
     /// <summary>
-    /// 快手 PC 直播伴侣端特有的 Payload 结构
-    /// 与网页版的 KsPayload 不同，它不是把类型作为字符串放在 SendMessage 里，
-    /// 而是直接把不同类型的消息放在了不同的数字 Tag 数组中。
+    /// 快手 PC 直播伴侣端特有的 Payload 结构 (对应 SCFeedPush)
     /// </summary>
     [ProtoContract]
     public class KsPcPayload
     {
-        // 假设 Tag 7 是聊天消息数组 (基于二进制分析)
-        [ProtoMember(7, IsRequired = false)]
+        [ProtoMember(1, IsRequired = false)]
         public List<KsPcChatMessage> ChatMessages { get; } = new List<KsPcChatMessage>();
         
-        // 假设 Tag 8 是礼物消息数组
-        [ProtoMember(8, IsRequired = false)]
-        public List<KsPcGiftMessage> GiftMessages { get; } = new List<KsPcGiftMessage>();
-        
-        // 假设 Tag 9 是点赞消息数组
-        [ProtoMember(9, IsRequired = false)]
+        [ProtoMember(2, IsRequired = false)]
         public List<KsPcLikeMessage> LikeMessages { get; } = new List<KsPcLikeMessage>();
-
-        // 假设 Tag 10 是进房消息数组
-        [ProtoMember(10, IsRequired = false)]
+        
+        [ProtoMember(3, IsRequired = false)]
         public List<KsPcEnterMessage> EnterMessages { get; } = new List<KsPcEnterMessage>();
+
+        [ProtoMember(4, IsRequired = false)]
+        public List<KsPcGiftMessage> GiftMessages { get; } = new List<KsPcGiftMessage>();
+    }
+
+    [ProtoContract]
+    public class KsPcUserInfo
+    {
+        [ProtoMember(1)]
+        public string UserName { get; set; } = "";
+
+        [ProtoMember(2)]
+        public long UserId { get; set; }
+
+        [ProtoMember(3)]
+        public bool Male { get; set; }
+
+        [ProtoMember(4)]
+        public string HeadUrl { get; set; } = "";
     }
 
     [ProtoContract]
     public class KsPcChatMessage
     {
         [ProtoMember(1)]
-        public KsUser User { get; set; }
+        public string Id { get; set; }
 
         [ProtoMember(2)]
+        public KsPcUserInfo User { get; set; }
+
+        [ProtoMember(3)]
+        public long Time { get; set; }
+
+        [ProtoMember(4)]
         public string Content { get; set; }
     }
 
@@ -152,33 +168,45 @@ namespace BarrageGrab.Modles.ProtoEntity
     public class KsPcGiftMessage
     {
         [ProtoMember(1)]
-        public KsUser User { get; set; }
+        public string Id { get; set; }
 
         [ProtoMember(2)]
-        public long GiftId { get; set; }
+        public KsPcUserInfo User { get; set; }
 
         [ProtoMember(3)]
-        public string GiftName { get; set; }
+        public long Time { get; set; }
 
         [ProtoMember(4)]
-        public long Count { get; set; }
+        public uint GiftId { get; set; }
+
+        [ProtoMember(8)]
+        public uint ComboCount { get; set; }
     }
 
     [ProtoContract]
     public class KsPcLikeMessage
     {
         [ProtoMember(1)]
-        public KsUser User { get; set; }
+        public string Id { get; set; }
 
         [ProtoMember(2)]
-        public long Count { get; set; }
+        public KsPcUserInfo User { get; set; }
+
+        [ProtoMember(3)]
+        public long Time { get; set; }
     }
 
     [ProtoContract]
     public class KsPcEnterMessage
     {
         [ProtoMember(1)]
-        public KsUser User { get; set; }
+        public string Id { get; set; }
+
+        [ProtoMember(2)]
+        public KsPcUserInfo User { get; set; }
+
+        [ProtoMember(3)]
+        public long Time { get; set; }
     }
 
     /// <summary>

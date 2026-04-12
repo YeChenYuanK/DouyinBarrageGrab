@@ -417,6 +417,18 @@ namespace BarrageGrab
 
                         if (ksPcPayload != null)
                         {
+                            Func<Modles.ProtoEntity.KsPcUserInfo, Modles.ProtoEntity.KsUser> mapUser = (pcUser) =>
+                            {
+                                if (pcUser == null) return new Modles.ProtoEntity.KsUser();
+                                return new Modles.ProtoEntity.KsUser
+                                {
+                                    UserId = pcUser.UserId.ToString(),
+                                    Nickname = pcUser.UserName,
+                                    Gender = pcUser.Male ? 1 : 2,
+                                    HeadUrl = pcUser.HeadUrl
+                                };
+                            };
+
                             if (ksPcPayload.ChatMessages != null && ksPcPayload.ChatMessages.Count > 0)
                             {
                                 hasPcData = true;
@@ -425,7 +437,7 @@ namespace BarrageGrab
                                     FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
                                     {
                                         Content = chat.Content,
-                                        User = chat.User
+                                        User = mapUser(chat.User)
                                     });
                                 }
                             }
@@ -437,10 +449,10 @@ namespace BarrageGrab
                                 {
                                     FireKuaishouGift(new Modles.ProtoEntity.KsGiftMessage
                                     {
-                                        User = gift.User,
+                                        User = mapUser(gift.User),
                                         GiftId = gift.GiftId,
-                                        GiftName = gift.GiftName,
-                                        Count = gift.Count
+                                        GiftName = "Gift_" + gift.GiftId, // PC 格式没有直接传 Name，用 Id 占位或由上层处理
+                                        Count = gift.ComboCount > 0 ? gift.ComboCount : 1
                                     });
                                 }
                             }
@@ -452,8 +464,8 @@ namespace BarrageGrab
                                 {
                                     FireKuaishouLike(new Modles.ProtoEntity.KsLikeMessage
                                     {
-                                        User = like.User,
-                                        Count = like.Count
+                                        User = mapUser(like.User),
+                                        Count = 1
                                     });
                                 }
                             }
@@ -465,7 +477,7 @@ namespace BarrageGrab
                                 {
                                     FireKuaishouEnter(new Modles.ProtoEntity.KsEnterMessage
                                     {
-                                        User = enter.User
+                                        User = mapUser(enter.User)
                                     });
                                 }
                             }
