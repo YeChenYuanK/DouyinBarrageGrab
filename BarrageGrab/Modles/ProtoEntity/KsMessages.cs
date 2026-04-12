@@ -37,6 +37,19 @@ namespace BarrageGrab.Modles.ProtoEntity
         public byte[] Payload { get; set; }
     }
 
+    [ProtoContract]
+    public class KsPcSocketMessage
+    {
+        [ProtoMember(1)]
+        public int PayloadType { get; set; }
+
+        [ProtoMember(2)]
+        public int CompressionType { get; set; }
+
+        [ProtoMember(3)]
+        public byte[] Payload { get; set; }
+    }
+
     /// <summary>
     /// 快手认证请求（连接 WebSocket 后发送的第一个消息）
     /// </summary>
