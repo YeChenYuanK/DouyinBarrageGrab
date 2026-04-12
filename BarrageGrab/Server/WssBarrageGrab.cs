@@ -1648,6 +1648,10 @@ namespace BarrageGrab
             if (text.IndexOf("欢迎", StringComparison.OrdinalIgnoreCase) >= 0) return false;
             if (text.Contains("?") || text.Contains("�")) return false;
             if (ContainsGuidLikeFragment(text)) return false;
+            if (text.IndexOf("评论", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            if (text.IndexOf("送出", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            if (text.IndexOf("进入直播间", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            if (text.IndexOf("正在看", StringComparison.OrdinalIgnoreCase) >= 0) return false;
             
             // 放宽限制，快手用户名可能包含英文数字和颜文字
             return true;
@@ -1657,6 +1661,7 @@ namespace BarrageGrab
         {
             var nickname = (tokens ?? new List<string>())
                 .Select(s => (s ?? string.Empty).Trim())
+                .Where(s => s.Length >= 2 && s.Length <= 15)
                 .FirstOrDefault(s => IsLikelyKuaishouNickname(s) && !string.Equals(s, selectedText, StringComparison.Ordinal));
             if (!string.IsNullOrWhiteSpace(nickname))
             {
@@ -1781,10 +1786,10 @@ namespace BarrageGrab
         private bool IsLikelyKuaishouChatText(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return false;
-            // 允许 "1" / "2" / "3" 这类单字符数字评论
+            // 允许 "1" / "2" / "3" 等常见单字符评论
             if (text.Length == 1)
             {
-                return text[0] == '1' || text[0] == '2' || text[0] == '3' || text[0] == '4';
+                return char.IsLetterOrDigit(text[0]) || text.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF) > 0;
             }
             if (text.Length > 50) return false;
             if (text.Contains("http") || text.Contains("kwailive://") || text.Contains(".png") || text.Contains(".webp")) return false;
@@ -1794,13 +1799,17 @@ namespace BarrageGrab
             {
                 "livePeakCup", "MERCHANT_", "lottie", "stickerImage", "正在看", "直播间正在开启", "host-name", "result",
                 "快手平台账号", "未成年人", "严禁主播", "人气里程碑", "欢迎开播",
-                "抢红包", "红包", "城市巅峰赛", "人在看", "author_label", "commentSource", "BOTTOM_BUTTON"
+                "抢红包", "红包", "城市巅峰赛", "人在看", "author_label", "commentSource", "BOTTOM_BUTTON",
+                "进入直播间", "送出", "评论"
             };
             if (blacklist.Any(k => text.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0)) return false;
 
+            // 放宽判断：只要有两个汉字，或者是字母/数字组合，都算作可能是弹幕
             var cjkCount = text.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF);
+            if (cjkCount >= 1) return true;
+            
             var letterOrDigit = text.Count(char.IsLetterOrDigit);
-            return cjkCount >= 2 || (letterOrDigit >= 4 && text.Any(ch => ch == ' '));
+            return letterOrDigit >= 2;
         }
 
         private bool ContainsGuidLikeFragment(string text)
@@ -1941,8 +1950,7 @@ namespace BarrageGrab
                         compressionType = envelope.CompressionType;
                     }
 
-                    // 检查是否需要 GZIP 解压
-                    // GZIP 头特征：1F 8B
+                    // ====== 最强暴力容错：直接搜 GZIP 头，不依赖 Protobuf 字段 ======
                     int gzipOffset = -1;
                     for (int i = 0; i < innerPayload.Length - 1; i++)
                     {
@@ -1950,6 +1958,31 @@ namespace BarrageGrab
                         {
                             gzipOffset = i;
                             break;
+                        }
+                    }
+
+                    // 如果第一层 payload 没有 GZIP，看看原始包里有没有 GZIP
+                    if (gzipOffset == -1)
+                    {
+                        for (int i = 0; i < buff.Length - 1; i++)
+                        {
+                            if (buff[i] == 0x1F && buff[i+1] == 0x8B)
+                            {
+                                // 直接跨过所有的外层包壳，提取出 GZIP 数据！
+                                byte[] toDecompress = new byte[buff.Length - i];
+                                Buffer.BlockCopy(buff, i, toDecompress, 0, toDecompress.Length);
+                                try
+                                {
+                                    byte[] decomp = Decompress(toDecompress);
+                                    if (decomp != null && decomp.Length > 0)
+                                    {
+                                        innerPayload = decomp;
+                                        gzipOffset = 0; // 标记已经解压成功
+                                        break;
+                                    }
+                                }
+                                catch { }
+                            }
                         }
                     }
 
@@ -1985,38 +2018,54 @@ namespace BarrageGrab
                         }
                     }
 
+                    // ====== PC 端弹幕的终极提取方案：抛弃所有 PayloadType，直接从解压后的 innerPayload 中提取全部文本 ======
+                    // 在最新抓取的日志中，我们发现反序列化常常抛出 Unexpected character encountered 异常
+                    // 这意味着快手不仅改了外层头，甚至连里层的 Protobuf 结构都加盐/混淆了。
+                    // 但它的中文字符并没有加密！
+                    
                     var ksPayload = Serializer.Deserialize<Modles.ProtoEntity.KsPayload>(new ReadOnlyMemory<byte>(innerPayload));
                     
-                    // 兜底文本提取逻辑：如果标准解析没命中（或反序列化失败），但是在解压后的 payload 中发现了大量中文字符，走 fallback
+                    // 如果标准解析没命中（或反序列化失败，上面 catch 住了），我们走终极的纯文本扫描
                     if (ksPayload?.SendMessages == null || ksPayload.SendMessages.Count == 0)
                     {
-                        var tokens = ExtractProtoStringTokens(innerPayload, maxTokens: 256);
-                        var chatCandidate = tokens
+                        var tokens = ExtractProtoStringTokens(innerPayload, maxTokens: 512); // 扩大搜索范围
+                        
+                        // 找所有包含中文的 token，把它们当做一条消息或多条消息处理
+                        var chatCandidates = tokens
                             .Where(t => IsLikelyKuaishouChatText(t))
                             .Where(t => !IsLikelyKuaishouNickname(t))
                             .Where(t => !ContainsGuidLikeFragment(t))
-                            .OrderByDescending(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF))
-                            .ThenBy(t => t.Length)
-                            .FirstOrDefault();
+                            .Where(t => t.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF) > 0)
+                            .ToList();
                             
-                        if (!string.IsNullOrWhiteSpace(chatCandidate))
+                        if (chatCandidates.Count > 0)
                         {
                             if (AppSetting.Current.KuaishouVerboseLog)
                             {
-                                Logger.LogInfo($"[快手] PC 协议标准 Protobuf 失败，但触发文本兜底，捕获内容: {chatCandidate}");
+                                Logger.LogInfo($"[快手] PC 协议标准 Protobuf 失败，但触发文本兜底，捕获到 {chatCandidates.Count} 条弹幕");
                             }
-                            var nickname = ResolveKuaishouNickname(tokens, chatCandidate);
-                            FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
+                            
+                            foreach(var chatCandidate in chatCandidates)
                             {
-                                Content = chatCandidate,
-                                User = new Modles.ProtoEntity.KsUser
+                                var nickname = ResolveKuaishouNickname(tokens, chatCandidate);
+                                
+                                // 防止同一句话里解析出完全一样的弹幕内容和昵称（去重）
+                                string dupKey = $"{nickname}_{chatCandidate}";
+                                if (TryPushKuaishouFallbackText(dupKey))
                                 {
-                                    Nickname = nickname,
-                                    UserId = "",
-                                    HeadUrl = ""
+                                    FireKuaishouChat(new Modles.ProtoEntity.KsChatMessage
+                                    {
+                                        Content = chatCandidate,
+                                        User = new Modles.ProtoEntity.KsUser
+                                        {
+                                            Nickname = nickname,
+                                            UserId = "",
+                                            HeadUrl = ""
+                                        }
+                                    });
                                 }
-                            });
-                            return true;
+                            }
+                            // 这里不 return true，继续尝试其他包的解析，防止大包里混了多种类型
                         }
                         continue;
                     }
