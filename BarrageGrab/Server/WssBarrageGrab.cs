@@ -1637,15 +1637,15 @@ namespace BarrageGrab
         {
             if (string.IsNullOrWhiteSpace(text)) return false;
             text = text.Trim();
-            if (text.Length < 2 || text.Length > 10) return false;
-            if (text.Any(char.IsDigit)) return false;
+            if (text.Length < 2 || text.Length > 20) return false;
             if (text.IndexOf("主播", StringComparison.OrdinalIgnoreCase) >= 0) return false;
             if (text.IndexOf("你好", StringComparison.OrdinalIgnoreCase) >= 0) return false;
             if (text.IndexOf("欢迎", StringComparison.OrdinalIgnoreCase) >= 0) return false;
             if (text.Contains("?") || text.Contains("�")) return false;
             if (ContainsGuidLikeFragment(text)) return false;
-            var cjkCount = text.Count(ch => ch >= 0x4E00 && ch <= 0x9FFF);
-            return cjkCount >= 2;
+            
+            // 放宽限制，快手用户名可能包含英文数字和颜文字
+            return true;
         }
 
         private string ResolveKuaishouNickname(List<string> tokens, string selectedText)
@@ -1657,6 +1657,19 @@ namespace BarrageGrab
             {
                 _ksLastStableNickname = nickname;
                 return nickname;
+            }
+
+            // 如果没有找到合适的昵称，我们可以直接在所有 tokens 中找一个最长的、看起来像名字的词
+            var anyName = (tokens ?? new List<string>())
+                .Select(s => (s ?? string.Empty).Trim())
+                .Where(s => s.Length >= 2 && s.Length <= 15 && !s.Contains("?") && !string.Equals(s, selectedText, StringComparison.Ordinal))
+                .OrderByDescending(s => s.Length)
+                .FirstOrDefault();
+                
+            if (!string.IsNullOrWhiteSpace(anyName))
+            {
+                _ksLastStableNickname = anyName;
+                return anyName;
             }
 
             if (!string.IsNullOrWhiteSpace(_ksLastStableNickname)) return _ksLastStableNickname;
