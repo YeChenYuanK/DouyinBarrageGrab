@@ -971,7 +971,30 @@ namespace BarrageGrab.Proxy
             return Task.CompletedTask;
         }
 
-        // 移除重复定义的 ExplicitEndPoint_BeforeTunnelConnectRequest
+        // 恢复 ExplicitEndPoint_BeforeTunnelConnectRequest
+        private Task ExplicitEndPoint_BeforeTunnelConnectRequest(object sender, TunnelConnectSessionEventArgs e)
+        {
+            string hostname = e.HttpClient.Request.RequestUri.Host;
+            var processid = e.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processid);
+
+            // 只对已知直播客户端进程做 SSL 解密，其他进程（游戏App、浏览器等）直接透传
+            var knownLiveProcesses = new[] { "直播伴侣", "kwailive", "webcast_mate", "douyin" };
+            bool isLiveProcess = knownLiveProcesses.Any(p => processName != null && processName.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0);
+
+            e.DecryptSsl = isLiveProcess && CheckHost(hostname);
+            
+            // 快手直连 IP: 因为它不是 TLS/HTTPS 协议，而是直接裸奔的 TCP 协议 (01 1A 2B 3C...)，
+            // 所以绝对不能强制解密，否则 TitaniumProxy 的 TLS 握手会失败断开。
+            bool isKsIpDirect = Regex.IsMatch(hostname, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(hostname, @"^116\.153\.82\.\d{1,3}$");
+            if (isKsIpDirect && CheckKuaishouProcess(processName))
+            {
+                e.DecryptSsl = false;
+                Logger.LogInfo($"[KS_TUNNEL] 快手直连 TCP 协议 IP，关闭解密: {hostname}");
+            }
+
+            return Task.CompletedTask;
+        }
 
         // 隧道建立后，对 kwailive 进程订阅 DecryptedDataReceived（含IP直连的弹幕WS）
         private Task ExplicitEndPoint_BeforeTunnelConnectResponse(object sender, TunnelConnectSessionEventArgs e)
@@ -1207,6 +1230,79 @@ namespace BarrageGrab.Proxy
             {
                 UpdateKsFlowProfile(host, processName, e.Count, isRx: true);
             }
+
+            // --- 拦截快手直连 IP 的 TCP 粘包/半包处理 ---
+            bool isKsIpDirect = Regex.IsMatch(host, @"^103\.107\.218\.\d{1,3}$") || Regex.IsMatch(host, @"^116\.153\.82\.\d{1,3}$");
+            if (isKsIpDirect && CheckKuaishouProcess(processName))
+            {
+                var buf = _ksTunnelBuffers.GetOrAdd(args, _ => new List<byte>());
+                buf.AddRange(new ArraySegment<byte>(e.Buffer, e.Offset, e.Count));
+
+                while (buf.Count >= 16)
+                {
+                    var data = buf.ToArray();
+                    if (data[0] == 0x01 && data[1] == 0x1A && data[2] == 0x2B && data[3] == 0x3C)
+                    {
+                        // 读取包体长度 (Big Endian)
+                        int payloadLen = (data[12] << 24) | (data[13] << 16) | (data[14] << 8) | data[15];
+                        if (payloadLen < 0 || payloadLen > 10 * 1024 * 1024) 
+                        {
+                            Logger.LogInfo($"[KS_TCP_FRAME] 异常长度 {payloadLen}，清空缓冲区");
+                            buf.Clear();
+                            break;
+                        }
+                        if (buf.Count < 16 + payloadLen)
+                        {
+                            break; // 等待更多数据
+                        }
+
+                        byte[] packet = new byte[payloadLen];
+                        Array.Copy(data, 16, packet, 0, payloadLen);
+                        buf.RemoveRange(0, 16 + payloadLen);
+
+                        if (AppSetting.Current.KuaishouVerboseLog)
+                        {
+                            Logger.LogInfo($"[KS_TCP_FRAME] 提取完整业务包 size:{payloadLen} host:{host}");
+                        }
+
+                        base.FireWsEvent(new WsMessageEventArgs()
+                        {
+                            ProcessID = processId,
+                            HostName = "ksraw:" + host,
+                            Payload = packet,
+                            ProcessName = processName
+                        });
+                    }
+                    else
+                    {
+                        // 寻找下一个包头
+                        int nextHeader = -1;
+                        for (int i = 1; i <= data.Length - 4; i++)
+                        {
+                            if (data[i] == 0x01 && data[i+1] == 0x1A && data[i+2] == 0x2B && data[i+3] == 0x3C)
+                            {
+                                nextHeader = i;
+                                break;
+                            }
+                        }
+                        if (nextHeader != -1)
+                        {
+                            buf.RemoveRange(0, nextHeader);
+                        }
+                        else
+                        {
+                            // 没找到头，保留最后3个字节以防截断
+                            if (buf.Count > 3)
+                            {
+                                buf.RemoveRange(0, buf.Count - 3);
+                            }
+                            break;
+                        }
+                    }
+                }
+                return; // 处理完毕，不走下面的透传逻辑
+            }
+            // ------------------------------------------
 
             // 对快手直播伴侣的“非标准WS帧”通道做透传，交给上层做协议探测解析
             // 0x16/0x17 多为 TLS 握手/应用层密文，跳过避免噪音；其余字节流尝试上送
